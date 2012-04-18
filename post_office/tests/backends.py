@@ -19,7 +19,7 @@ class ErrorRaisingBackend(backends.base.BaseEmailBackend):
 
 class BackendTest(TestCase):
 
-    @override_settings(EMAIL_BACKEND='post_office.backends.PostOfficeBackend')
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_email_backend(self):
         """
         Ensure that email backend properly queue email messages.

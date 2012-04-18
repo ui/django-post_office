@@ -35,10 +35,13 @@ class Email(models.Model):
     priority = models.PositiveSmallIntegerField(choices=PRIORITY_CHOICES, blank=True,
                                                 null=True, db_index=True)
     created = models.DateTimeField(default=datetime.datetime.now, db_index=True)
-    updated = models.DateTimeField(default=datetime.datetime.now, db_index=True, auto_now=True)
+    last_updated = models.DateTimeField(default=datetime.datetime.now, db_index=True, auto_now=True)
 
     class Meta:
         ordering = ('-created',)
+
+    def __unicode__(self):
+        return self.to
 
     def email_message(self, connection=None):
         """

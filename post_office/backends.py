@@ -3,7 +3,7 @@ from django.core.mail.backends.base import BaseEmailBackend
 from .models import Email, PRIORITY, STATUS
 
 
-class PostOfficeBackend(BaseEmailBackend):
+class EmailBackend(BaseEmailBackend):
 
     def open(self):
         pass
