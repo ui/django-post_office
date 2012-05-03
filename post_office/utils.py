@@ -51,6 +51,7 @@ def send_queued_mails():
                 sent_count += 1
             else:
                 failed_count += 1
-        connection.close()
+        if connection:
+            connection.close()
     print '{0} emails attempted, {1} sent, {2} failed'.format(len(queued_emails),
                                                               sent_count, failed_count)
