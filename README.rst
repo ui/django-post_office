@@ -31,7 +31,7 @@ Installation
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
-    EMAIL_BACKEND = 'post_office.EMAIL_BACKEND'
+    EMAIL_BACKEND = 'post_office.EmailBackend'
 
 
 Usage
@@ -65,9 +65,26 @@ Sending HTML Email
 ------------------
 
 ``post_office`` also comes with a ``send_mail`` command that is very similar to django's,
-except that it accepts two extra arguments ``html_message`` and ``priority`` (``high``, ``medium`` or ``low``).
+except that it accepts two extra arguments ``html_message`` and
+``priority`` (``high``, ``medium`` or ``low``).
 
 Here's how to use it::
     
     send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
               '<p>HTML message</p>', priority='medium')
+
+
+Management Commands
+-------------------
+
+* ``send_mail`` will send queued emails. If there are any
+   failures, they will be marked deferred and will not be attempted again by
+   ``send_mail``.
+
+* ``cleanup_mail`` will delete mails created before an X number of days
+   (defaults to 90).
+
+You may want to set these up via cron to run regularly::
+
+    * * * * * (cd $PROJECT; python manage.py send_mail >> $PROJECT/cron_mail.log 2>&1)
+    0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
