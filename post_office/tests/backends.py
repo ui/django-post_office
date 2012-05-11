@@ -44,7 +44,7 @@ class BackendTest(TestCase):
         self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If EMAIL_BACKEND is set to PostOfficeBackend, use SMTP to send by default
-        setattr(settings, 'EMAIL_BACKEND', 'post_office.backends.PostOfficeBackend')
+        setattr(settings, 'EMAIL_BACKEND', 'post_office.EmailBackend')
         self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If POST_OFFICE_BACKEND is given, use that

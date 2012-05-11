@@ -19,11 +19,11 @@ class UtilsTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.status, STATUS.queued)
         
-        # Emails sent with "now" priority don't have their status field set
+        # Emails sent with "now" priority don't get sent right away
         send_mail('subject', 'message', 'from@example.com', ['to@example.com'],
                   priority=PRIORITY.now)
         email = Email.objects.latest('id')
-        self.assertEqual(email.status, None)
+        self.assertEqual(email.status, STATUS.sent)
 
     def test_send_queued_mails(self):
         """

@@ -95,3 +95,6 @@ class Log(models.Model):
 
     class Meta:
         ordering = ('-date',)
+
+    def __unicode__(self):
+        return str(self.date)

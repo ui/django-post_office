@@ -12,7 +12,7 @@ class ModelTest(TestCase):
     def test_email_message(self):
         """
         Test to make sure that model's "email_message" method
-        returns proper `EmailMultiAlternatives`` with html attachment.
+        returns proper ``EmailMultiAlternatives`` with html attachment.
         """
                          
         email = Email.objects.create(to='to@example.com',

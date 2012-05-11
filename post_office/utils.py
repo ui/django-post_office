@@ -23,9 +23,12 @@ def send_mail(subject, message, from_email, recipient_list,
     msg = EmailMultiAlternatives(subject, message, from_email,
                                  recipient_list, connection=connection)
     status = None if priority == PRIORITY.now else STATUS.queued
+
     for address in recipient_list:
-        Email.objects.create(from_email=from_email, to=address, subject=subject,
+        email = Email.objects.create(from_email=from_email, to=address, subject=subject,
             message=message, html_message=html_message, status=status, priority=priority)
+        if priority == PRIORITY.now:
+            email.dispatch(connection=connection)
 
 
 def send_queued_mails():
