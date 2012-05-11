@@ -17,13 +17,14 @@ class Email(models.Model):
     A model to hold email information.    
     """
     
-    PRIORITY_CHOICES = [(PRIORITY.low, 'low'), (PRIORITY.medium, 'medium'), (PRIORITY.high, 'high')]
+    PRIORITY_CHOICES = [(PRIORITY.low, 'low'), (PRIORITY.medium, 'medium'),
+                        (PRIORITY.high, 'high'), (PRIORITY.now, 'now')]
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'), (STATUS.queued, 'queued')]
 
     from_email = models.EmailField(max_length=254)
     to = models.EmailField(max_length=254)
-    subject = models.CharField(max_length=255)
-    message = models.TextField()
+    subject = models.CharField(max_length=255, blank=True)
+    message = models.TextField(blank=True)
     html_message = models.TextField(blank=True)
     """
     Emails having 'queued' status will get processed by ``send_all`` command.
@@ -79,6 +80,10 @@ class Email(models.Model):
         self.save()
         self.logs.create(status=status, message=message)
         return status
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super(Email, self).save(*args, **kwargs)
 
 
 class Log(models.Model):
