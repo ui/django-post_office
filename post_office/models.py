@@ -1,4 +1,3 @@
-import datetime
 from collections import namedtuple
 
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -6,6 +5,12 @@ from django.db import models
 from django.utils.encoding import smart_unicode
 
 from .settings import get_backend
+
+try:
+    from django.utils.timezone import now
+except ImportError:
+    from datetime import datetime
+    now = datetime.now
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
@@ -35,8 +40,8 @@ class Email(models.Model):
                                               blank=True, null=True)
     priority = models.PositiveSmallIntegerField(choices=PRIORITY_CHOICES, blank=True,
                                                 null=True, db_index=True)
-    created = models.DateTimeField(default=datetime.datetime.now, db_index=True)
-    last_updated = models.DateTimeField(default=datetime.datetime.now, db_index=True, auto_now=True)
+    created = models.DateTimeField(default=now, db_index=True)
+    last_updated = models.DateTimeField(db_index=True, auto_now=True)
 
     class Meta:
         ordering = ('-created',)
@@ -94,7 +99,7 @@ class Log(models.Model):
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed')]
     
     email = models.ForeignKey(Email, editable=False, related_name='logs')
-    date = models.DateTimeField(default=datetime.datetime.now, db_index=True)
+    date = models.DateTimeField(default=now, db_index=True)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, db_index=True)
     message = models.TextField()
 
