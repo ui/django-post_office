@@ -2,7 +2,8 @@
 Django Post Office
 ==================
 
-Django Post Office is a simple mail queuing app that allows you to send mails asynchronously in django.
+Django Post Office is a simple mail queuing app that allows you to keep track of email activities and 
+send mails asynchronously in django.
 The concept is very similar to `django-mailer <https://github.com/jtauber/django-mailer>`_ and
 `django-mailer-2 <https://github.com/SmileyChris/django-mailer-2>`_. I maintained `my own fork of
 django-mailer-2 here <https://github.com/selwin/django-mailer>`_ until I decided to make one from scratch
@@ -15,13 +16,16 @@ to start sending email asynchronously.
 Dependencies
 ============
 
-- `django > 1.2 <http://djangoproject.com/>`_: http://djangoproject.com/
+- `django >= 1.2 <http://djangoproject.com/>`_
 
 
 Installation
 ============
 
-* Copy ``post_office`` to your ``PYTHONPATH``
+* Install via pypi::
+    
+    pip install django-post_office
+
 * Add ``post_office`` to your INSTALLED_APPS in django's ``settings.py``::
     
     INSTALLED_APPS = (
@@ -61,30 +65,39 @@ You can view also queued emails along with their statuses if you have django's a
         # ...
     )
 
-Sending HTML Email
-------------------
-
-``post_office`` also comes with a ``send_mail`` command that is very similar to django's,
-except that it accepts two extra arguments ``html_message`` and
-``priority`` (``high``, ``medium`` or ``low``).
-
-Here's how to use it::
-    
-    send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
-              '<p>HTML message</p>', priority='medium')
-
-
 Management Commands
 -------------------
 
-* ``send_mail`` will send queued emails. If there are any
+* ``send_queued_mail`` will send queued emails. If there are any
    failures, they will be marked deferred and will not be attempted again by
-   ``send_mail``.
+   ``send_queued_mail``.
 
 * ``cleanup_mail`` will delete mails created before an X number of days
    (defaults to 90).
 
 You may want to set these up via cron to run regularly::
 
-    * * * * * (cd $PROJECT; python manage.py send_mail >> $PROJECT/cron_mail.log 2>&1)
+    * * * * * (cd $PROJECT; python manage.py send_queued_mail >> $PROJECT/cron_mail.log 2>&1)
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
+
+Lower Level Usage
+-----------------
+
+``post_office`` also comes with a ``send_mail`` command that is very similar to django's,
+except that it accepts two extra arguments ``html_message`` and
+``priority`` (``high``, ``medium``, ``low`` or ``now``).
+
+Here's how to use it::
+    
+    from post_office import send_mail, PRIORITY
+    send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
+              '<p>HTML message</p>', priority=PRIORITY.medium)
+
+``post_office`` is also task queue friendly. If you already use something like
+`django-rq <https://github.com/ui/django-rq>`_ to send emails asynchronously and 
+only need to record email activities and logs, use the ``send_mail`` command with 
+``now`` as priority. This will send the email right away instead of being queued::
+    
+    from post_office import send_mail, PRIORITY
+    send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
+              '<p>HTML message</p>', priority=PRIORITY.now)
