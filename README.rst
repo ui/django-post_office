@@ -93,11 +93,13 @@ Here's how to use it::
     send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
               '<p>HTML message</p>', priority=PRIORITY.medium)
 
-``post_office`` is also task queue friendly. If you already use something like
-`django-rq <https://github.com/ui/django-rq>`_ to send emails asynchronously and 
-only need to record email activities and logs, use the ``send_mail`` command with 
-``now`` as priority. This will send the email right away instead of being queued::
+``post_office`` is also task queue friendly. Passing ``now`` as priority into ``send_mail``
+will deliver the email right away, even if there's another active process
+running ``send_queued_mail`` processing a thousand other messages::
     
     from post_office import send_mail, PRIORITY
     send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
               '<p>HTML message</p>', priority=PRIORITY.now)
+
+This is also useful if you already use something like `django-rq <https://github.com/ui/django-rq>`_
+to send emails asynchronously and only need to store email activities and logs.
