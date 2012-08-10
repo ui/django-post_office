@@ -30,7 +30,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
             email.dispatch()
 
 
-def send_queued_mails():
+def send_queued_mail():
     """
     Sends out all queued mails
     """

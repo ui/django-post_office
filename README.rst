@@ -44,10 +44,10 @@ Usage
 If you use ``post_office``'s ``EmailBackend``, it will automatically queue emails sent using
 django's ``send_mail`` in the database.
 
-To actually send them out, run ``python manage.py send_mail``. You can schedule this
+To actually send them out, run ``python manage.py send_queued_mail``. You can schedule this
 to run regularly via cron::
     
-    * * * * * (/usr/bin/python manage.py send_mail >> send_mail.log 2>&1)
+    * * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
 
 
 By default, ``post_office`` uses django's SMTP ``EmailBackend``. If you want to use a different one,
