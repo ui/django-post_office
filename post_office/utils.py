@@ -5,9 +5,8 @@ from .models import Email, PRIORITY, STATUS
 from .settings import get_backend
 
 
-def send_mail(subject, message, from_email, recipient_list,
-              fail_silently=False, auth_user=None, auth_password=None,
-              connection=None, html_message='', priority=PRIORITY.medium):
+def send_mail(subject, message, from_email, recipient_list, html_message='',
+              priority=PRIORITY.medium):
     """
     Add a new message to the mail queue.
 
@@ -21,14 +20,14 @@ def send_mail(subject, message, from_email, recipient_list,
     subject = force_unicode(subject)
     # Turn the input to django's email object to check for failures
     msg = EmailMultiAlternatives(subject, message, from_email,
-                                 recipient_list, connection=connection)
+                                 recipient_list)
     status = None if priority == PRIORITY.now else STATUS.queued
 
     for address in recipient_list:
         email = Email.objects.create(from_email=from_email, to=address, subject=subject,
             message=message, html_message=html_message, status=status, priority=priority)
         if priority == PRIORITY.now:
-            email.dispatch(connection=connection)
+            email.dispatch()
 
 
 def send_queued_mails():
