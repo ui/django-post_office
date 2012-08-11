@@ -2,9 +2,10 @@
 Django Post Office
 ==================
 
-Django Post Office is a simple mail queuing app that allows you to keep track of email activities and 
-send mails asynchronously in django.
-The concept is very similar to `django-mailer <https://github.com/jtauber/django-mailer>`_ and
+Django Post Office is a simple mail queuing and logging app that allows you to
+keep track of email activities and send mails asynchronously in django.
+
+The concept is similar to `django-mailer <https://github.com/jtauber/django-mailer>`_ and
 `django-mailer-2 <https://github.com/SmileyChris/django-mailer-2>`_. I maintained `my own fork of
 django-mailer-2 here <https://github.com/selwin/django-mailer>`_ until I decided to make one from scratch
 because I wanted a cleaner code base.
@@ -32,6 +33,10 @@ Installation
         # other apps
         "post_office",
     )
+
+* Run ``syncdb``::
+    
+    python manage.py syncdb
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
