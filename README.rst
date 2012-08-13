@@ -24,18 +24,18 @@ Installation
 ============
 
 * Install via pypi::
-    
+
     pip install django-post_office
 
 * Add ``post_office`` to your INSTALLED_APPS in django's ``settings.py``::
-    
+
     INSTALLED_APPS = (
         # other apps
         "post_office",
     )
 
 * Run ``syncdb``::
-    
+
     python manage.py syncdb
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
@@ -51,7 +51,7 @@ django's ``send_mail`` in the database.
 
 To actually send them out, run ``python manage.py send_queued_mail``. You can schedule this
 to run regularly via cron::
-    
+
     * * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
 
 
@@ -63,7 +63,7 @@ For example if you want to use `django-ses <https://github.com/hmarr/django-ses>
     POST_OFFICE_BACKEND = 'django_ses.SESBackend'
 
 You can view also queued emails along with their statuses if you have django's admin interface enabled::
-    
+
     INSTALLED_APPS = (
         # ...
         'django.contrib.admin',
@@ -73,12 +73,11 @@ You can view also queued emails along with their statuses if you have django's a
 Management Commands
 -------------------
 
-* ``send_queued_mail`` will send queued emails. If there are any
-   failures, they will be marked deferred and will not be attempted again by
-   ``send_queued_mail``.
+* ``send_queued_mail`` - send queued emails, those that aren't successfully
+  sent they will be marked as ``failed``.
 
-* ``cleanup_mail`` will delete mails created before an X number of days
-   (defaults to 90).
+* ``cleanup_mail`` will delete all emails created before an X number of days
+  (defaults to 90).
 
 You may want to set these up via cron to run regularly::
 
@@ -93,7 +92,7 @@ except that it accepts two extra arguments ``html_message`` and
 ``priority`` (``high``, ``medium``, ``low`` or ``now``).
 
 Here's how to use it::
-    
+
     from post_office import send_mail, PRIORITY
     send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
               '<p>HTML message</p>', priority=PRIORITY.medium)
@@ -101,7 +100,7 @@ Here's how to use it::
 ``post_office`` is also task queue friendly. Passing ``now`` as priority into ``send_mail``
 will deliver the email right away, even if there's another active process
 running ``send_queued_mail`` processing a thousand other messages::
-    
+
     from post_office import send_mail, PRIORITY
     send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
               '<p>HTML message</p>', priority=PRIORITY.now)
