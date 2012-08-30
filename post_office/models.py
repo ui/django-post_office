@@ -19,9 +19,9 @@ STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 
 class Email(models.Model):
     """
-    A model to hold email information.    
+    A model to hold email information.
     """
-    
+
     PRIORITY_CHOICES = [(PRIORITY.low, 'low'), (PRIORITY.medium, 'medium'),
                         (PRIORITY.high, 'high'), (PRIORITY.now, 'now')]
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'), (STATUS.queued, 'queued')]
@@ -68,8 +68,9 @@ class Email(models.Model):
         connection_opened = False
         if connection is None:
             connection = get_connection(get_backend())
+            connection.open()
             connection_opened = True
-            
+
         try:
             self.email_message(connection=connection).send()
             status = STATUS.sent
@@ -80,7 +81,7 @@ class Email(models.Model):
 
         if connection_opened:
             connection.close()
-        
+
         self.status = status
         self.save()
         self.logs.create(status=status, message=message)
@@ -97,7 +98,7 @@ class Log(models.Model):
     """
 
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed')]
-    
+
     email = models.ForeignKey(Email, editable=False, related_name='logs')
     date = models.DateTimeField(default=now, db_index=True)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, db_index=True)
