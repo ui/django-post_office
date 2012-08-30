@@ -9,7 +9,7 @@ setup(
     packages=['post_office'],
     url='https://github.com/ui/django-post_office',
     license='MIT',
-    description='An app that allows you to keep track of email activities and send mail asynchronously in django.',
+    description='A Django app that allows you to log email activities and send mail asynchronously.',
     long_description=open('README.rst').read(),
     zip_safe=False,
     include_package_data=True,
