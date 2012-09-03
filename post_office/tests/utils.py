@@ -52,6 +52,9 @@ class UtilsTest(TestCase):
         Email.objects.create(to='to@example.com', from_email='Alice <from@example.com>',
             subject='Test', message='Message', status=STATUS.sent)
 
+        # Should also support international domains
+        validate_email_with_name('Alice Bob <email@example.co.id>')
+
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_email_with_name, 'invalid_mail')
         self.assertRaises(ValidationError, validate_email_with_name, 'Alice <invalid_mail>')

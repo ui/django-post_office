@@ -1,5 +1,9 @@
+import re
+
 from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
+
+
+email_re = re.compile(r'\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b', re.IGNORECASE)
 
 
 def validate_email_with_name(value):
@@ -7,14 +11,17 @@ def validate_email_with_name(value):
     In addition to validating valid email address, it also accepts email address
     in the format of "Recipient Name <email@example.com>"
     """
-    try:
-        validate_email(value)
-    except ValidationError:
-        if '<' and '>' in value:
-            start = value.find('<') + 1
-            end = value.find('>') - 1
-            if start < end:
-                email = value[start:end]
-                validate_email(email)
+    # Try matching straight email address "alice@example.com"
+    if email_re.match(value):
+        return
+
+    # Now try to match "Alice <alice@example.com>"
+    if '<' and '>' in value:
+        start = value.find('<') + 1
+        end = value.find('>') - 1
+        if start < end:
+            email = value[start:end]
+            if email_re.match(email):
                 return
-        raise
+
+    raise ValidationError('Enter a valid e-mail address.', code='invalid')
