@@ -37,16 +37,16 @@ def send_queued_mail():
     sent_count = 0
     failed_count = 0
     queued_emails = Email.objects.filter(status=STATUS.queued).order_by('-priority')
-    
+
     if queued_emails:
-        
+
         # Try to open a connection, if we can't just pass in None as connection
         try:
             connection = get_connection(get_backend())
             connection.open()
         except Exception, error:
             connection = None
-        
+
         for mail in queued_emails:
             status = mail.dispatch(connection)
             if status == STATUS.sent:

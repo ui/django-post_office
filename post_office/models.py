@@ -5,6 +5,7 @@ from django.db import models
 from django.utils.encoding import smart_unicode
 
 from .settings import get_backend
+from .validators import validate_email_with_name
 
 try:
     from django.utils.timezone import now
@@ -26,7 +27,7 @@ class Email(models.Model):
                         (PRIORITY.high, 'high'), (PRIORITY.now, 'now')]
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'), (STATUS.queued, 'queued')]
 
-    from_email = models.EmailField(max_length=254)
+    from_email = models.CharField(max_length=254, validators=[validate_email_with_name])
     to = models.EmailField(max_length=254)
     subject = models.CharField(max_length=255, blank=True)
     message = models.TextField(blank=True)
