@@ -18,7 +18,7 @@ def validate_email_with_name(value):
     # Now try to match "Alice <alice@example.com>"
     if '<' and '>' in value:
         start = value.find('<') + 1
-        end = value.find('>') - 1
+        end = value.find('>')
         if start < end:
             email = value[start:end]
             if email_re.match(email):
