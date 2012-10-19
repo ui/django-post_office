@@ -108,3 +108,11 @@ you have in your queue::
 
 This is useful if you already use something like `django-rq <https://github.com/ui/django-rq>`_
 to send emails asynchronously and only need to store email activities and logs.
+
+
+Changelog
+=========
+
+Version 0.1.5
+-------------
+* Errors when opening connection in ``Email.dispatch`` method are now logged

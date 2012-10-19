@@ -67,21 +67,22 @@ class Email(models.Model):
         Actually send out the email and log the result
         """
         connection_opened = False
-        if connection is None:
-            connection = get_connection(get_backend())
-            connection.open()
-            connection_opened = True
-
         try:
+            if connection is None:
+                connection = get_connection(get_backend())
+                connection.open()
+                connection_opened = True
+
             self.email_message(connection=connection).send()
             status = STATUS.sent
             message = 'Sent'
+
+            if connection_opened:
+                connection.close()
+
         except Exception, err:
             status = STATUS.failed
             message = unicode(err)
-
-        if connection_opened:
-            connection.close()
 
         self.status = status
         self.save()
