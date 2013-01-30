@@ -111,3 +111,24 @@ class Log(models.Model):
 
     def __unicode__(self):
         return str(self.date)
+
+
+class EmailTemplate(models.Model):
+    """
+    Model to hold template information from db
+    """
+
+    name = models.CharField(('name'), help_text=("Example: 'emails/customers/id/welcome.html'"))
+    content = models.TextField()
+    created = models.DateTimeField(default=now)
+    last_updated = models.DateTimeField(default=now)
+
+    class Meta:
+        ordering = ('name',)
+
+    def __unicode__(self):
+        return str(self.name)
+
+    def save(self, *args, **kwargs):
+        self.last_updated = now
+        return super(Email, self).save(*args, **kwargs)

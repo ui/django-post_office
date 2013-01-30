@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Email, Log
+from .models import Email, Log, EmailTemplate
 
 
 def get_message_preview(instance):
@@ -28,5 +28,9 @@ class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
 
 
+class EmailTemplateAdmin(admin.modelAdmin):
+    list_display = ('name', 'created')
+
 admin.site.register(Email, EmailAdmin)
 admin.site.register(Log, LogAdmin)
+admin.site.register(EmailTemplate, EmailTemplateAdmin)
