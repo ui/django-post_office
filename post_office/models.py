@@ -4,7 +4,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.encoding import smart_unicode
 
-from .settings import get_backend
+from .settings import get_email_backend
 from .validators import validate_email_with_name
 
 try:
@@ -69,7 +69,7 @@ class Email(models.Model):
         connection_opened = False
         try:
             if connection is None:
-                connection = get_connection(get_backend())
+                connection = get_connection(get_email_backend())
                 connection.open()
                 connection_opened = True
 

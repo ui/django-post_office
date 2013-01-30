@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY
-from ..utils import get_backend
+from ..utils import get_email_backend
 
 
 class ErrorRaisingBackend(backends.base.BaseEmailBackend):
@@ -14,7 +14,6 @@ class ErrorRaisingBackend(backends.base.BaseEmailBackend):
     '''
     def send_messages(self, email_messages):
         raise Exception('Fake Error')
-
 
 
 class BackendTest(TestCase):
@@ -30,9 +29,9 @@ class BackendTest(TestCase):
         self.assertEqual(email.status, STATUS.queued)
         self.assertEqual(email.priority, PRIORITY.medium)
 
-    def test_backend_setting(self):
+    def test__email_backend_setting(self):
         """
-        
+
         """
         old_email_backend = getattr(settings, 'EMAIL_BACKEND', None)
         old_post_office_backend = getattr(settings, 'POST_OFFICE_BACKEND', None)
@@ -41,21 +40,21 @@ class BackendTest(TestCase):
         if hasattr(settings, 'POST_OFFICE_BACKEND'):
             delattr(settings, 'POST_OFFICE_BACKEND')
         # If no email backend is set, backend should default to SMTP
-        self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
+        self.assertEqual(get_email_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If EMAIL_BACKEND is set to PostOfficeBackend, use SMTP to send by default
         setattr(settings, 'EMAIL_BACKEND', 'post_office.EmailBackend')
-        self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
+        self.assertEqual(get_email_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If POST_OFFICE_BACKEND is given, use that
         setattr(settings, 'POST_OFFICE_BACKEND', 'whatever.Whatever')
-        self.assertEqual(get_backend(), 'whatever.Whatever')
+        self.assertEqual(get_email_backend(), 'whatever.Whatever')
 
         if old_email_backend:
             setattr(settings, 'EMAIL_BACKEND', old_email_backend)
         else:
             delattr(settings, 'EMAIL_BACKEND')
-        
+
         if old_post_office_backend:
             setattr(settings, 'POST_OFFICE_BACKEND', old_post_office_backend)
         else:

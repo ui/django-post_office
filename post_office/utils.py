@@ -2,7 +2,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.encoding import force_unicode
 
 from .models import Email, PRIORITY, STATUS
-from .settings import get_backend
+from .settings import get_email_backend
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
@@ -42,7 +42,7 @@ def send_queued_mail():
 
         # Try to open a connection, if we can't just pass in None as connection
         try:
-            connection = get_connection(get_backend())
+            connection = get_connection(get_email_backend())
             connection.open()
         except Exception, error:
             connection = None
