@@ -68,16 +68,18 @@ class UtilsTest(TestCase):
 
     def test_send_templated_email(self):
         template_name = 'customer/en/happy-holidays'
+        to_addresses = ['to@example1.com', 'to@example2.com']
         EmailTemplate.objects.create(name=template_name,
             content='Hi {{name}}', html_content='<p>Hi {{name}}</p>',
             subject='Happy Holidays!')
         send_templated_mail(template_name, 'from@example.com',
-            ['to@example1.com', 'to@example2.com'],
+            to_addresses,
             priority=PRIORITY.medium, context={'name': 'AwesomeBoy'})
         send_queued_mail()
         self.assertEqual(len(mail.outbox), 2)
 
-        for email in mail.outbox:
+        for email, to_address in zip(mail.outbox, to_addresses):
             self.assertEqual(email.subject, 'Happy Holidays!')
             self.assertEqual(email.body, 'Hi AwesomeBoy')
             self.assertEqual(email.alternatives, [('<p>Hi AwesomeBoy</p>', 'text/html')])
+            self.assertEqual(email.to, [to_address])

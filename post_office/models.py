@@ -139,7 +139,6 @@ class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
-
     name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
     subject = models.CharField(max_length=255, blank=True)
     content = models.TextField(blank=True)
