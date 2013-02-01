@@ -4,6 +4,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.encoding import smart_unicode
 
+from .cache import delete_cache
 from .settings import get_email_backend
 from .validators import validate_email_with_name
 
@@ -131,5 +132,6 @@ class EmailTemplate(models.Model):
         return str(self.name)
 
     def save(self, *args, **kwargs):
+        delete_cache(self.name)
         self.last_updated = now
         return super(EmailTemplate, self).save(*args, **kwargs)
