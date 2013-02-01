@@ -1,7 +1,8 @@
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.encoding import force_unicode
 
-from .models import Email, PRIORITY, STATUS
+from .cache import set_cache, get_cache
+from .models import Email, PRIORITY, STATUS, EmailTemplate
 from .settings import get_email_backend
 
 
@@ -57,3 +58,19 @@ def send_queued_mail():
             connection.close()
     print '{0} emails attempted, {1} sent, {2} failed'.format(len(queued_emails),
                                                               sent_count, failed_count)
+
+
+def get_email_template(self, name):
+    """
+    Function to get email template that checks from cache first
+    """
+    email_template = get_cache(name)
+    if email_template is not None:
+        return email_template
+    else:
+        try:
+            email_template = EmailTemplate.objects.get(name=name)
+            set_cache(name, email_template)
+            return email_template
+        except EmailTemplate.DoesNotExist:
+            return None
