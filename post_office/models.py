@@ -21,6 +21,21 @@ PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 
 
+class EmailManager(models.Manager):
+    def create_from_template(self, from_email, to_email, template,
+            context_instance={}, priority=PRIORITY.medium, status=None):
+
+        context = Context(context_instance)
+        template_content = Template(template.content)
+        template_content_html = Template(template.html_content)
+        return Email.objects.create(
+                from_email=from_email, to=to_email, subject=template.subject,
+                message=template_content.render(context),
+                html_message=template_content_html.render(context),
+                priority=priority, status=status
+            )
+
+
 class Email(models.Model):
     """
     A model to hold email information.
@@ -46,6 +61,7 @@ class Email(models.Model):
                                                 null=True, db_index=True)
     created = models.DateTimeField(default=now, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
+    objects = EmailManager()
 
     class Meta:
         ordering = ('-created',)
@@ -143,16 +159,6 @@ class EmailTemplate(models.Model):
         delete_cache(self.name)
         return template
 
-    def create_email(self, from_email, to_email, context_instance={}, connection=None):
-        subject = smart_unicode(self.subject)
-        context = Context(context_instance)
-        template_content = Template(self.content)
-        msg = EmailMultiAlternatives(subject, template_content.render(context), from_email,
-                                     to_email, connection=connection)
-        if self.html_content:
-            template_html_content = Template(self.html_content)
-            msg.attach_alternative(template_html_content.render(context), "text/html")
-        return msg
 
 
 

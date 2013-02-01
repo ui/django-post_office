@@ -4,7 +4,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, Log, STATUS, PRIORITY, EmailTemplate
+from ..models import Email, Log, STATUS, EmailTemplate
 
 
 class ModelTest(TestCase):
@@ -25,7 +25,6 @@ class ModelTest(TestCase):
         self.assertEqual(message.subject, 'Subject')
         self.assertEqual(message.body, 'Message')
         self.assertEqual(message.alternatives, [('<p>HTML</p>', 'text/html')])
-
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_dispatch(self):
@@ -104,10 +103,12 @@ class ModelTest(TestCase):
         Test basic constructing email message with template
         """
 
-        # test 1, if no html content no template
+        # Test 1, create email object from template, without context
         email_template = EmailTemplate.objects.create(name='customer/en/welcome',
             subject='welcome to our amazing web apps', content='Hi there!')
-        message = email_template.create_email('from@example.com', ['to@example.com'])
+        email = Email.objects.create_from_template('from@example.com', 'to@example.com', email_template)
+
+        message = email.email_message()
         self.assertTrue(isinstance(message, EmailMultiAlternatives))
         self.assertEqual(message.from_email, 'from@example.com')
         self.assertEqual(message.to, ['to@example.com'])
@@ -115,18 +116,20 @@ class ModelTest(TestCase):
         self.assertEqual(message.body, 'Hi there!')
         self.assertFalse(message.alternatives)
 
-        # test 2, no html content with template
+        # Test 2, create email object from template, with context
         email_template.content = "Hi there {{name}}!"
         email_template.save()
-        message = email_template.create_email('from@example.com', ['to@example.com'],
-            context_instance={'name': 'AwesomeGuy'})
+        email = Email.objects.create_from_template('from@example.com', 'to@example.com',
+            email_template, context_instance={'name': 'AwesomeGuy'})
 
+        message = email.email_message()
         self.assertEqual(message.body, 'Hi there AwesomeGuy!')
 
-        # test 3, with html content and templated
+        # Test 3, create email object from template, with context and html
         email_template.html_content = "<p>Hi there {{ name }}!</p>"
         email_template.save()
-        message = email_template.create_email('from@example.com', ['to@example.com'],
-            context_instance={'name': 'AwesomeGuy'})
+        email = Email.objects.create_from_template('from@example.com', 'to@example.com',
+            email_template, context_instance={'name': 'AwesomeGuy'})
 
+        message = email.email_message()
         self.assertEqual(message.alternatives, [('<p>Hi there AwesomeGuy!</p>', 'text/html')])
