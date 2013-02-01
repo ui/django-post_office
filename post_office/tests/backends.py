@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY
-from ..utils import get_email_backend
+from ..settings import get_email_backend
 
 
 class ErrorRaisingBackend(backends.base.BaseEmailBackend):
