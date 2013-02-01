@@ -118,7 +118,7 @@ class EmailTemplate(models.Model):
     Model to hold template information from db
     """
 
-    name = models.CharField(('name'), help_text=("Example: 'emails/customers/id/welcome.html'"))
+    name = models.CharField(('name'), max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
     content = models.TextField()
     created = models.DateTimeField(default=now)
     last_updated = models.DateTimeField(default=now)

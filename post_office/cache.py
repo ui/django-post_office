@@ -1,7 +1,7 @@
 from django.core.cache import get_cache
 from django.template.defaultfilters import slugify
 
-from .utils import get_cache_backend
+from .settings import get_cache_backend
 
 
 cache = get_cache(get_cache_backend())
