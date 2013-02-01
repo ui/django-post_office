@@ -1,5 +1,6 @@
 from django.core import mail
 from django.core.exceptions import ValidationError
+from django.template import TemplateDoesNotExist
 
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -61,6 +62,6 @@ class UtilsTest(TestCase):
 
     def test_get_template_email(self):
         template_name = 'customer/en/happy-holidays'
-        self.assertEqual(None, get_email_template(template_name))
+        self.assertRaises(TemplateDoesNotExist, get_email_template, template_name)
         email_template = EmailTemplate.objects.create(name=template_name, content='Happy Holiday!')
         self.assertEqual(email_template, get_email_template(template_name))

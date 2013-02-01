@@ -1,5 +1,6 @@
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.encoding import force_unicode
+from django.template import TemplateDoesNotExist
 
 from .cache import set_cache, get_cache
 from .models import Email, PRIORITY, STATUS, EmailTemplate
@@ -73,4 +74,4 @@ def get_email_template(name):
             set_cache(name, email_template)
             return email_template
         except EmailTemplate.DoesNotExist:
-            return None
+            raise TemplateDoesNotExist
