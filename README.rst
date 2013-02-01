@@ -116,10 +116,10 @@ Templated email
 ``post_office`` will create a database table to store your email templates that can be used to send emails with context.
 
 Basic usage::
+
     1. Create EmailTemplate object
         email_template = EmailTemplate.objects.create(name='template_name',
             subject='your_subject', content='your_content', html_content='your html content')
-
     2. Send templated email
         send_templated_mail(template_name, ['from@example.com'], ['to@example.com'],
             priority=PRIORITY.medium, context={'name': 'AwesomeBoy'})
