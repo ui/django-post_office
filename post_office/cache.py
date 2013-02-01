@@ -9,7 +9,7 @@ cache = get_cache(get_cache_backend())
 
 def get_cache_key(name):
     """
-    Prefixes the key name
+    Prefixes and slugify the key name
     """
     return 'post_office::template::%s' % (slugify(name))
 
