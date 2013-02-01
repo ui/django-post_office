@@ -24,3 +24,6 @@ CACHES = {
         'LOCATION': '127.0.0.1:11211',
     }
 }
+
+
+POST_OFFICE_TEMPLATE_CACHE = False

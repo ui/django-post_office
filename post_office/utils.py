@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.mail import get_connection
 from django.utils.encoding import force_unicode
 
@@ -70,12 +71,15 @@ def send_templated_mail(template_name, from_address, to_addresses, priority, con
 
 def get_email_template(name):
     """
-    Function to get email template object that checks from cache first
+    Function to get email template object that checks from cache first if caching is enabled
     """
-    email_template = get_cache(name)
-    if email_template is not None:
-        return email_template
+    if settings.POST_OFFICE_TEMPLATE_CACHE:
+        email_template = get_cache(name)
+        if email_template is not None:
+            return email_template
+        else:
+            email_template = EmailTemplate.objects.get(name=name)
+            set_cache(name, email_template)
+            return email_template
     else:
-        email_template = EmailTemplate.objects.get(name=name)
-        set_cache(name, email_template)
-        return email_template
+        return EmailTemplate.objects.get(name=name)
