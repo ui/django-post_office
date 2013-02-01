@@ -133,6 +133,7 @@ Basic usage::
     3. (Optional) Add caching for templated email by adding this settings in your settings file
 
         ## Enable caching support for post_office templated email
+        ## Without this key caching support will be turned off
         ## All cache key will be prefixed by post_office:template:
         POST_OFFICE_TEMPLATE_CACHE = True
 
