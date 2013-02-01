@@ -3,7 +3,8 @@ from django.template.defaultfilters import slugify
 
 from .settings import get_cache_backend
 
-
+# Stripped down version of caching functions from django-dbtemplates
+# https://github.com/jezdez/django-dbtemplates/blob/develop/dbtemplates/utils/cache.py
 cache = get_cache(get_cache_backend())
 
 
