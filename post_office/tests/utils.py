@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate
-from ..utils import send_mail, send_queued_mail, get_email_template
+from ..utils import send_mail, send_queued_mail, get_email_template, send_templated_mail
 from ..validators import validate_email_with_name
 
 
@@ -40,7 +40,7 @@ class UtilsTest(TestCase):
             subject='Test', message='Message', status=None)
 
         # This should be the only email that gets sent
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
+        Email.objects.create(to='to@example.com', from_email='from@example.com',
             subject='Queued', message='Message', status=STATUS.queued)
         send_queued_mail()
         self.assertEqual(len(mail.outbox), 1)
@@ -65,3 +65,19 @@ class UtilsTest(TestCase):
         self.assertRaises(EmailTemplate.DoesNotExist, get_email_template, template_name)
         email_template = EmailTemplate.objects.create(name=template_name, content='Happy Holiday!')
         self.assertEqual(email_template, get_email_template(template_name))
+
+    def test_send_templated_email(self):
+        template_name = 'customer/en/happy-holidays'
+        EmailTemplate.objects.create(name=template_name,
+            content='Hi {{name}}', html_content='<p>Hi {{name}}</p>',
+            subject='Happy Holidays!')
+        send_templated_mail(template_name, 'from@example.com',
+            ['to@example1.com', 'to@example2.com'],
+            priority=PRIORITY.medium, context={'name': 'AwesomeBoy'})
+        send_queued_mail()
+        self.assertEqual(len(mail.outbox), 2)
+
+        for email in mail.outbox:
+            self.assertEqual(email.subject, 'Happy Holidays!')
+            self.assertEqual(email.body, 'Hi AwesomeBoy')
+            self.assertEqual(email.alternatives, [('<p>Hi AwesomeBoy</p>', 'text/html')])
