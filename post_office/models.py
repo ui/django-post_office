@@ -157,14 +157,3 @@ class EmailTemplate(models.Model):
         template = super(EmailTemplate, self).save(*args, **kwargs)
         delete_cache(self.name)
         return template
-
-
-
-
-# Email.objects.create_from_template(from_email, to, context={}, priority)
-
-# email_template = EmailTemplate.objects.get(name='template')
-# email_template.create_email(from, to, context={})
-
-
-# send_templated_mail(template_name, context, from, to_addresses, priority)
