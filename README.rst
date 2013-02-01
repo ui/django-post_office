@@ -118,10 +118,16 @@ Templated email
 Basic usage::
 
     1. Create EmailTemplate object
+
+        from post_office.models import EmailTemplate
         email_template = EmailTemplate.objects.create(name='template_name',
-            subject='your_subject', content='your_content', html_content='your html content')
+            subject='your_subject', content='your_content, {{name}}',
+            html_content='<p>your html content {{name}}</p>')
+
     2. Send templated email
-        send_templated_mail(template_name, ['from@example.com'], ['to@example.com'],
+
+        from post_office.utils import send_templated_mail
+        send_templated_mail(template_name, 'from@example.com', ['to@example.com'],
             priority=PRIORITY.medium, context={'name': 'AwesomeBoy'})
 
 
