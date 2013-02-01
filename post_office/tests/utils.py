@@ -1,6 +1,5 @@
 from django.core import mail
 from django.core.exceptions import ValidationError
-from django.template import TemplateDoesNotExist
 
 from django.test import TestCase
 from django.test.utils import override_settings
