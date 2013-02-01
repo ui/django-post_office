@@ -149,9 +149,11 @@ Basic usage::
 Testing
 =======
 
+
 To run ``post_office``'s test suite::
 
     django-admin.py test post_office --settings=post_office.tests.settings --pythonpath=.
+
 
 
 Changelog
