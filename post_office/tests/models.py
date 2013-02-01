@@ -4,7 +4,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, Log, STATUS, PRIORITY
+from ..models import Email, Log, STATUS, PRIORITY, EmailTemplate
 
 
 class ModelTest(TestCase):
@@ -98,3 +98,9 @@ class ModelTest(TestCase):
         self.assertEqual(log.email, email)
         self.assertEqual(log.status, STATUS.failed)
         self.assertIn('does not define a "backend" class', log.message)
+
+    def test_email_template(self):
+        """
+        Ensure that when saving email template, cache are set
+        """
+        EmailTemplate.objects.create(name='customer/en/welcome', content='test')

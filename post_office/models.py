@@ -9,6 +9,7 @@ from .validators import validate_email_with_name
 
 try:
     from django.utils.timezone import now
+    now = now()
 except ImportError:
     from datetime import datetime
     now = datetime.now
@@ -118,7 +119,7 @@ class EmailTemplate(models.Model):
     Model to hold template information from db
     """
 
-    name = models.CharField(('name'), max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
+    name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
     content = models.TextField()
     created = models.DateTimeField(default=now)
     last_updated = models.DateTimeField(default=now)
@@ -131,4 +132,4 @@ class EmailTemplate(models.Model):
 
     def save(self, *args, **kwargs):
         self.last_updated = now
-        return super(Email, self).save(*args, **kwargs)
+        return super(EmailTemplate, self).save(*args, **kwargs)
