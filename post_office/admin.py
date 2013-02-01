@@ -29,7 +29,7 @@ class LogAdmin(admin.ModelAdmin):
 
 
 class EmailTemplateAdmin(admin.modelAdmin):
-    list_display = ('name', 'created')
+    list_display = ('name', 'subject', 'created')
 
 admin.site.register(Email, EmailAdmin)
 admin.site.register(Log, LogAdmin)
