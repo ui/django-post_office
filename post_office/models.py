@@ -65,6 +65,9 @@ class Email(models.Model):
             msg.attach_alternative(self.html_message, "text/html")
         return msg
 
+    def create_from_template(template):
+        pass
+
     def dispatch(self, connection=None):
         """
         Actually send out the email and log the result

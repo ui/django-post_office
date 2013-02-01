@@ -19,9 +19,6 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     """
 
     subject = force_unicode(subject)
-    # Turn the input to django's email object to check for failures
-    msg = EmailMultiAlternatives(subject, message, from_email,
-                                 recipient_list)
     status = None if priority == PRIORITY.now else STATUS.queued
 
     for address in recipient_list:
