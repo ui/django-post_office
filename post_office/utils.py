@@ -1,4 +1,4 @@
-from django.core.mail import EmailMultiAlternatives, get_connection
+from django.core.mail import get_connection
 from django.utils.encoding import force_unicode
 
 from .cache import set_cache, get_cache
@@ -42,7 +42,7 @@ def send_queued_mail():
         try:
             connection = get_connection(get_email_backend())
             connection.open()
-        except Exception, error:
+        except Exception:
             connection = None
 
         for mail in queued_emails:
