@@ -26,4 +26,3 @@ CACHES = {
 }
 
 
-POST_OFFICE_TEMPLATE_CACHE = False
