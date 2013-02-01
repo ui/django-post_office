@@ -4,8 +4,8 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, STATUS, PRIORITY
-from ..utils import send_mail, send_queued_mail
+from ..models import Email, STATUS, PRIORITY, EmailTemplate
+from ..utils import send_mail, send_queued_mail, get_email_template
 from ..validators import validate_email_with_name
 
 
@@ -58,3 +58,9 @@ class UtilsTest(TestCase):
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_email_with_name, 'invalid_mail')
         self.assertRaises(ValidationError, validate_email_with_name, 'Alice <invalid_mail>')
+
+    def test_get_template_email(self):
+        template_name = 'customer/en/happy-holidays'
+        self.assertEqual(None, get_email_template(template_name))
+        email_template = EmailTemplate.objects.create(name=template_name, content='Happy Holiday!')
+        self.assertEqual(email_template, get_email_template(template_name))

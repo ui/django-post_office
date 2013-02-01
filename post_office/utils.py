@@ -60,9 +60,9 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
-def get_email_template(self, name):
+def get_email_template(name):
     """
-    Function to get email template that checks from cache first
+    Function to get email template object that checks from cache first
     """
     email_template = get_cache(name)
     if email_template is not None:

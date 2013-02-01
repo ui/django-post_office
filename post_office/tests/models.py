@@ -104,5 +104,3 @@ class ModelTest(TestCase):
         Ensure that when saving email template, cache are set
         """
         EmailTemplate.objects.create(name='customer/en/welcome', content='test')
-
-
