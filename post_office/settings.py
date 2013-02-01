@@ -15,7 +15,7 @@ def get_email_backend():
 
 
 def get_cache_backend():
-    if hasattr(settings, 'CACHE'):
+    if hasattr(settings, 'CACHES'):
         if "post_office" in settings.CACHES:
             return "post_office"
         else:
