@@ -62,6 +62,6 @@ class UtilsTest(TestCase):
 
     def test_get_template_email(self):
         template_name = 'customer/en/happy-holidays'
-        self.assertRaises(TemplateDoesNotExist, get_email_template, template_name)
+        self.assertRaises(EmailTemplate.DoesNotExist, get_email_template, template_name)
         email_template = EmailTemplate.objects.create(name=template_name, content='Happy Holiday!')
         self.assertEqual(email_template, get_email_template(template_name))

@@ -11,11 +11,11 @@ def get_cache_key(name):
     """
     Prefixes and slugify the key name
     """
-    return 'post_office::template::%s' % (slugify(name))
+    return 'post_office:template:%s' % (slugify(name))
 
 
-def set_cache(name, content, timeout=3600):
-    return cache.set(get_cache_key(name), content, timeout)
+def set_cache(name, content):
+    return cache.set(get_cache_key(name), content)
 
 
 def get_cache(name):

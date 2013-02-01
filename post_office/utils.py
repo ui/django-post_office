@@ -1,6 +1,5 @@
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils.encoding import force_unicode
-from django.template import TemplateDoesNotExist
 
 from .cache import set_cache, get_cache
 from .models import Email, PRIORITY, STATUS, EmailTemplate
@@ -61,6 +60,19 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
+def send_templated_mail(template_name, context, from_address, to_addresses, priority):
+    email_template = get_email_template(template_name)
+    message = email_template.create_email(from_address, to_addresses, context_instance=context)
+    status = None if priority == PRIORITY.now else STATUS.queued
+
+    for address in to_addresses:
+        email = Email.objects.create(from_email=from_address, to=address, subject=email_template.subject,
+            message=message, html_message=html_message, status=status, priority=priority)
+        if priority == PRIORITY.now:
+            email.dispatch()
+    pass
+
+
 def get_email_template(name):
     """
     Function to get email template object that checks from cache first
@@ -69,9 +81,6 @@ def get_email_template(name):
     if email_template is not None:
         return email_template
     else:
-        try:
-            email_template = EmailTemplate.objects.get(name=name)
-            set_cache(name, email_template)
-            return email_template
-        except EmailTemplate.DoesNotExist:
-            raise TemplateDoesNotExist
+        email_template = EmailTemplate.objects.get(name=name)
+        set_cache(name, email_template)
+        return email_template

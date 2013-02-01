@@ -27,8 +27,8 @@ class CacheTest(TestCase):
         """
             Test for converting names to cache key
         """
-        self.assertEqual('post_office::template::test', get_cache_key('test'))
-        self.assertEqual('post_office::template::test-slugify', get_cache_key('test slugify'))
+        self.assertEqual('post_office:template:test', get_cache_key('test'))
+        self.assertEqual('post_office:template:test-slugify', get_cache_key('test slugify'))
 
     def test_basic_cache_operations(self):
         """
@@ -36,8 +36,8 @@ class CacheTest(TestCase):
         """
         # clean test
         cache.clear()
-        self.assertEqual(None, get_cache('test'))
-        set_cache('test', 'qwe')
-        self.assertTrue('qwe', get_cache('test'))
-        delete_cache('test')
-        self.assertEqual(None, get_cache('test'))
+        self.assertEqual(None, get_cache('test-cache'))
+        set_cache('test-cache', 'awesome content')
+        self.assertTrue('awesome content', get_cache('test-cache'))
+        delete_cache('test-cache')
+        self.assertEqual(None, get_cache('test-cache'))

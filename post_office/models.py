@@ -3,6 +3,7 @@ from collections import namedtuple
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.encoding import smart_unicode
+from django.template import Context, Template
 
 from .cache import delete_cache
 from .settings import get_email_backend
@@ -121,7 +122,9 @@ class EmailTemplate(models.Model):
     """
 
     name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
-    content = models.TextField()
+    subject = models.CharField(max_length=255, blank=True)
+    content = models.TextField(blank=True)
+    html_content = models.TextField(blank=True)
     created = models.DateTimeField(default=now)
     last_updated = models.DateTimeField(default=now)
 
@@ -132,6 +135,28 @@ class EmailTemplate(models.Model):
         return str(self.name)
 
     def save(self, *args, **kwargs):
-        delete_cache(self.name)
         self.last_updated = now
-        return super(EmailTemplate, self).save(*args, **kwargs)
+        template = super(EmailTemplate, self).save(*args, **kwargs)
+        delete_cache(self.name)
+        return template
+
+    def create_email(self, from_email, to_email, context_instance={}, connection=None):
+        subject = smart_unicode(self.subject)
+        context = Context(context_instance)
+        template_content = Template(self.content)
+        msg = EmailMultiAlternatives(subject, template_content.render(context), from_email,
+                                     to_email, connection=connection)
+        if self.html_content:
+            template_html_content = Template(self.html_content)
+            msg.attach_alternative(template_html_content.render(context), "text/html")
+        return msg
+
+
+
+# Email.objects.create_from_template(from_email, to, context={}, priority)
+
+# email_template = EmailTemplate.objects.get(name='template')
+# email_template.create_email(from, to, context={})
+
+
+# send_templated_mail(template_name, context, from, to_addresses, priority)

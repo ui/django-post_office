@@ -101,6 +101,32 @@ class ModelTest(TestCase):
 
     def test_email_template(self):
         """
-        Ensure that when saving email template, cache are set
+        Test basic constructing email message with template
         """
-        EmailTemplate.objects.create(name='customer/en/welcome', content='test')
+
+        # test 1, if no html content no template
+        email_template = EmailTemplate.objects.create(name='customer/en/welcome',
+            subject='welcome to our amazing web apps', content='Hi there!')
+        message = email_template.create_email('from@example.com', ['to@example.com'])
+        self.assertTrue(isinstance(message, EmailMultiAlternatives))
+        self.assertEqual(message.from_email, 'from@example.com')
+        self.assertEqual(message.to, ['to@example.com'])
+        self.assertEqual(message.subject, 'welcome to our amazing web apps')
+        self.assertEqual(message.body, 'Hi there!')
+        self.assertFalse(message.alternatives)
+
+        # test 2, no html content with template
+        email_template.content = "Hi there {{name}}!"
+        email_template.save()
+        message = email_template.create_email('from@example.com', ['to@example.com'],
+            context_instance={'name': 'AwesomeGuy'})
+
+        self.assertEqual(message.body, 'Hi there AwesomeGuy!')
+
+        # test 3, with html content and templated
+        email_template.html_content = "<p>Hi there {{ name }}!</p>"
+        email_template.save()
+        message = email_template.create_email('from@example.com', ['to@example.com'],
+            context_instance={'name': 'AwesomeGuy'})
+
+        self.assertEqual(message.alternatives, [('<p>Hi there AwesomeGuy!</p>', 'text/html')])
