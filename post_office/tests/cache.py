@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.test import TestCase
 
-from ..cache import *
+from post_office import cache
 from ..settings import get_cache_backend
 
 
@@ -27,17 +27,17 @@ class CacheTest(TestCase):
         """
             Test for converting names to cache key
         """
-        self.assertEqual('post_office:template:test', get_cache_key('test'))
-        self.assertEqual('post_office:template:test-slugify', get_cache_key('test slugify'))
+        self.assertEqual('post_office:template:test', cache.get_cache_key('test'))
+        self.assertEqual('post_office:template:test-slugify', cache.get_cache_key('test slugify'))
 
     def test_basic_cache_operations(self):
         """
             Test basic cache operations
         """
-        # clean test
-        cache.clear()
-        self.assertEqual(None, get_cache('test-cache'))
-        set_cache('test-cache', 'awesome content')
-        self.assertTrue('awesome content', get_cache('test-cache'))
-        delete_cache('test-cache')
-        self.assertEqual(None, get_cache('test-cache'))
+        # clean test cache
+        cache.backend_cache.clear()
+        self.assertEqual(None, cache.get('test-cache'))
+        cache.set('test-cache', 'awesome content')
+        self.assertTrue('awesome content', cache.get('test-cache'))
+        cache.delete('test-cache')
+        self.assertEqual(None, cache.get('test-cache'))

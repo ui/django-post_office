@@ -5,7 +5,7 @@ from django.db import models
 from django.utils.encoding import smart_unicode
 from django.template import Context, Template
 
-from .cache import delete_cache
+from post_office import cache
 from .settings import get_email_backend
 from .validators import validate_email_with_name
 
@@ -152,5 +152,5 @@ class EmailTemplate(models.Model):
     def save(self, *args, **kwargs):
         self.last_updated = now
         template = super(EmailTemplate, self).save(*args, **kwargs)
-        delete_cache(self.name)
+        cache.delete(self.name)
         return template

@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.mail import get_connection
 from django.utils.encoding import force_unicode
 
-from .cache import set_cache, get_cache
+from post_office import cache
 from .models import Email, PRIORITY, STATUS, EmailTemplate
 from .settings import get_email_backend
 
@@ -74,12 +74,12 @@ def get_email_template(name):
     Function to get email template object that checks from cache first if caching is enabled
     """
     if hasattr(settings, 'POST_OFFICE_TEMPLATE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE:
-        email_template = get_cache(name)
+        email_template = cache.get(name)
         if email_template is not None:
             return email_template
         else:
             email_template = EmailTemplate.objects.get(name=name)
-            set_cache(name, email_template)
+            cache.set(name, email_template)
             return email_template
     else:
         return EmailTemplate.objects.get(name=name)
