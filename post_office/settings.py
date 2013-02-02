@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.cache import get_cache
 
 
 def get_email_backend():
@@ -17,7 +18,7 @@ def get_email_backend():
 def get_cache_backend():
     if hasattr(settings, 'CACHES'):
         if "post_office" in settings.CACHES:
-            return "post_office"
+            return get_cache("post_office")
         else:
-            return "default"
+            return get_cache("default")
     return None

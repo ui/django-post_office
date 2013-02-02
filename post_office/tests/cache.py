@@ -13,11 +13,11 @@ class CacheTest(TestCase):
         """
         # Sanity check
         self.assertTrue('post_office' in settings.CACHES)
-        self.assertEqual('post_office', get_cache_backend())
+        self.assertTrue(get_cache_backend())
 
         # If no post office key is defined, it should return default
         del(settings.CACHES['post_office'])
-        self.assertEqual('default', get_cache_backend())
+        self.assertTrue(get_cache_backend())
 
         # If no caches key in settings, it should return None
         delattr(settings, 'CACHES')
