@@ -60,23 +60,34 @@ class UtilsTest(TestCase):
         self.assertRaises(ValidationError, validate_email_with_name, 'Alice <invalid_mail>')
 
     def test_get_template_email(self):
+        # Sanity Check
         template_name = 'customer/en/happy-holidays'
         self.assertRaises(EmailTemplate.DoesNotExist, get_email_template, template_name)
         email_template = EmailTemplate.objects.create(name=template_name, content='Happy Holiday!')
+
+        # First query should hit database
+        self.assertNumQueries(1, lambda: get_email_template(template_name))
+        # Second query should hit cache instead
+        self.assertNumQueries(0, lambda: get_email_template(template_name))
+
+        # It should return the correct template
         self.assertEqual(email_template, get_email_template(template_name))
 
     def test_send_templated_email(self):
         template_name = 'customer/en/happy-holidays'
         to_addresses = ['to@example1.com', 'to@example2.com']
 
+        # Create email template
         EmailTemplate.objects.create(name=template_name, content='Hi {{name}}',
             html_content='<p>Hi {{name}}</p>', subject='Happy Holidays!')
 
+        # Send templated mail
         send_templated_mail(template_name, 'from@example.com',
             to_addresses, context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
         send_queued_mail()
-        self.assertEqual(len(mail.outbox), 2)
 
+        # Check for the message integrity
+        self.assertEqual(len(mail.outbox), 2)
         for email, to_address in zip(mail.outbox, to_addresses):
             self.assertEqual(email.subject, 'Happy Holidays!')
             self.assertEqual(email.body, 'Hi AwesomeBoy')
