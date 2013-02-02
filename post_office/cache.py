@@ -5,7 +5,7 @@ from .settings import get_cache_backend
 
 # Stripped down version of caching functions from django-dbtemplates
 # https://github.com/jezdez/django-dbtemplates/blob/develop/dbtemplates/utils/cache.py
-backend_cache = get_cache_backend()
+cache_backend = get_cache_backend()
 
 
 def get_cache_key(name):
@@ -16,12 +16,12 @@ def get_cache_key(name):
 
 
 def set(name, content):
-    return backend_cache.set(get_cache_key(name), content)
+    return cache_backend.set(get_cache_key(name), content)
 
 
 def get(name):
-    return backend_cache.get(get_cache_key(name))
+    return cache_backend.get(get_cache_key(name))
 
 
 def delete(name):
-    return backend_cache.delete(get_cache_key(name))
+    return cache_backend.delete(get_cache_key(name))

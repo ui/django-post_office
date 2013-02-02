@@ -35,7 +35,7 @@ class CacheTest(TestCase):
             Test basic cache operations
         """
         # clean test cache
-        cache.backend_cache.clear()
+        cache.cache_backend.clear()
         self.assertEqual(None, cache.get('test-cache'))
         cache.set('test-cache', 'awesome content')
         self.assertTrue('awesome content', cache.get('test-cache'))
