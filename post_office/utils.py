@@ -63,7 +63,7 @@ def send_templated_mail(template_name, from_address, to_addresses, priority, con
     status = None if priority == PRIORITY.now else STATUS.queued
 
     for address in to_addresses:
-        email = Email.objects.create_from_template(from_address, address, email_template,
+        email = Email.objects.from_template(from_address, address, email_template,
             context, priority, status=status)
         if priority == PRIORITY.now:
             email.dispatch()

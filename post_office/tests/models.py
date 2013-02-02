@@ -106,7 +106,7 @@ class ModelTest(TestCase):
         # Test 1, create email object from template, without context
         email_template = EmailTemplate.objects.create(name='customer/en/welcome',
             subject='welcome to our amazing web apps', content='Hi there!')
-        email = Email.objects.create_from_template('from@example.com', 'to@example.com', email_template)
+        email = Email.objects.from_template('from@example.com', 'to@example.com', email_template)
 
         message = email.email_message()
         self.assertTrue(isinstance(message, EmailMultiAlternatives))
@@ -121,7 +121,7 @@ class ModelTest(TestCase):
         email_template.subject = "Welcome to our amazing apps, {{app_name}}!"
         email_template.content = "Hi there {{name}}!"
         email_template.save()
-        email = Email.objects.create_from_template('from@example.com', 'to@example.com',
+        email = Email.objects.from_template('from@example.com', 'to@example.com',
             email_template, context_instance={'name': 'AwesomeGuy', 'app_name': 'AwesomeApp'})
 
         message = email.email_message()
@@ -132,7 +132,7 @@ class ModelTest(TestCase):
         # Email message alternatives should render the template correctly
         email_template.html_content = "<p>Hi there {{ name }}!</p>"
         email_template.save()
-        email = Email.objects.create_from_template('from@example.com', 'to@example.com',
+        email = Email.objects.from_template('from@example.com', 'to@example.com',
             email_template, context_instance={'name': 'AwesomeGuy'})
 
         message = email.email_message()
