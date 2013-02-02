@@ -1,8 +1,10 @@
-from django.core.mail import EmailMultiAlternatives, get_connection
+from django.conf import settings
+from django.core.mail import get_connection
 from django.utils.encoding import force_unicode
 
-from .models import Email, PRIORITY, STATUS
-from .settings import get_backend
+from post_office import cache
+from .models import Email, PRIORITY, STATUS, EmailTemplate
+from .settings import get_email_backend
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
@@ -18,9 +20,6 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     """
 
     subject = force_unicode(subject)
-    # Turn the input to django's email object to check for failures
-    msg = EmailMultiAlternatives(subject, message, from_email,
-                                 recipient_list)
     status = None if priority == PRIORITY.now else STATUS.queued
 
     for address in recipient_list:
@@ -42,9 +41,9 @@ def send_queued_mail():
 
         # Try to open a connection, if we can't just pass in None as connection
         try:
-            connection = get_connection(get_backend())
+            connection = get_connection(get_email_backend())
             connection.open()
-        except Exception, error:
+        except Exception:
             connection = None
 
         for mail in queued_emails:
@@ -57,3 +56,28 @@ def send_queued_mail():
             connection.close()
     print '{0} emails attempted, {1} sent, {2} failed'.format(len(queued_emails),
                                                               sent_count, failed_count)
+
+
+def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium):
+    email_template = get_email_template(template_name)
+    for address in to_addresses:
+        email = Email.objects.from_template(from_address, address, email_template,
+            context, priority)
+        if priority == PRIORITY.now:
+            email.dispatch()
+
+
+def get_email_template(name):
+    """
+    Function to get email template object that checks from cache first if caching is enabled
+    """
+    if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
+        return EmailTemplate.objects.get(name=name)
+    else:
+        email_template = cache.get(name)
+        if email_template is not None:
+            return email_template
+        else:
+            email_template = EmailTemplate.objects.get(name=name)
+            cache.set(name, email_template)
+            return email_template
