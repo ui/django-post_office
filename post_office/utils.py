@@ -73,7 +73,9 @@ def get_email_template(name):
     """
     Function to get email template object that checks from cache first if caching is enabled
     """
-    if hasattr(settings, 'POST_OFFICE_TEMPLATE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE:
+    if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
+        return EmailTemplate.objects.get(name=name)
+    else:
         email_template = cache.get(name)
         if email_template is not None:
             return email_template
@@ -81,5 +83,3 @@ def get_email_template(name):
             email_template = EmailTemplate.objects.get(name=name)
             cache.set(name, email_template)
             return email_template
-    else:
-        return EmailTemplate.objects.get(name=name)

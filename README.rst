@@ -130,15 +130,14 @@ Basic usage::
         send_templated_mail(template_name, 'from@example.com', ['to@example.com'],
             context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
 
-    3. (Optional) Add caching for templated email by adding this settings in your settings file
+    3. Caching for templated email is turned ON by default
 
         ## Enable caching support for post_office templated email
-        ## Without this key caching support will be turned off
         ## All cache key will be prefixed by post_office:template:
-        POST_OFFICE_TEMPLATE_CACHE = True
+        ## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
+        POST_OFFICE_CACHE = False
 
-        ## This is optional, if 'post_office' key is non existent, it will use
-        ## 'default' key
+        ## This is optional, if 'post_office' key is non existent, it will use 'default' key for cache backend
         CACHES = {
                     'post_office': {
                         'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
