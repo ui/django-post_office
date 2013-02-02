@@ -128,7 +128,7 @@ Basic usage::
 
         from post_office.utils import send_templated_mail
         send_templated_mail(template_name, 'from@example.com', ['to@example.com'],
-            priority=PRIORITY.medium, context={'name': 'AwesomeBoy'})
+            context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
 
     3. (Optional) Add caching for templated email by adding this settings in your settings file
 

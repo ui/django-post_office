@@ -58,7 +58,7 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
-def send_templated_mail(template_name, from_address, to_addresses, priority, context={}):
+def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium):
     email_template = get_email_template(template_name)
     status = None if priority == PRIORITY.now else STATUS.queued
 
