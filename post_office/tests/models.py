@@ -122,7 +122,7 @@ class ModelTest(TestCase):
         email_template.content = "Hi there {{name}}!"
         email_template.save()
         email = Email.objects.from_template('from@example.com', 'to@example.com',
-            email_template, context_instance={'name': 'AwesomeGuy', 'app_name': 'AwesomeApp'})
+            email_template, context={'name': 'AwesomeGuy', 'app_name': 'AwesomeApp'})
 
         message = email.email_message()
         self.assertEqual(message.body, 'Hi there AwesomeGuy!')
@@ -133,7 +133,7 @@ class ModelTest(TestCase):
         email_template.html_content = "<p>Hi there {{ name }}!</p>"
         email_template.save()
         email = Email.objects.from_template('from@example.com', 'to@example.com',
-            email_template, context_instance={'name': 'AwesomeGuy'})
+            email_template, context={'name': 'AwesomeGuy'})
 
         message = email.email_message()
         self.assertEqual(message.alternatives, [('<p>Hi there AwesomeGuy!</p>', 'text/html')])
