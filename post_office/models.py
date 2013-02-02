@@ -28,8 +28,9 @@ class EmailManager(models.Manager):
         context = Context(context_instance)
         template_content = Template(template.content)
         template_content_html = Template(template.html_content)
+        template_subject = Template(template.subject)
         return Email.objects.create(
-                from_email=from_email, to=to_email, subject=template.subject,
+                from_email=from_email, to=to_email, subject=template_subject.render(context),
                 message=template_content.render(context),
                 html_message=template_content_html.render(context),
                 priority=priority, status=status

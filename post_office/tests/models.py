@@ -117,15 +117,19 @@ class ModelTest(TestCase):
         self.assertFalse(message.alternatives)
 
         # Test 2, create email object from template, with context
+        # Email body and subject should render correctly from template
+        email_template.subject = "Welcome to our amazing apps, {{app_name}}!"
         email_template.content = "Hi there {{name}}!"
         email_template.save()
         email = Email.objects.create_from_template('from@example.com', 'to@example.com',
-            email_template, context_instance={'name': 'AwesomeGuy'})
+            email_template, context_instance={'name': 'AwesomeGuy', 'app_name': 'AwesomeApp'})
 
         message = email.email_message()
         self.assertEqual(message.body, 'Hi there AwesomeGuy!')
+        self.assertEqual(message.subject, 'Welcome to our amazing apps, AwesomeApp!')
 
-        # Test 3, create email object from template, with context and html
+        # Test 3, create email object from template, with context and html_content
+        # Email message alternatives should render the template correctly
         email_template.html_content = "<p>Hi there {{ name }}!</p>"
         email_template.save()
         email = Email.objects.create_from_template('from@example.com', 'to@example.com',
