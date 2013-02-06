@@ -27,7 +27,9 @@ Installation
 
     pip install django-post_office
 
-* Add ``post_office`` to your INSTALLED_APPS in django's ``settings.py``::
+* Add ``post_office`` to your INSTALLED_APPS in django's ``settings.py``:
+
+.. code-block:: python
 
     INSTALLED_APPS = (
         # other apps
@@ -63,7 +65,9 @@ For example if you want to use `django-ses <https://github.com/hmarr/django-ses>
     POST_OFFICE_BACKEND = 'django_ses.SESBackend'
 
 You can view also queued emails along with their statuses if you have django's
-admin interface enabled::
+admin interface enabled:
+
+.. code-block:: python
 
     INSTALLED_APPS = (
         # ...
@@ -92,7 +96,9 @@ Lower Level Usage
 It accepts two extra arguments, ``html_message`` and
 ``priority`` (``high``, ``medium``, ``low`` or ``now``).
 
-Here's how to use it::
+Here's how to use it:
+
+.. code-block:: python
 
     from post_office import send_mail, PRIORITY
     send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
@@ -100,7 +106,9 @@ Here's how to use it::
 
 ``post_office`` is also task queue friendly. Passing ``now`` as priority into
 ``send_mail`` will deliver the email right away, regardless of how many emails
-you have in your queue::
+you have in your queue:
+
+.. code-block:: python
 
     from post_office import send_mail, PRIORITY
     send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
@@ -110,35 +118,48 @@ This is useful if you already use something like `django-rq <https://github.com/
 to send emails asynchronously and only need to store email activities and logs.
 
 
-Templated email
+Email Templates
 ---------------
-``post_office`` now supports templated email from database with basic caching support.
-``post_office`` will create a database table to store your email templates that can be used to send emails with context.
+``post_office`` also allows you to easily send templated rendered emails.
+Email templates in ``post_office`` are stored in database and can be easily
+added via Django's ``admin`` interface.
 
-Basic usage::
+Here's how to send templated emails:
 
-    1. Create EmailTemplate from django administration panel
+1. Create an ``EmailTemplate`` from django's ``admin`` interface
+2. Send the email using ``send_templated_mail`` command:
 
-    2. From your code or shell, you can use the template to create an Email object and add them to the email queue
+.. code-block:: python
 
-        from post_office.utils import send_templated_mail
-        send_templated_mail(template_name, 'from@example.com', ['to@example.com'],
-            context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
+    from post_office.utils import send_templated_mail
+    send_templated_mail('template_name', 'from@example.com', ['to@example.com'])
 
-    3. Caching for templated email is turned ON by default
+    # Here's a list of full arguments accepted by send_templated mail
+    send_templated_mail(
+        'template_name',        # Name of the template
+        'from@example.com',     # Sender email
+        ['to@example.com'],     # List of recipient emails
+        context={'foo': 'bar'}, # Extra data that will be used during template rendering
+        priority=PRIORITY.now,  # Email priority
+    )
 
-        ## Enable caching support for post_office templated email
-        ## All cache key will be prefixed by post_office:template:
-        ## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
-        POST_OFFICE_CACHE = False
+If ``CACHES`` is configured in Django's ``settings.py``, ``EmailTemplate``s will
+be cached by default. If for some reason you want to disable caching, you can
+set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 
-        ## This is optional, if 'post_office' key is non existent, it will use 'default' key for cache backend
-        CACHES = {
-                    'post_office': {
-                        'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-                        'LOCATION': '127.0.0.1:11211',
-                    }
-                }
+.. code-block:: python
+
+    ## All cache key will be prefixed by post_office:template:
+    ## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
+    POST_OFFICE_CACHE = False
+
+    ## Optional: to use a non default cache backend, add a "post_office" entry in CACHES
+    CACHES = {
+        'post_office': {
+            'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+            'LOCATION': '127.0.0.1:11211',
+        }
+    }
 
 Testing
 =======
@@ -146,12 +167,15 @@ Testing
 
 To run ``post_office``'s test suite::
 
-    django-admin.py test post_office --settings=post_office.tests.settings --pythonpath=.
-
+    `which django-admin.py` test post_office --settings=post_office.tests.settings --pythonpath=.
 
 
 Changelog
 =========
+
+Version 0.2
+-----------
+* Allows sending emails via database backed templates
 
 Version 0.1.5
 -------------
