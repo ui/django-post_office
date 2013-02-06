@@ -3,13 +3,13 @@ from setuptools import setup
 
 setup(
     name='django-post_office',
-    version='0.1.5',
+    version='0.2.0',
     author='Selwin Ong',
     author_email='selwin.ong@gmail.com',
     packages=['post_office'],
     url='https://github.com/ui/django-post_office',
     license='MIT',
-    description='A Django app that allows you to log email activities and send mail asynchronously.',
+    description='A Django app that allows you to log email activities and send mail asynchronously, complete with template support.',
     long_description=open('README.rst').read(),
     zip_safe=False,
     include_package_data=True,

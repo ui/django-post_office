@@ -30,11 +30,12 @@ class EmailManager(models.Manager):
         template_content_html = Template(template.html_content)
         template_subject = Template(template.subject)
         return Email.objects.create(
-                from_email=from_email, to=to_email, subject=template_subject.render(context),
-                message=template_content.render(context),
-                html_message=template_content_html.render(context),
-                priority=priority, status=status
-            )
+            from_email=from_email, to=to_email,
+            subject=template_subject.render(context),
+            message=template_content.render(context),
+            html_message=template_content_html.render(context),
+            priority=priority, status=status
+        )
 
 
 class Email(models.Model):
