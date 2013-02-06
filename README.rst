@@ -110,6 +110,46 @@ This is useful if you already use something like `django-rq <https://github.com/
 to send emails asynchronously and only need to store email activities and logs.
 
 
+Templated email
+---------------
+``post_office`` now supports templated email from database with basic caching support.
+``post_office`` will create a database table to store your email templates that can be used to send emails with context.
+
+Basic usage::
+
+    1. Create EmailTemplate from django administration panel
+
+    2. From your code or shell, you can use the template to create an Email object and add them to the email queue
+
+        from post_office.utils import send_templated_mail
+        send_templated_mail(template_name, 'from@example.com', ['to@example.com'],
+            context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
+
+    3. Caching for templated email is turned ON by default
+
+        ## Enable caching support for post_office templated email
+        ## All cache key will be prefixed by post_office:template:
+        ## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
+        POST_OFFICE_CACHE = False
+
+        ## This is optional, if 'post_office' key is non existent, it will use 'default' key for cache backend
+        CACHES = {
+                    'post_office': {
+                        'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+                        'LOCATION': '127.0.0.1:11211',
+                    }
+                }
+
+Testing
+=======
+
+
+To run ``post_office``'s test suite::
+
+    django-admin.py test post_office --settings=post_office.tests.settings --pythonpath=.
+
+
+
 Changelog
 =========
 

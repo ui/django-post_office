@@ -3,12 +3,15 @@ from collections import namedtuple
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.encoding import smart_unicode
+from django.template import Context, Template
 
-from .settings import get_backend
+from post_office import cache
+from .settings import get_email_backend
 from .validators import validate_email_with_name
 
 try:
     from django.utils.timezone import now
+    now = now()
 except ImportError:
     from datetime import datetime
     now = datetime.now
@@ -16,6 +19,22 @@ except ImportError:
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
+
+
+class EmailManager(models.Manager):
+    def from_template(self, from_email, to_email, template,
+            context={}, priority=PRIORITY.medium):
+        status = None if priority == PRIORITY.now else STATUS.queued
+        context = Context(context)
+        template_content = Template(template.content)
+        template_content_html = Template(template.html_content)
+        template_subject = Template(template.subject)
+        return Email.objects.create(
+                from_email=from_email, to=to_email, subject=template_subject.render(context),
+                message=template_content.render(context),
+                html_message=template_content_html.render(context),
+                priority=priority, status=status
+            )
 
 
 class Email(models.Model):
@@ -43,6 +62,7 @@ class Email(models.Model):
                                                 null=True, db_index=True)
     created = models.DateTimeField(default=now, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
+    objects = EmailManager()
 
     class Meta:
         ordering = ('-created',)
@@ -69,7 +89,7 @@ class Email(models.Model):
         connection_opened = False
         try:
             if connection is None:
-                connection = get_connection(get_backend())
+                connection = get_connection(get_email_backend())
                 connection.open()
                 connection_opened = True
 
@@ -111,3 +131,27 @@ class Log(models.Model):
 
     def __unicode__(self):
         return str(self.date)
+
+
+class EmailTemplate(models.Model):
+    """
+    Model to hold template information from db
+    """
+    name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
+    subject = models.CharField(max_length=255, blank=True)
+    content = models.TextField(blank=True)
+    html_content = models.TextField(blank=True)
+    created = models.DateTimeField(default=now)
+    last_updated = models.DateTimeField(default=now)
+
+    class Meta:
+        ordering = ('name',)
+
+    def __unicode__(self):
+        return str(self.name)
+
+    def save(self, *args, **kwargs):
+        self.last_updated = now
+        template = super(EmailTemplate, self).save(*args, **kwargs)
+        cache.delete(self.name)
+        return template
