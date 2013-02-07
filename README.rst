@@ -173,6 +173,10 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.2.1
+-------------
+* Fixed typo in ``admin.py``
+
 Version 0.2
 -----------
 * Allows sending emails via database backed templates
