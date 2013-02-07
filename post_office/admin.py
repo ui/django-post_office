@@ -28,7 +28,7 @@ class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
 
 
-class EmailTemplateAdmin(admin.modelAdmin):
+class EmailTemplateAdmin(admin.ModelAdmin):
     list_display = ('name', 'subject', 'created')
 
 admin.site.register(Email, EmailAdmin)
