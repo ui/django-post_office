@@ -167,7 +167,7 @@ Testing
 
 To run ``post_office``'s test suite::
 
-    `which django-admin.py` test post_office --settings=post_office.tests.settings --pythonpath=.
+    `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
 
 
 Changelog
