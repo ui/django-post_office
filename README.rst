@@ -23,7 +23,7 @@ Dependencies
 Installation
 ============
 
-* Install via pypi::
+* Install from PyPI (or you can `manually download it from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
 
     pip install django-post_office
 
