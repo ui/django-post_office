@@ -14,13 +14,13 @@ DATABASES = {
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-        'LOCATION': '127.0.0.1:11211',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'TIMEOUT': 36000,
-        'KEY_PREFIX': 'stamps:',
+        'KEY_PREFIX': 'post-office',
     },
     'post_office': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-        'LOCATION': '127.0.0.1:11211',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'TIMEOUT': 36000,
+        'KEY_PREFIX': 'post-office',  
     }
 }
