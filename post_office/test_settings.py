@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-INSTALLED_APPS = ['post_office']
-
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -24,3 +21,14 @@ CACHES = {
         'KEY_PREFIX': 'post-office',  
     }
 }
+
+
+INSTALLED_APPS = (
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'post_office',
+)
+
+ROOT_URLCONF = 'post_office.test_urls'
