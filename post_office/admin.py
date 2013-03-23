@@ -18,6 +18,8 @@ class LogInline(admin.StackedInline):
 class EmailAdmin(admin.ModelAdmin):
     list_display = ('to', 'subject', get_message_preview, 'status', 'last_updated')
     inlines = [LogInline]
+    list_filter = ('status',)
+    search_fields = ('to', 'subject')
 
 
 def to(instance):
@@ -26,10 +28,13 @@ def to(instance):
 
 class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
+    list_filter = ('status',)
+    search_fields = ('email__to',)
 
 
 class EmailTemplateAdmin(admin.ModelAdmin):
     list_display = ('name', 'subject', 'created')
+    search_fields = ('name', 'subject')
 
 admin.site.register(Email, EmailAdmin)
 admin.site.register(Log, LogAdmin)
