@@ -209,6 +209,11 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.2.2
+-------------
+* ``created`` fields now use ``auto_now_add``
+* ``last_updated`` fields now use ``auto_now``
+
 Version 0.2.1
 -------------
 * Fixed typo in ``admin.py``

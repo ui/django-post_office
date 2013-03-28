@@ -5,6 +5,12 @@ from django.test import TestCase
 
 from ..models import Email
 
+try:
+    from django.utils.timezone import now
+    now = now
+except ImportError:
+    now = datetime.now
+
 
 class CommandTest(TestCase):
 
@@ -13,16 +19,15 @@ class CommandTest(TestCase):
         The ``cleanup_mail`` command deletes mails older than a specified
         amount of days
         """
-        today = datetime.date.today()
         self.assertEqual(Email.objects.count(), 0)
 
         # The command shouldn't delete today's email
-        Email.objects.create(from_email='from@example.com', to='to@example.com')
+        email = Email.objects.create(from_email='from@example.com', to='to@example.com')
         call_command('cleanup_mail', days=30)
         self.assertEqual(Email.objects.count(), 1)
 
-        # Email older than 30 days should get deleted
-        prev = today - datetime.timedelta(31)
-        Email.objects.create(from_email='from@example.com', to='to@example.com', created=prev)
+        # Email older than 30 days should be deleted
+        email.created = now() - datetime.timedelta(31)
+        email.save()
         call_command('cleanup_mail', days=30)
-        self.assertEqual(Email.objects.count(), 1)
+        self.assertEqual(Email.objects.count(), 0)

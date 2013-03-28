@@ -9,13 +9,6 @@ from post_office import cache
 from .settings import get_email_backend
 from .validators import validate_email_with_name
 
-try:
-    from django.utils.timezone import now
-    now = now()
-except ImportError:
-    from datetime import datetime
-    now = datetime.now
-
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
@@ -61,7 +54,7 @@ class Email(models.Model):
                                               blank=True, null=True)
     priority = models.PositiveSmallIntegerField(choices=PRIORITY_CHOICES, blank=True,
                                                 null=True, db_index=True)
-    created = models.DateTimeField(default=now, db_index=True)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     objects = EmailManager()
 
@@ -123,7 +116,7 @@ class Log(models.Model):
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed')]
 
     email = models.ForeignKey(Email, editable=False, related_name='logs')
-    date = models.DateTimeField(default=now, db_index=True)
+    date = models.DateTimeField(auto_now_add=True, db_index=True)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, db_index=True)
     message = models.TextField()
 
@@ -142,8 +135,8 @@ class EmailTemplate(models.Model):
     subject = models.CharField(max_length=255, blank=True)
     content = models.TextField(blank=True)
     html_content = models.TextField(blank=True)
-    created = models.DateTimeField(default=now)
-    last_updated = models.DateTimeField(default=now)
+    created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ('name',)
@@ -152,7 +145,6 @@ class EmailTemplate(models.Model):
         return str(self.name)
 
     def save(self, *args, **kwargs):
-        self.last_updated = now
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
