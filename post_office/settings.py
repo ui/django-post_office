@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.cache import get_cache
+from django.core.cache.backends.base import InvalidCacheBackendError
 
 
 def get_email_backend():
@@ -20,5 +21,9 @@ def get_cache_backend():
         if "post_office" in settings.CACHES:
             return get_cache("post_office")
         else:
-            return get_cache("default")
+            # Sometimes this raises InvalidCacheBackendError, which is ok too
+            try:
+                return get_cache("default")
+            except InvalidCacheBackendError:
+                pass
     return None
