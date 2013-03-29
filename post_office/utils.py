@@ -21,12 +21,19 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
 
     subject = force_unicode(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
-
+    emails = []
     for address in recipient_list:
-        email = Email.objects.create(from_email=from_email, to=address, subject=subject,
-            message=message, html_message=html_message, status=status, priority=priority)
-        if priority == PRIORITY.now:
+        emails.append(
+            Email.objects.create(
+                from_email=from_email, to=address, subject=subject,
+                message=message, html_message=html_message, status=status,
+                priority=priority
+            )
+        )
+    if priority == PRIORITY.now:
+        for email in emails:
             email.dispatch()
+    return emails
 
 
 def send_queued_mail():

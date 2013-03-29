@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, Log, STATUS, EmailTemplate
+from ..mail import from_template, send
 
 
 class ModelTest(TestCase):
@@ -98,42 +99,71 @@ class ModelTest(TestCase):
         self.assertEqual(log.status, STATUS.failed)
         self.assertIn('does not define a "backend" class', log.message)
 
-    def test_email_template(self):
+    def test_from_template(self):
         """
         Test basic constructing email message with template
         """
 
         # Test 1, create email object from template, without context
-        email_template = EmailTemplate.objects.create(name='customer/en/welcome',
-            subject='welcome to our amazing web apps', content='Hi there!')
-        email = Email.objects.from_template('from@example.com', 'to@example.com', email_template)
+        email_template = EmailTemplate.objects.create(name='welcome',
+            subject='Welcome!', content='Hi there!')
+        email = from_template('from@example.com', 'to@example.com', email_template)
+        self.assertEqual(email.from_email, 'from@example.com')
+        self.assertEqual(email.to, 'to@example.com')
+        self.assertEqual(email.subject, 'Welcome!')
+        self.assertEqual(email.message, 'Hi there!')
 
-        message = email.email_message()
-        self.assertTrue(isinstance(message, EmailMultiAlternatives))
-        self.assertEqual(message.from_email, 'from@example.com')
-        self.assertEqual(message.to, ['to@example.com'])
-        self.assertEqual(message.subject, 'welcome to our amazing web apps')
-        self.assertEqual(message.body, 'Hi there!')
-        self.assertFalse(message.alternatives)
+        # Passing in template name also works
+        email = from_template('from2@example.com', 'to2@example.com',
+                              email_template.name)
+        self.assertEqual(email.from_email, 'from2@example.com')
+        self.assertEqual(email.to, 'to2@example.com')
+        self.assertEqual(email.subject, 'Welcome!')
+        self.assertEqual(email.message, 'Hi there!')
 
-        # Test 2, create email object from template, with context
-        # Email body and subject should render correctly from template
-        email_template.subject = "Welcome to our amazing apps, {{app_name}}!"
-        email_template.content = "Hi there {{name}}!"
+        # Ensure that subject, message and html_message are correctly rendered
+        email_template.subject = "Subject: {{foo}}"
+        email_template.content = "Message: {{foo}}"
+        email_template.html_content = "HTML: {{foo}}"
         email_template.save()
-        email = Email.objects.from_template('from@example.com', 'to@example.com',
-            email_template, context={'name': 'AwesomeGuy', 'app_name': 'AwesomeApp'})
+        email = from_template('from@example.com', 'to@example.com',
+                              email_template, context={'foo': 'bar'})
 
-        message = email.email_message()
-        self.assertEqual(message.body, 'Hi there AwesomeGuy!')
-        self.assertEqual(message.subject, 'Welcome to our amazing apps, AwesomeApp!')
+        self.assertEqual(email.subject, 'Subject: bar')
+        self.assertEqual(email.message, 'Message: bar')
+        self.assertEqual(email.html_message, 'HTML: bar')
 
-        # Test 3, create email object from template, with context and html_content
-        # Email message alternatives should render the template correctly
-        email_template.html_content = "<p>Hi there {{ name }}!</p>"
-        email_template.save()
-        email = Email.objects.from_template('from@example.com', 'to@example.com',
-            email_template, context={'name': 'AwesomeGuy'})
+    def test_send_argument_checking(self):
+        """
+        mail.send() should raise an Exception if "template" argument is used
+        with "subject", "message" or "html_message" arguments
+        """
+        self.assertRaises(ValueError, send, 'from@a.com', ['to@example.com'],
+                          template='foo', subject='bar')
+        self.assertRaises(ValueError, send, 'from@a.com', ['to@example.com'],
+                          template='foo', message='bar')
+        self.assertRaises(ValueError, send, 'from@a.com', ['to@example.com'],
+                          template='foo', html_message='bar')
 
-        message = email.email_message()
-        self.assertEqual(message.alternatives, [('<p>Hi there AwesomeGuy!</p>', 'text/html')])
+    def test_send_with_template(self):
+        """
+        Ensure mail.send correctly creates templated emails to recipients
+        """
+        Email.objects.all().delete()
+        email_template = EmailTemplate.objects.create(name='foo', subject='bar',
+                                                      content='baz')
+        emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
+                      template=email_template)
+        self.assertEqual(len(emails), 2)
+        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(emails[1].to, 'to2@example.com')
+
+    def test_send_without_template(self):
+        emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
+                      subject='foo', message='bar', html_message='baz')
+        self.assertEqual(len(emails), 2)
+        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(emails[0].subject, 'foo')
+        self.assertEqual(emails[0].message, 'bar')
+        self.assertEqual(emails[0].html_message, 'baz')
+        self.assertEqual(emails[1].to, 'to2@example.com')
