@@ -8,9 +8,7 @@ from ..settings import get_cache_backend
 class CacheTest(TestCase):
 
     def test_get_backend_settings(self):
-        """
-            Test basic get backend function and its settings
-        """
+        """Test basic get backend function and its settings"""
         # Sanity check
         self.assertTrue('post_office' in settings.CACHES)
         self.assertTrue(get_cache_backend())

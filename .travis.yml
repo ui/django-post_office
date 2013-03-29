@@ -12,4 +12,4 @@ install:
   - pip install $DJANGO
 
 script:
-  - "django-admin.py test post_office --settings=post_office.test_settings --pythonpath=."
+  - "python post_office/tests/runtests.py"
