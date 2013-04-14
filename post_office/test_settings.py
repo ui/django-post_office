@@ -30,4 +30,6 @@ INSTALLED_APPS = (
     'post_office',
 )
 
+SECRET_KEY = 'a'
+
 ROOT_URLCONF = 'post_office.test_urls'
