@@ -43,106 +43,101 @@ Installation
     EMAIL_BACKEND = 'post_office.EmailBackend'
 
 
-Usage
-=====
+Quickstart
+==========
 
-If you already use Django's ``send_mail`` command and want to send out emails
-asynchronously, simply set ``post_office`` as your email backend in
-``settings.py`` and it will automatically queue outgoing emails without you
-needing to change anything::
+To get started, make sure you have Django's admin interface enabled. Create an
+``EmailTemplate`` instance via ``/admin`` and you can start sending emails.
 
-    EMAIL_BACKEND = 'post_office.EmailBackend'
+.. code-block:: python
 
-To actually send them out, run ``python manage.py send_queued_mail``. You can schedule this
-to run regularly via cron::
+    from post_office import mail
+
+    mail.send(
+        'from@example.com',
+        ['recipient1@example.com', 'recipient2@example.com'],
+        template='welcome_email', # Could be an EmailTemplate instance or name
+        context={'foo': 'bar'},
+    )
+
+The above command will put your email on the queue so you can use the
+command in your webapp without slowing down the request/response cycle too much.
+To actually send them out, run ``python manage.py send_queued_mail``.
+You can schedule this management command to run regularly via cron::
 
     * * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
 
 
-By default, ``post_office`` uses django's SMTP ``EmailBackend``. If you want to
-use a different backend, you can do so by changing ``POST_OFFICE_BACKEND``.
+Usage
+=====
 
-For example if you want to use `django-ses <https://github.com/hmarr/django-ses>`_::
+mail.send()
+-----------
 
-    POST_OFFICE_BACKEND = 'django_ses.SESBackend'
+``mail.send`` is the most important function in this library, it takes these
+arguments:
 
-You can view also queued emails along with their statuses if you have django's
-admin interface enabled:
+============ ======== =========================
+Argument     Required Description
+============ ======== =========================
+sender       Yes      email address, display name is allowed (``John <john@example.com>``)
+recipients   Yes      list of recipient email addresses
+template     No       ``EmailTemplate`` instance or name
+context      No       A dictionary used when email is being rendered
+subject      No       Email subject (if ``template`` is not specified)
+message      No       Email content (if ``template`` is not specified)
+html_message No       Email's HTML content (if ``template`` is not specified)
+priority     No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
+============ ======== =========================
+
+Here are a few examples.
+
+If you just want to send out emails without using database templates. You can
+call the ``send`` command without the ``template`` argument.
 
 .. code-block:: python
+    from post_office import mail
 
-    INSTALLED_APPS = (
-        # ...
-        'django.contrib.admin',
-        # ...
+    mail.send(
+        'from@example.com',
+        ['recipient1@example.com', 'recipient2@example.com'],
+        subject='Welcome!',
+        message='Welcome home, {{ name }}!',
+        html_message='Welcome home, <b>{{ name }}</b>!',
+        context={'name': 'Alice'},
     )
-
-Sending HTML Emails
--------------------
-
-``post_office`` also comes with a ``send_mail`` command similar to django's.
-It accepts two extra arguments, ``html_message`` and
-``priority`` (``high``, ``medium``, ``low`` or ``now``).
-
-Here's how to use it:
-
-.. code-block:: python
-
-    from post_office import send_mail, PRIORITY
-    send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
-              '<p>HTML message</p>', priority=PRIORITY.medium)
 
 ``post_office`` is also task queue friendly. Passing ``now`` as priority into
-``send_mail`` will deliver the email right away, regardless of how many emails
-you have in your queue:
+``send_mail`` will deliver the email right away (instead of queuing it),
+regardless of how many emails you have in your queue:
 
 .. code-block:: python
 
-    from post_office import send_mail, PRIORITY
-    send_mail('subject', 'plaintext message', 'from@example.com', ['to@example.com'],
-              '<p>HTML message</p>', priority=PRIORITY.now)
+    from post_office import mail
+
+    mail.send(
+        'from@example.com',
+        ['recipient1@example.com'],
+        template='welcome_email',
+        context={'foo': 'bar'},
+        priority='now',
+    )
 
 This is useful if you already use something like `django-rq <https://github.com/ui/django-rq>`_
-to send emails asynchronously and only need to store email activities and logs.
+to send emails asynchronously and only need to store email related activities and logs.
 
-
-Email Templates
----------------
-
-``post_office`` also allows you to easily send template rendered emails.
-Email templates in ``post_office`` are stored in database and can be easily
-added via Django's ``admin`` interface.
-
-Here's how to send templated emails:
-
-1. Create an ``EmailTemplate`` from django's ``admin`` interface
-2. Send the email using ``send_templated_mail`` command:
-
-.. code-block:: python
-
-    from post_office.utils import send_templated_mail
-    send_templated_mail('template_name', 'from@example.com', ['to@example.com'])
-
-    # Here's a list of full arguments accepted by send_templated mail
-    send_templated_mail(
-        'template_name',        # Name of the template
-        'from@example.com',     # Sender email
-        ['to@example.com'],     # List of recipient emails
-        context={'foo': 'bar'}, # Extra data that will be used during template rendering
-        priority=PRIORITY.now,  # Email priority
-    )
 
 Template Tags and Variables
 ---------------------------
 
-You can, of course use Django's template tags and variables when in templates.
+``post-office`` supports Django's template tags and variables when.
 For example, if you put "Hello, {{ name }}" in the subject line and pass in 
 ``{'name': 'Alice'}`` as context, you will get "Hello, Alice" as subject:
 
 .. code-block:: python
     
     from post_office.models import EmailTemplate
-    from post_office.utils import send_templated_mail
+    from post_office import mail
 
     EmailTemplate.objects.create(
         name='morning_greeting',
@@ -151,10 +146,10 @@ For example, if you put "Hello, {{ name }}" in the subject line and pass in
         html_content='Hi <b>{{ name }}</b>, how are you feeling today?',
     )
 
-    send_templated_mail(
-        'morning_greeting',
+    mail.send(
         'from@example.com',
-        ['to@example.com'],
+        ['recipient@example.com'],
+        template='morning_greeting',
         context={'name': 'alice'},
     )
 
@@ -163,7 +158,22 @@ For example, if you put "Hello, {{ name }}" in the subject line and pass in
     content = 'Hi alice, how are you feeling today?'
     content = 'Hi <strong>alice</strong>, how are you feeling today?'
 
-``post_office`` will cache ``EmailTemplate``s by default if Django's caching
+
+Custom Email Backends
+---------------------
+
+By default, ``post_office`` uses django's SMTP ``EmailBackend``. If you want to
+use a different backend, you can do so by changing ``POST_OFFICE_BACKEND``.
+
+For example if you want to use `django-ses <https://github.com/hmarr/django-ses>`_::
+
+    POST_OFFICE_BACKEND = 'django_ses.SESBackend'
+
+
+Caching
+-------
+
+By default, ``post_office`` will cache ``EmailTemplate``s if Django's caching
 mechanism is configured. If for some reason you want to disable caching, you can
 set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 
@@ -200,7 +210,6 @@ You may want to set these up via cron to run regularly::
 Testing
 =======
 
-
 To run ``post_office``'s test suite::
 
     `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
@@ -208,6 +217,10 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.3.0
+-------------
+* Introduced a new ``mail.send`` function that provides a nicer API to send emails
 
 Version 0.2.2
 -------------
