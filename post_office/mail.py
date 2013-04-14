@@ -26,9 +26,8 @@ def from_template(sender, recipient, template, context={},
     )
 
 
-def send(sender, recipients, template=None, context=None, subject=None,
+def send(sender, recipients, template=None, context={}, subject=None,
          message=None, html_message=None, priority=PRIORITY.medium):
-    
     if template:
         
         if subject is not None:
@@ -37,14 +36,18 @@ def send(sender, recipients, template=None, context=None, subject=None,
             raise ValueError('You can\'t specify both "template" and "message" arguments')
         if html_message is not None:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
-        
-        context = {} if context is None else context
+                
         emails = [from_template(sender, recipient, template, context, priority)
                   for recipient in recipients]
         if priority == PRIORITY.now:
             for email in emails:
                 email.dispatch()
     else:
+        if context:
+            context = Context(context)
+            subject = Template(subject).render(context)
+            message = Template(message).render(context)
+            html_message = Template(html_message).render(context)
         emails = send_mail(subject=subject, message=message, from_email=sender,
                            recipient_list=recipients, html_message=html_message,
                            priority=PRIORITY.medium)

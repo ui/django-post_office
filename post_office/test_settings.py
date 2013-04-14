@@ -17,7 +17,7 @@ CACHES = {
     'post_office': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'TIMEOUT': 36000,
-        'KEY_PREFIX': 'post-office',  
+        'KEY_PREFIX': 'post-office',
     }
 }
 

@@ -160,10 +160,22 @@ class ModelTest(TestCase):
 
     def test_send_without_template(self):
         emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
-                      subject='foo', message='bar', html_message='baz')
+                      subject='foo', message='bar', html_message='baz',
+                      context={'name': 'Alice'})
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
         self.assertEqual(emails[0].subject, 'foo')
         self.assertEqual(emails[0].message, 'bar')
         self.assertEqual(emails[0].html_message, 'baz')
         self.assertEqual(emails[1].to, 'to2@example.com')
+
+        # Same thing, but now with context
+        emails = send('from@a.com', ['to1@example.com'],
+                      subject='Hi {{ name }}', message='Message {{ name }}',
+                      html_message='<b>{{ name }}</b>',
+                      context={'name': 'Bob'})
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(emails[0].subject, 'Hi Bob')
+        self.assertEqual(emails[0].message, 'Message Bob')
+        self.assertEqual(emails[0].html_message, '<b>Bob</b>')
