@@ -28,7 +28,6 @@ Installation
 * Add ``post_office`` to your INSTALLED_APPS in django's ``settings.py``:
 
 .. code-block:: python
-
     INSTALLED_APPS = (
         # other apps
         "post_office",
@@ -50,7 +49,6 @@ To get started, make sure you have Django's admin interface enabled. Create an
 ``EmailTemplate`` instance via ``/admin`` and you can start sending emails.
 
 .. code-block:: python
-
     from post_office import mail
 
     mail.send(
@@ -97,7 +95,7 @@ call the ``send`` command without the ``template`` argument.
 
 .. code-block:: python
     from post_office import mail
-
+    
     mail.send(
         'from@example.com',
         ['recipient1@example.com', 'recipient2@example.com'],
@@ -182,7 +180,7 @@ set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
     ## All cache key will be prefixed by post_office:template:
     ## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
     POST_OFFICE_CACHE = False
-
+    
     ## Optional: to use a non default cache backend, add a "post_office" entry in CACHES
     CACHES = {
         'post_office': {
