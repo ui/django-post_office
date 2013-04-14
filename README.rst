@@ -221,9 +221,6 @@ Changelog
 Version 0.3.0
 -------------
 * Introduced a new ``mail.send`` function that provides a nicer API to send emails
-
-Version 0.2.2
--------------
 * ``created`` fields now use ``auto_now_add``
 * ``last_updated`` fields now use ``auto_now``
 
