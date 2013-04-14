@@ -220,7 +220,8 @@ Changelog
 
 Version 0.3.0
 -------------
-* Added south migration
+* **IMPORTANT**: added South migration. If you use South and had post-office
+  installed before 0.3.0, you may need to manually resolve migration conflicts
 * Allow unicode messages to be displayed in ``/admin``
 * Introduced a new ``mail.send`` function that provides a nicer API to send emails
 * ``created`` fields now use ``auto_now_add``
