@@ -28,6 +28,7 @@ Installation
 * Add ``post_office`` to your INSTALLED_APPS in django's ``settings.py``:
 
 .. code-block:: python
+
     INSTALLED_APPS = (
         # other apps
         "post_office",
@@ -49,8 +50,9 @@ To get started, make sure you have Django's admin interface enabled. Create an
 ``EmailTemplate`` instance via ``/admin`` and you can start sending emails.
 
 .. code-block:: python
-    from post_office import mail
 
+    from post_office import mail
+    
     mail.send(
         'from@example.com',
         ['recipient1@example.com', 'recipient2@example.com'],
@@ -94,6 +96,7 @@ If you just want to send out emails without using database templates. You can
 call the ``send`` command without the ``template`` argument.
 
 .. code-block:: python
+    
     from post_office import mail
     
     mail.send(
@@ -150,7 +153,7 @@ For example, if you put "Hello, {{ name }}" in the subject line and pass in
         template='morning_greeting',
         context={'name': 'alice'},
     )
-
+    
     # This will create an email with the following content:
     subject = 'Morning, Alice',
     content = 'Hi alice, how are you feeling today?'
