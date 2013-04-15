@@ -72,7 +72,8 @@ class Email(models.Model):
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object
         from a ``Message`` instance, depending on whether html_message is empty.
         """
-        headers = json.loads(self.headers)
+        if headers is not '':
+            headers = json.JSONDecoder().decode(self.headers)
         subject = smart_unicode(self.subject)
         msg = EmailMultiAlternatives(subject, self.message, self.from_email,
                                      [self.to], connection=connection, headers=headers)
