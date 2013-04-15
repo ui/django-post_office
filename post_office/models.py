@@ -1,3 +1,4 @@
+import json
 from collections import namedtuple
 
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -58,6 +59,7 @@ class Email(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     objects = EmailManager()
+    headers = models.TextField(blank=True)
 
     class Meta:
         ordering = ('-created',)
@@ -70,9 +72,10 @@ class Email(models.Model):
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object
         from a ``Message`` instance, depending on whether html_message is empty.
         """
+        headers = json.loads(self.headers)
         subject = smart_unicode(self.subject)
         msg = EmailMultiAlternatives(subject, self.message, self.from_email,
-                                     [self.to], connection=connection)
+                                     [self.to], connection=connection, headers=headers)
         if self.html_message:
             msg.attach_alternative(self.html_message, "text/html")
         return msg
@@ -138,6 +141,7 @@ class EmailTemplate(models.Model):
     html_content = models.TextField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    headers = models.TextField(blank=True)
 
     class Meta:
         ordering = ('name',)

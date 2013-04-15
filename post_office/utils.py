@@ -8,7 +8,7 @@ from .settings import get_email_backend
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              priority=PRIORITY.medium):
+              priority=PRIORITY.medium, headers=None):
     """
     Add a new message to the mail queue.
 
@@ -27,7 +27,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
             Email.objects.create(
                 from_email=from_email, to=address, subject=subject,
                 message=message, html_message=html_message, status=status,
-                priority=priority
+                priority=priority, headers=headers
             )
         )
     if priority == PRIORITY.now:
@@ -65,11 +65,11 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
-def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium):
+def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium, headers=None):
     email_template = get_email_template(template_name)
     for address in to_addresses:
         email = Email.objects.from_template(from_address, address, email_template,
-            context, priority)
+            context, priority, headers)
         if priority == PRIORITY.now:
             email.dispatch()
 
