@@ -8,7 +8,7 @@ from .settings import get_email_backend
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              priority=PRIORITY.medium, headers=None):
+              priority=PRIORITY.medium, headers=''):
     """
     Add a new message to the mail queue.
 
@@ -65,7 +65,7 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
-def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium, headers=None):
+def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium, headers=''):
     email_template = get_email_template(template_name)
     for address in to_addresses:
         email = Email.objects.from_template(from_address, address, email_template,
