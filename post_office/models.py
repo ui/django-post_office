@@ -18,7 +18,7 @@ STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 # TODO: This will be deprecated, replaced by mail.from_template
 class EmailManager(models.Manager):
     def from_template(self, from_email, to_email, template,
-            context={}, priority=PRIORITY.medium):
+            context={}, priority=PRIORITY.medium, headers={}):
         status = None if priority == PRIORITY.now else STATUS.queued
         context = Context(context)
         template_content = Template(template.content)
@@ -29,7 +29,8 @@ class EmailManager(models.Manager):
             subject=template_subject.render(context),
             message=template_content.render(context),
             html_message=template_content_html.render(context),
-            priority=priority, status=status
+            priority=priority, status=status,
+            headers=headers
         )
 
 
@@ -72,8 +73,10 @@ class Email(models.Model):
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object
         from a ``Message`` instance, depending on whether html_message is empty.
         """
-        if headers is not '':
-            headers = json.JSONDecoder().decode(self.headers)
+        if self.headers:
+            headers = json.loads(self.headers)
+        else:
+            headers = {}
         subject = smart_unicode(self.subject)
         msg = EmailMultiAlternatives(subject, self.message, self.from_email,
                                      [self.to], connection=connection, headers=headers)
