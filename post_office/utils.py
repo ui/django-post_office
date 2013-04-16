@@ -1,3 +1,4 @@
+import json
 from django.conf import settings
 from django.core.mail import get_connection
 from django.utils.encoding import force_unicode
@@ -8,7 +9,7 @@ from .settings import get_email_backend
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              priority=PRIORITY.medium, headers=''):
+              priority=PRIORITY.medium, headers={}):
     """
     Add a new message to the mail queue.
 
@@ -18,7 +19,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     only provided to match the signature of the emulated function. These
     arguments are not used.
     """
-
+    headers = json.dumps(headers)
     subject = force_unicode(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = []
