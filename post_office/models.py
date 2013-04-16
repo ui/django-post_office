@@ -18,7 +18,7 @@ STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 # TODO: This will be deprecated, replaced by mail.from_template
 class EmailManager(models.Manager):
     def from_template(self, from_email, to_email, template,
-            context={}, priority=PRIORITY.medium, headers={}):
+            context={}, headers={}, priority=PRIORITY.medium):
         status = None if priority == PRIORITY.now else STATUS.queued
         context = Context(context)
         template_content = Template(template.content)
