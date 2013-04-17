@@ -133,16 +133,24 @@ class ModelTest(TestCase):
         self.assertEqual(email.message, 'Message: bar')
         self.assertEqual(email.html_message, 'HTML: bar')
 
+    def test_default_sender(self):
+        emails = send(['to@example.com'], subject='foo')
+        self.assertEqual(emails[0].from_email,
+                         django_settings.DEFAULT_FROM_EMAIL)
+
     def test_send_argument_checking(self):
         """
-        mail.send() should raise an Exception if "template" argument is used
-        with "subject", "message" or "html_message" arguments
+        mail.send() should raise an Exception if:
+        - "template" is used with "subject", "message" or "html_message"
+        - recipients is not in tuple or list format
         """
-        self.assertRaises(ValueError, send, 'from@a.com', ['to@example.com'],
+        self.assertRaises(ValueError, send, ['to@example.com'], 'from@a.com',
                           template='foo', subject='bar')
-        self.assertRaises(ValueError, send, 'from@a.com', ['to@example.com'],
+        self.assertRaises(ValueError, send, ['to@example.com'], 'from@a.com',
                           template='foo', message='bar')
-        self.assertRaises(ValueError, send, 'from@a.com', ['to@example.com'],
+        self.assertRaises(ValueError, send, ['to@example.com'], 'from@a.com',
+                          template='foo', html_message='bar')
+        self.assertRaises(ValueError, send, 'to@example.com', 'from@a.com',
                           template='foo', html_message='bar')
 
     def test_send_with_template(self):
@@ -152,14 +160,14 @@ class ModelTest(TestCase):
         Email.objects.all().delete()
         email_template = EmailTemplate.objects.create(name='foo', subject='bar',
                                                       content='baz')
-        emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
+        emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
                       template=email_template)
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
         self.assertEqual(emails[1].to, 'to2@example.com')
 
     def test_send_without_template(self):
-        emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
+        emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
                       subject='foo', message='bar', html_message='baz',
                       context={'name': 'Alice'})
         self.assertEqual(len(emails), 2)
@@ -170,7 +178,7 @@ class ModelTest(TestCase):
         self.assertEqual(emails[1].to, 'to2@example.com')
 
         # Same thing, but now with context
-        emails = send('from@a.com', ['to1@example.com'],
+        emails = send(['to1@example.com'], 'from@a.com',
                       subject='Hi {{ name }}', message='Message {{ name }}',
                       html_message='<b>{{ name }}</b>',
                       context={'name': 'Bob'})

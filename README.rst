@@ -52,10 +52,10 @@ To get started, make sure you have Django's admin interface enabled. Create an
 .. code-block:: python
 
     from post_office import mail
-    
+
     mail.send(
-        'from@example.com',
         ['recipient1@example.com', 'recipient2@example.com'],
+        'from@example.com',
         template='welcome_email', # Could be an EmailTemplate instance or name
         context={'foo': 'bar'},
     )
@@ -80,8 +80,8 @@ arguments:
 ============ ======== =========================
 Argument     Required Description
 ============ ======== =========================
-sender       Yes      email address, display name is allowed (``John <john@example.com>``)
 recipients   Yes      list of recipient email addresses
+sender       No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
 template     No       ``EmailTemplate`` instance or name
 context      No       A dictionary used when email is being rendered
 subject      No       Email subject (if ``template`` is not specified)
@@ -96,12 +96,12 @@ If you just want to send out emails without using database templates. You can
 call the ``send`` command without the ``template`` argument.
 
 .. code-block:: python
-    
+
     from post_office import mail
-    
+
     mail.send(
-        'from@example.com',
         ['recipient1@example.com', 'recipient2@example.com'],
+        'from@example.com',
         subject='Welcome!',
         message='Welcome home, {{ name }}!',
         html_message='Welcome home, <b>{{ name }}</b>!',
@@ -117,8 +117,8 @@ regardless of how many emails you have in your queue:
     from post_office import mail
 
     mail.send(
-        'from@example.com',
         ['recipient1@example.com'],
+        'from@example.com',
         template='welcome_email',
         context={'foo': 'bar'},
         priority='now',
@@ -132,11 +132,11 @@ Template Tags and Variables
 ---------------------------
 
 ``post-office`` supports Django's template tags and variables when.
-For example, if you put "Hello, {{ name }}" in the subject line and pass in 
+For example, if you put "Hello, {{ name }}" in the subject line and pass in
 ``{'name': 'Alice'}`` as context, you will get "Hello, Alice" as subject:
 
 .. code-block:: python
-    
+
     from post_office.models import EmailTemplate
     from post_office import mail
 
@@ -148,12 +148,12 @@ For example, if you put "Hello, {{ name }}" in the subject line and pass in
     )
 
     mail.send(
-        'from@example.com',
         ['recipient@example.com'],
+        'from@example.com',
         template='morning_greeting',
         context={'name': 'alice'},
     )
-    
+
     # This will create an email with the following content:
     subject = 'Morning, Alice',
     content = 'Hi alice, how are you feeling today?'
@@ -183,7 +183,7 @@ set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
     ## All cache key will be prefixed by post_office:template:
     ## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
     POST_OFFICE_CACHE = False
-    
+
     ## Optional: to use a non default cache backend, add a "post_office" entry in CACHES
     CACHES = {
         'post_office': {
@@ -218,6 +218,12 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.3.1
+-------------
+* **IMPORTANT**: ``mail.send`` now expects recipient email addresses as the first
+ argument. This change is to allow optional ``sender`` parameter which defaults
+ to ``settings.DEFAULT_FROM_EMAIL``
 
 Version 0.3.0
 -------------

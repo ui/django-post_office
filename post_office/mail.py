@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.template import Context, Template
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
@@ -26,17 +27,23 @@ def from_template(sender, recipient, template, context={},
     )
 
 
-def send(sender, recipients, template=None, context={}, subject=None,
-         message=None, html_message=None, priority=PRIORITY.medium):
+def send(recipients, sender=None, template=None, context={}, subject='',
+         message='', html_message='', priority=PRIORITY.medium):
+
+    if not isinstance(recipients, (tuple, list)):
+        raise ValueError('Recipient emails must be in list/tuple format')
+
+    if sender is None:
+        sender = settings.DEFAULT_FROM_EMAIL
+
     if template:
-        
-        if subject is not None:
+        if subject:
             raise ValueError('You can\'t specify both "template" and "subject" arguments')
-        if message is not None:
+        if message:
             raise ValueError('You can\'t specify both "template" and "message" arguments')
-        if html_message is not None:
+        if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
-                
+
         emails = [from_template(sender, recipient, template, context, priority)
                   for recipient in recipients]
         if priority == PRIORITY.now:
