@@ -8,21 +8,13 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding field 'EmailTemplate.headers'
-        db.add_column(u'post_office_emailtemplate', 'headers',
-                      self.gf('django.db.models.fields.TextField')(default='', blank=True),
-                      keep_default=False)
-
         # Adding field 'Email.headers'
         db.add_column(u'post_office_email', 'headers',
-                      self.gf('django.db.models.fields.TextField')(default='', blank=True),
+                      self.gf('jsonfield.fields.JSONField')(default={}),
                       keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting field 'EmailTemplate.headers'
-        db.delete_column(u'post_office_emailtemplate', 'headers')
-
         # Deleting field 'Email.headers'
         db.delete_column(u'post_office_email', 'headers')
 
@@ -32,7 +24,7 @@ class Migration(SchemaMigration):
             'Meta': {'ordering': "('-created',)", 'object_name': 'Email'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
             'from_email': ('django.db.models.fields.CharField', [], {'max_length': '254'}),
-            'headers': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'headers': ('jsonfield.fields.JSONField', [], {'default': '{}'}),
             'html_message': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'last_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
@@ -46,7 +38,6 @@ class Migration(SchemaMigration):
             'Meta': {'ordering': "('name',)", 'object_name': 'EmailTemplate'},
             'content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'headers': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'html_content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'last_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
