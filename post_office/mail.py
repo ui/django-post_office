@@ -5,7 +5,7 @@ from .utils import get_email_template, send_mail
 
 
 def from_template(sender, recipient, template, context={},
-                  priority=PRIORITY.medium):
+                  headers={}, priority=PRIORITY.medium):
     """Returns an Email instance from provided template and context."""
     # template can be an EmailTemplate instance of name
     if isinstance(template, EmailTemplate):
@@ -22,22 +22,22 @@ def from_template(sender, recipient, template, context={},
         subject=template_subject.render(context),
         message=template_content.render(context),
         html_message=template_content_html.render(context),
-        priority=priority, status=status
+        headers=headers, priority=priority, status=status
     )
 
 
-def send(sender, recipients, template=None, context={}, subject=None,
+def send(sender, recipients, template=None, context={}, headers={}, subject=None,
          message=None, html_message=None, priority=PRIORITY.medium):
     if template:
-        
+
         if subject is not None:
             raise ValueError('You can\'t specify both "template" and "subject" arguments')
         if message is not None:
             raise ValueError('You can\'t specify both "template" and "message" arguments')
         if html_message is not None:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
-                
-        emails = [from_template(sender, recipient, template, context, priority)
+
+        emails = [from_template(sender, recipient, template, context, headers, priority)
                   for recipient in recipients]
         if priority == PRIORITY.now:
             for email in emails:
@@ -50,5 +50,5 @@ def send(sender, recipients, template=None, context={}, subject=None,
             html_message = Template(html_message).render(context)
         emails = send_mail(subject=subject, message=message, from_email=sender,
                            recipient_list=recipients, html_message=html_message,
-                           priority=PRIORITY.medium)
+                           headers=headers, priority=PRIORITY.medium)
     return emails

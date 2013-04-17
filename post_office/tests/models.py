@@ -152,42 +152,40 @@ class ModelTest(TestCase):
         Ensure mail.send correctly creates templated emails to recipients
         """
         Email.objects.all().delete()
+        headers = {'Reply-to': 'reply@email.com'}
         email_template = EmailTemplate.objects.create(name='foo', subject='bar',
                                                       content='baz')
         emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
-                      template=email_template)
+                      headers=headers, template=email_template)
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(emails[0].headers, headers)
+
         self.assertEqual(emails[1].to, 'to2@example.com')
+        self.assertEqual(emails[1].headers, headers)
 
     def test_send_without_template(self):
+        headers = {'Reply-to': 'reply@email.com'}
         emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
                       subject='foo', message='bar', html_message='baz',
-                      context={'name': 'Alice'})
+                      context={'name': 'Alice'}, headers=headers)
+
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
         self.assertEqual(emails[0].subject, 'foo')
         self.assertEqual(emails[0].message, 'bar')
         self.assertEqual(emails[0].html_message, 'baz')
+        self.assertEqual(emails[0].headers, headers)
         self.assertEqual(emails[1].to, 'to2@example.com')
 
         # Same thing, but now with context
         emails = send('from@a.com', ['to1@example.com'],
                       subject='Hi {{ name }}', message='Message {{ name }}',
                       html_message='<b>{{ name }}</b>',
-                      context={'name': 'Bob'})
+                      context={'name': 'Bob'}, headers=headers)
         self.assertEqual(len(emails), 1)
         self.assertEqual(emails[0].to, 'to1@example.com')
         self.assertEqual(emails[0].subject, 'Hi Bob')
         self.assertEqual(emails[0].message, 'Message Bob')
         self.assertEqual(emails[0].html_message, '<b>Bob</b>')
-
-    def test_send_mail_with_headers(self):
-        subject = "subject"
-        message = "message"
-        from_email = "from@mail.com"
-        recipient_list = ['to1@mail.com']
-        headers = {'Reply-To':'reply_to@mail.com'}
-        emails = send_mail(subject, message, from_email, recipient_list, headers=headers)
-        self.assertEqual(len(emails), 1)
         self.assertEqual(emails[0].headers, headers)
