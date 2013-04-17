@@ -57,5 +57,5 @@ def send(recipients, sender=None, template=None, context={}, subject='',
             html_message = Template(html_message).render(context)
         emails = send_mail(subject=subject, message=message, from_email=sender,
                            recipient_list=recipients, html_message=html_message,
-                           priority=PRIORITY.medium)
+                           priority=priority)
     return emails
