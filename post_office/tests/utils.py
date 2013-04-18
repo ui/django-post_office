@@ -86,7 +86,6 @@ class UtilsTest(TestCase):
         send_templated_mail(template_name, 'from@example.com', to_addresses,
                             context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
 
-        # template_name, from_address, to_addresses, context={}, headers={}, priority=PRIORITY.medium
         send_queued_mail()
 
         # Check for the message integrity

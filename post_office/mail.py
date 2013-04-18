@@ -5,7 +5,7 @@ from .utils import get_email_template, send_mail
 
 
 def from_template(sender, recipient, template, context={},
-                  headers={}, priority=PRIORITY.medium):
+                  headers=None, priority=PRIORITY.medium):
     """Returns an Email instance from provided template and context."""
     # template can be an EmailTemplate instance of name
     if isinstance(template, EmailTemplate):
@@ -26,7 +26,7 @@ def from_template(sender, recipient, template, context={},
     )
 
 
-def send(sender, recipients, template=None, context={}, headers={}, subject=None,
+def send(sender, recipients, template=None, context={}, headers=None, subject=None,
          message=None, html_message=None, priority=PRIORITY.medium):
     if template:
 

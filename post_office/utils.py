@@ -8,7 +8,7 @@ from .settings import get_email_backend
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              headers={}, priority=PRIORITY.medium):
+              headers=None, priority=PRIORITY.medium):
     """
     Add a new message to the mail queue.
 

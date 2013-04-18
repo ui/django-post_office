@@ -164,6 +164,17 @@ class ModelTest(TestCase):
         self.assertEqual(emails[1].to, 'to2@example.com')
         self.assertEqual(emails[1].headers, headers)
 
+        # Test without header
+        Email.objects.all().delete()
+        emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],
+                      template=email_template)
+        self.assertEqual(len(emails), 2)
+        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(emails[0].headers, None)
+
+        self.assertEqual(emails[1].to, 'to2@example.com')
+        self.assertEqual(emails[1].headers, None)
+
     def test_send_without_template(self):
         headers = {'Reply-to': 'reply@email.com'}
         emails = send('from@a.com', ['to1@example.com', 'to2@example.com'],

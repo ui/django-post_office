@@ -59,7 +59,7 @@ class Email(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     objects = EmailManager()
-    headers = JSONField()
+    headers = JSONField(blank=True, null=True)
 
     class Meta:
         ordering = ('-created',)
