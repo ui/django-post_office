@@ -1,3 +1,4 @@
+import json
 from django.conf import settings
 from django.core.mail import get_connection
 from django.utils.encoding import force_unicode
@@ -7,7 +8,7 @@ from .models import Email, PRIORITY, STATUS, EmailTemplate
 from .settings import get_email_backend
 
 
-def send_mail(subject, message, from_email, recipient_list, html_message='',
+def send_mail(subject, message, from_email, recipient_list, html_message='', headers={},
               priority=PRIORITY.medium):
     """
     Add a new message to the mail queue.
@@ -18,7 +19,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     only provided to match the signature of the emulated function. These
     arguments are not used.
     """
-
+    headers = json.dumps(headers)
     subject = force_unicode(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = []
@@ -26,7 +27,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
         emails.append(
             Email.objects.create(
                 from_email=from_email, to=address, subject=subject,
-                message=message, html_message=html_message, status=status,
+                message=message, html_message=html_message, status=status, headers=headers,
                 priority=priority
             )
         )
@@ -65,11 +66,12 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
-def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium):
+def send_templated_mail(template_name, from_address, to_addresses, context={}, headers={}, priority=PRIORITY.medium):
     email_template = get_email_template(template_name)
+    headers = json.dumps(headers)
     for address in to_addresses:
         email = Email.objects.from_template(from_address, address, email_template,
-            context, priority)
+            context, headers, priority)
         if priority == PRIORITY.now:
             email.dispatch()
 

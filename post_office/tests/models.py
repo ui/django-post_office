@@ -1,9 +1,11 @@
+import json
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.test import TestCase
 from django.test.utils import override_settings
 
+from ..utils import send_mail
 from ..models import Email, Log, STATUS, EmailTemplate
 from ..mail import from_template, send
 
@@ -187,3 +189,13 @@ class ModelTest(TestCase):
         self.assertEqual(emails[0].subject, 'Hi Bob')
         self.assertEqual(emails[0].message, 'Message Bob')
         self.assertEqual(emails[0].html_message, '<b>Bob</b>')
+
+    def test_send_mail_with_headers(self):
+        subject = "subject"
+        message = "message"
+        from_email = "from@mail.com"
+        recipient_list = ['to1@mail.com']
+        headers = {'Reply-To':'reply_to@mail.com'}
+        emails = send_mail(subject, message, from_email, recipient_list, headers=headers)
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0].headers, json.dumps(headers))
