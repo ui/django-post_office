@@ -133,6 +133,50 @@ class ModelTest(TestCase):
         self.assertEqual(email.message, 'Message: bar')
         self.assertEqual(email.html_message, 'HTML: bar')
 
+    def test_language_template(self):
+        """
+        Test basic template selection based on language
+        """
+        email_template1 = EmailTemplate.objects.create(
+            name='welcome', subject='Welcome', content='Hello')
+        email_template2 = EmailTemplate.objects.create(
+            name='welcome', subject='Bienvenue', content='Bonjour', language='fr'
+        )
+
+        email = from_template('from@example.com', 'to@example.com', 'welcome',
+                              language='fr')
+        self.assertEqual(email.subject, 'Bienvenue')
+        self.assertEqual(email.message, 'Bonjour')
+
+        email = from_template('from@example.com', 'to@example.com', 'welcome')
+        self.assertEqual(email.subject, 'Welcome')
+        self.assertEqual(email.message, 'Hello')
+
+    @override_settings(POST_OFFICE_FALLBACK_LANGUAGE='en')
+    def test_language_fallback(self):
+        email_template1 = EmailTemplate.objects.create(
+            name='welcome', subject='Welcome', content='Hello', language='en')
+        email_template2 = EmailTemplate.objects.create(
+            name='welcome', subject='Bienvenue', content='Bonjour',
+            language='fr')
+
+        email = from_template('from@example.com', 'to@example.com', 'welcome',
+                              language='de')
+        self.assertEqual(email.subject, 'Welcome')
+        self.assertEqual(email.message, 'Hello')
+
+    @override_settings(POST_OFFICE_FALLBACK_LANGUAGE=None)
+    def test_language_fallback_disabled(self):
+        email_template1 = EmailTemplate.objects.create(
+            name='welcome', subject='Welcome', content='Hello')
+        email_template2 = EmailTemplate.objects.create(
+            name='welcome', subject='Bienvenue', content='Bonjour', language='fr'
+        )
+
+        self.assertRaises(EmailTemplate.DoesNotExist, from_template,
+                          'from@example.com', 'to@example.com', 'welcome', language='no')
+
+
     def test_default_sender(self):
         emails = send(['to@example.com'], subject='foo')
         self.assertEqual(emails[0].from_email,

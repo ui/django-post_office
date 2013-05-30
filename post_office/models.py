@@ -4,6 +4,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.encoding import smart_unicode
 from django.template import Context, Template
+from django.conf import settings
 
 from post_office import cache
 from .settings import get_email_backend
@@ -136,11 +137,14 @@ class EmailTemplate(models.Model):
     subject = models.CharField(max_length=255, blank=True)
     content = models.TextField(blank=True)
     html_content = models.TextField(blank=True)
+    language = models.CharField(max_length=10, choices=settings.LANGUAGES,
+                                blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ('name',)
+        unique_together = ('name', 'language')
 
     def __unicode__(self):
         return str(self.name)

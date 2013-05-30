@@ -6,13 +6,13 @@ from .utils import get_email_template, send_mail
 
 
 def from_template(sender, recipient, template, context={},
-                  priority=PRIORITY.medium):
+                  priority=PRIORITY.medium, language=None):
     """Returns an Email instance from provided template and context."""
     # template can be an EmailTemplate instance of name
     if isinstance(template, EmailTemplate):
         template = template
     else:
-        template = get_email_template(template)
+        template = get_email_template(template, language)
     status = None if priority == PRIORITY.now else STATUS.queued
     context = Context(context)
     template_content = Template(template.content)
@@ -28,13 +28,21 @@ def from_template(sender, recipient, template, context={},
 
 
 def send(recipients, sender=None, template=None, context={}, subject='',
-         message='', html_message='', priority=PRIORITY.medium):
+         message='', html_message='', priority=PRIORITY.medium, language=None):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
+
+    if language:
+        if subject:
+            raise ValueError('You can\'t specify both "language" and "subject" arguments')
+        if message:
+            raise ValueError('You can\'t specify both "language" and "message" arguments')
+        if html_message:
+            raise ValueError('You can\'t specify both "language" and "html_message" arguments')
 
     if template:
         if subject:
@@ -44,7 +52,8 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-        emails = [from_template(sender, recipient, template, context, priority)
+        emails = [from_template(sender, recipient, template, context, priority,
+                                language)
                   for recipient in recipients]
         if priority == PRIORITY.now:
             for email in emails:
