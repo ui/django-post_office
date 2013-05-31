@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -174,8 +175,27 @@ class ModelTest(TestCase):
         )
 
         self.assertRaises(EmailTemplate.DoesNotExist, from_template,
-                          'from@example.com', 'to@example.com', 'welcome', language='no')
+                          'from@example.com', 'to@example.com', 'welcome',
+                          language='no')
 
+    @override_settings(USE_L10N=True, USE_THOUSAND_SEPARATOR=True)
+    def test_localization(self):
+        EmailTemplate.objects.create(
+            name='cost', subject='Pay {{ amount }}',
+            content='You have to pay {{ amount }}', language='en-us')
+        EmailTemplate.objects.create(
+            name='cost', subject='Betaal {{ amount }}',
+            content='U moet {{ amount }} betalen', language='nl')
+
+        email = from_template('from@example.com', 'to@example.com', 'cost',
+                              {'amount': Decimal("1234.56")}, language='en-us')
+        self.assertEqual(email.subject, "Pay 1,234.56")
+        self.assertEqual(email.message, "You have to pay 1,234.56")
+
+        email2 = from_template('from@example.com', 'to@example.com', 'cost',
+                               {'amount': Decimal("1234.56")}, language='nl')
+        self.assertEqual(email2.subject, "Betaal 1.234,56")
+        self.assertEqual(email2.message, "U moet 1.234,56 betalen")
 
     def test_default_sender(self):
         emails = send(['to@example.com'], subject='foo')

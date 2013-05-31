@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.template import Context, Template
+from django.utils import translation
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .utils import get_email_template, send_mail
@@ -18,13 +19,19 @@ def from_template(sender, recipient, template, context={},
     template_content = Template(template.content)
     template_content_html = Template(template.html_content)
     template_subject = Template(template.subject)
-    return Email.objects.create(
+    old_language = translation.get_language()
+    if language:
+        translation.activate(language)
+    email = Email.objects.create(
         from_email=sender, to=recipient,
         subject=template_subject.render(context),
         message=template_content.render(context),
         html_message=template_content_html.render(context),
         priority=priority, status=status
     )
+    if language:
+        translation.activate(old_language)
+    return email
 
 
 def send(recipients, sender=None, template=None, context={}, subject='',
