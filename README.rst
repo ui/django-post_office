@@ -88,6 +88,7 @@ subject      No       Email subject (if ``template`` is not specified)
 message      No       Email content (if ``template`` is not specified)
 html_message No       Email's HTML content (if ``template`` is not specified)
 priority     No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
+language     No       Select the ``EmailTemplate`` with this language
 ============ ======== =========================
 
 Here are a few examples.
@@ -126,6 +127,43 @@ regardless of how many emails you have in your queue:
 
 This is useful if you already use something like `django-rq <https://github.com/ui/django-rq>`_
 to send emails asynchronously and only need to store email related activities and logs.
+
+Languages
+---------
+
+``EmailTemplate`` has a ``language`` attribute which indicates the language of
+the content. This allows you to compose ``EmailTemplate`` in different
+languages and send mails in the recipient's desired language:
+
+.. code-block:: python
+
+    from post_office import mail
+
+    mail.send(
+        ['recipient@example.com'],
+        'from@example.com',
+        template='welcome_email',
+        context={'foo': 'bar'},
+        language='fr',
+    )
+
+When the ``language`` parameter is given, ``mail.from_template`` will attempt to
+load the ``EmailTemplate`` with the given ``name`` and ``language``. It will
+also activate that language prior to rendering the template so localization and
+translation will work as expected.
+
+What happens if a template with the given language could not be found depends on
+the setting ``POST_OFFICE_FALLBACK_LANGUAGE``. You can set it to a language
+code. ``post-office`` will try to fall back to a template with that language. If
+*that* language is also absent it will give up and raise
+``EmailTemplate.DoesNotExist``.
+
+    POST_OFFICE_FALLBACK_LANGUAGE = 'en-us'
+
+If ``POST_OFFICE_FALLBACK_LANGUAGE`` is not set it will default to
+``LANGUAGE_CODE``. You can prevent that and disable falling back by setting:
+
+    POST_OFFICE_FALLBACK_LANGUAGE = False
 
 
 Template Tags and Variables
