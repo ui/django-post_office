@@ -32,15 +32,15 @@ class UtilsTest(TestCase):
         Check that only queued messages are sent.
         """
         Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Test', message='Message', status=STATUS.sent)
+                             subject='Test', message='Message', status=STATUS.sent)
         Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Test', message='Message', status=STATUS.failed)
+                             subject='Test', message='Message', status=STATUS.failed)
         Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Test', message='Message', status=None)
+                             subject='Test', message='Message', status=None)
 
         # This should be the only email that gets sent
         Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Queued', message='Message', status=STATUS.queued)
+                             subject='Queued', message='Message', status=STATUS.queued)
         send_queued_mail()
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'Queued')
@@ -50,7 +50,7 @@ class UtilsTest(TestCase):
         validate_email_with_name('email@example.com')
         validate_email_with_name('Alice Bob <email@example.com>')
         Email.objects.create(to='to@example.com', from_email='Alice <from@example.com>',
-            subject='Test', message='Message', status=STATUS.sent)
+                             subject='Test', message='Message', status=STATUS.sent)
 
         # Should also support international domains
         validate_email_with_name('Alice Bob <email@example.co.id>')
@@ -79,11 +79,13 @@ class UtilsTest(TestCase):
 
         # Create email template
         EmailTemplate.objects.create(name=template_name, content='Hi {{name}}',
-            html_content='<p>Hi {{name}}</p>', subject='Happy Holidays!')
+                                     html_content='<p>Hi {{name}}</p>',
+                                     subject='Happy Holidays!')
 
         # Send templated mail
-        send_templated_mail(template_name, 'from@example.com',
-            to_addresses, context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
+        send_templated_mail(template_name, 'from@example.com', to_addresses,
+                            context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
+
         send_queued_mail()
 
         # Check for the message integrity

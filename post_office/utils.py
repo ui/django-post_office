@@ -8,7 +8,7 @@ from .settings import get_email_backend
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              priority=PRIORITY.medium):
+              headers=None, priority=PRIORITY.medium):
     """
     Add a new message to the mail queue.
 
@@ -18,7 +18,6 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     only provided to match the signature of the emulated function. These
     arguments are not used.
     """
-
     subject = force_unicode(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = []
@@ -26,8 +25,8 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
         emails.append(
             Email.objects.create(
                 from_email=from_email, to=address, subject=subject,
-                message=message, html_message=html_message, status=status,
-                priority=priority
+                message=message, html_message=html_message,
+                status=status, headers=headers, priority=priority
             )
         )
     if priority == PRIORITY.now:
@@ -65,11 +64,12 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
-def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium):
+def send_templated_mail(template_name, from_address, to_addresses,
+                        context={}, priority=PRIORITY.medium):
     email_template = get_email_template(template_name)
     for address in to_addresses:
         email = Email.objects.from_template(from_address, address, email_template,
-            context, priority)
+                                            context, priority)
         if priority == PRIORITY.now:
             email.dispatch()
 
