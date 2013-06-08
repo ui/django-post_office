@@ -9,7 +9,7 @@ env:
   - DJANGO=django==1.4.5 --use-mirrors
 
 install:
-  - pip install $DJANGO
+  - pip install $DJANGO django-jsonfield
 
 script:
   - "python post_office/tests/runtests.py"
