@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.mail import backends, send_mail
+from django.core.mail import backends, EmailMultiAlternatives, send_mail
 from django.test import TestCase
 from django.test.utils import override_settings
 
@@ -29,7 +29,7 @@ class BackendTest(TestCase):
         self.assertEqual(email.status, STATUS.queued)
         self.assertEqual(email.priority, PRIORITY.medium)
 
-    def test__email_backend_setting(self):
+    def test_email_backend_setting(self):
         """
 
         """
@@ -59,3 +59,15 @@ class BackendTest(TestCase):
             setattr(settings, 'POST_OFFICE_BACKEND', old_post_office_backend)
         else:
             delattr(settings, 'POST_OFFICE_BACKEND')
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_sending_html_email(self):
+        """
+        "text/html" attachments to Email should be persisted into the database
+        """
+        message = EmailMultiAlternatives('subject', 'body', 'from@example.com',
+                                         ['recipient@example.com'])
+        message.attach_alternative('html', "text/html")
+        message.send()
+        email = Email.objects.latest('id')
+        self.assertEqual(email.html_message, 'html')
