@@ -102,11 +102,10 @@ def get_email_template(name, language=None):
     if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
         return load_email_template(name, language)
     else:
-        cache_key = ':'.join((name, '' if language is None else language))
-        email_template = cache.get(cache_key)
+        email_template = cache.get(name, language)
         if email_template is not None:
             return email_template
         else:
             email_template = load_email_template(name, language)
-            cache.set(cache_key, email_template)
+            cache.set(name, language, email_template)
             return email_template

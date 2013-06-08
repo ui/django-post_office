@@ -151,5 +151,5 @@ class EmailTemplate(models.Model):
 
     def save(self, *args, **kwargs):
         template = super(EmailTemplate, self).save(*args, **kwargs)
-        cache.delete(self.name)
+        cache.delete(self.name, self.language)
         return template
