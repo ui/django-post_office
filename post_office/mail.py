@@ -44,7 +44,6 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-
         emails = [from_template(sender, recipient, template, context, headers, priority)
                   for recipient in recipients]
         if priority == PRIORITY.now:

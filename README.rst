@@ -87,6 +87,7 @@ context      No       A dictionary used when email is being rendered
 subject      No       Email subject (if ``template`` is not specified)
 message      No       Email content (if ``template`` is not specified)
 html_message No       Email's HTML content (if ``template`` is not specified)
+headers      No       A dictionary of extra headers to put on the message
 priority     No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
 ============ ======== =========================
 
@@ -105,6 +106,7 @@ call the ``send`` command without the ``template`` argument.
         subject='Welcome!',
         message='Welcome home, {{ name }}!',
         html_message='Welcome home, <b>{{ name }}</b>!',
+        'headers'={'Reply-to': 'reply@example.com'},
         context={'name': 'Alice'},
     )
 
@@ -218,6 +220,11 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.4.0
+-------------
+* Support for sending emails with custom headers
+* Backend now properly persist emails with HTML alternatives
 
 Version 0.3.1
 -------------
