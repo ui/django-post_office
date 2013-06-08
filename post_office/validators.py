@@ -1,6 +1,7 @@
 import re
 
 from django.core.exceptions import ValidationError
+from django.template import Template, TemplateSyntaxError
 
 
 email_re = re.compile(r'\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b', re.IGNORECASE)
@@ -25,3 +26,15 @@ def validate_email_with_name(value):
                 return
 
     raise ValidationError('Enter a valid e-mail address.', code='invalid')
+
+
+def validate_template_syntax(source):
+    """
+    Basic Django Template syntax validation. This allows for robuster template
+    authoring.
+    """
+    try:
+        t = Template(source)
+    except TemplateSyntaxError as err:
+        raise ValidationError(unicode(err))
+
