@@ -223,7 +223,8 @@ Changelog
 
 Version 0.4.0
 -------------
-* Support for sending emails with custom headers
+* Added support for sending emails with custom headers (you'll need to run 
+  South when upgrading from earlier versions)
 * Backend now properly persist emails with HTML alternatives
 
 Version 0.3.1
