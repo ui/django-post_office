@@ -77,9 +77,9 @@ mail.send()
 ``mail.send`` is the most important function in this library, it takes these
 arguments:
 
-============    ======== =========================
+=============== ======== =========================
 Argument        Required Description
-============    ======== =========================
+=============== ======== =========================
 recipients      Yes      list of recipient email addresses
 sender          No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
 template        No       ``EmailTemplate`` instance or name
@@ -90,7 +90,7 @@ html_message    No       Email's HTML content (if ``template`` is not specified)
 headers         No       A dictionary of extra headers to put on the message
 scheduled_time  No       A date/datetime object indicating when the email should be sent
 priority        No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
-============    ======== =========================
+=============== ======== =========================
 
 Here are a few examples.
 
