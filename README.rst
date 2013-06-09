@@ -77,19 +77,20 @@ mail.send()
 ``mail.send`` is the most important function in this library, it takes these
 arguments:
 
-============ ======== =========================
-Argument     Required Description
-============ ======== =========================
-recipients   Yes      list of recipient email addresses
-sender       No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
-template     No       ``EmailTemplate`` instance or name
-context      No       A dictionary used when email is being rendered
-subject      No       Email subject (if ``template`` is not specified)
-message      No       Email content (if ``template`` is not specified)
-html_message No       Email's HTML content (if ``template`` is not specified)
-headers      No       A dictionary of extra headers to put on the message
-priority     No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
-============ ======== =========================
+============    ======== =========================
+Argument        Required Description
+============    ======== =========================
+recipients      Yes      list of recipient email addresses
+sender          No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
+template        No       ``EmailTemplate`` instance or name
+context         No       A dictionary used when email is being rendered
+subject         No       Email subject (if ``template`` is not specified)
+message         No       Email content (if ``template`` is not specified)
+html_message    No       Email's HTML content (if ``template`` is not specified)
+headers         No       A dictionary of extra headers to put on the message
+scheduled_time  No       A date/datetime object indicating when the email should be sent
+priority        No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
+============    ======== =========================
 
 Here are a few examples.
 
@@ -106,7 +107,8 @@ call the ``send`` command without the ``template`` argument.
         subject='Welcome!',
         message='Welcome home, {{ name }}!',
         html_message='Welcome home, <b>{{ name }}</b>!',
-        'headers'={'Reply-to': 'reply@example.com'},
+        headers={'Reply-to': 'reply@example.com'},
+        scheduled_time=date(2014, 1, 1),
         context={'name': 'Alice'},
     )
 
@@ -225,6 +227,7 @@ Version 0.4.0
 -------------
 * Added support for sending emails with custom headers (you'll need to run 
   South when upgrading from earlier versions)
+* Added support for scheduled email sending
 * Backend now properly persist emails with HTML alternatives
 
 Version 0.3.1
