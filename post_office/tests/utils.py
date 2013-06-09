@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.core import mail
 from django.core.exceptions import ValidationError
 
@@ -44,6 +46,23 @@ class UtilsTest(TestCase):
         send_queued_mail()
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'Queued')
+
+    def test_send_scheduled_mail(self):
+        """
+        Ensure that scheduled emails aren't sent out ahead of schedule
+        """
+        scheduled_time = datetime.now() + timedelta(days=1)
+        email = Email.objects.create(to='to@example.com', from_email='f@a.com',
+                                     subject='Queued', message='Message',
+                                     scheduled_time=scheduled_time, status=STATUS.queued)
+        send_queued_mail()
+        self.assertEqual(len(mail.outbox), 0)
+
+        # Email should only be sent if we move the scheduled_time back
+        email.scheduled_time = scheduled_time - timedelta(days=2)
+        email.save()
+        send_queued_mail()
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_email_validator(self):
         # These should validate

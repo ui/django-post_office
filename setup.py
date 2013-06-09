@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='django-post_office',
-    version='0.3.1',
+    version='0.4.0',
     author='Selwin Ong',
     author_email='selwin.ong@gmail.com',
     packages=['post_office'],

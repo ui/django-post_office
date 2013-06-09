@@ -58,6 +58,7 @@ class Email(models.Model):
                                                 null=True, db_index=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
+    scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
     objects = EmailManager()
     headers = JSONField(blank=True, null=True)
 

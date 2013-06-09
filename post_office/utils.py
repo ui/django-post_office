@@ -2,6 +2,7 @@ import warnings
 
 from django.conf import settings
 from django.core.mail import get_connection
+from django.db.models import Q
 from django.utils.encoding import force_unicode
 
 from post_office import cache
@@ -9,16 +10,20 @@ from .models import Email, PRIORITY, STATUS, EmailTemplate
 from .settings import get_email_backend
 
 
+try:
+    from django.utils import timezone
+    now = timezone.now
+except ImportError:
+    import datetime
+    now = datetime.datetime.now
+
+
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              headers=None, priority=PRIORITY.medium):
+              scheduled_time=None, headers=None, priority=PRIORITY.medium):
     """
     Add a new message to the mail queue. This is a replacement for Django's
     ``send_mail`` core email method.
     """
-    warnings.warn(
-        "The `send_mail` command is deprecated and will be removed in a future "
-        "relase. Please use `post_office.mail.send` instead.",
-        DeprecationWarning)
 
     subject = force_unicode(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
@@ -27,8 +32,8 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
         emails.append(
             Email.objects.create(
                 from_email=from_email, to=address, subject=subject,
-                message=message, html_message=html_message,
-                status=status, headers=headers, priority=priority
+                message=message, html_message=html_message, status=status,
+                headers=headers, priority=priority, scheduled_time=scheduled_time
             )
         )
     if priority == PRIORITY.now:
@@ -39,11 +44,13 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
 
 def send_queued_mail():
     """
-    Sends out all queued mails
+    Sends out all queued mails that has scheduled_time less than now or None
     """
     sent_count = 0
     failed_count = 0
-    queued_emails = Email.objects.filter(status=STATUS.queued).order_by('-priority')
+    queued_emails = Email.objects.filter(status=STATUS.queued) \
+        .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
+        .order_by('-priority')
 
     if queued_emails:
 

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -161,12 +163,14 @@ class ModelTest(TestCase):
         headers = {'Reply-to': 'reply@email.com'}
         email_template = EmailTemplate.objects.create(name='foo', subject='bar',
                                                       content='baz')
-
+        scheduled_time = datetime.now() + timedelta(days=1)
         emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
-                      headers=headers, template=email_template)
+                      headers=headers, template=email_template,
+                      scheduled_time=scheduled_time)
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
         self.assertEqual(emails[0].headers, headers)
+        self.assertEqual(emails[0].scheduled_time, scheduled_time)
 
         self.assertEqual(emails[1].to, 'to2@example.com')
         self.assertEqual(emails[1].headers, headers)
@@ -184,10 +188,11 @@ class ModelTest(TestCase):
 
     def test_send_without_template(self):
         headers = {'Reply-to': 'reply@email.com'}
+        scheduled_time = datetime.now() + timedelta(days=1)        
         emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
                       subject='foo', message='bar', html_message='baz',
                       context={'name': 'Alice'}, headers=headers,
-                      priority=PRIORITY.low)
+                      scheduled_time=scheduled_time, priority=PRIORITY.low)
 
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
@@ -196,6 +201,7 @@ class ModelTest(TestCase):
         self.assertEqual(emails[0].html_message, 'baz')
         self.assertEqual(emails[0].headers, headers)
         self.assertEqual(emails[0].priority, PRIORITY.low)
+        self.assertEqual(emails[0].scheduled_time, scheduled_time)
         self.assertEqual(emails[1].to, 'to2@example.com')
 
         # Same thing, but now with context
