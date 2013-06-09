@@ -107,5 +107,5 @@ def get_email_template(name, language=None):
             return email_template
         else:
             email_template = load_email_template(name, language)
-            cache.set(name, language, email_template)
+            cache.set(name, email_template, language)
             return email_template
