@@ -1,3 +1,5 @@
+import warnings
+
 from django.conf import settings
 from django.core.mail import get_connection
 from django.utils.encoding import force_unicode
@@ -10,14 +12,14 @@ from .settings import get_email_backend
 def send_mail(subject, message, from_email, recipient_list, html_message='',
               headers=None, priority=PRIORITY.medium):
     """
-    Add a new message to the mail queue.
-
-    This is a replacement for Django's ``send_mail`` core email method.
-
-    The `fail_silently``, ``auth_user`` and ``auth_password`` arguments are
-    only provided to match the signature of the emulated function. These
-    arguments are not used.
+    Add a new message to the mail queue. This is a replacement for Django's
+    ``send_mail`` core email method.
     """
+    warnings.warn(
+        "The `send_mail` command is deprecated and will be removed in a future "
+        "relase. Please use `post_office.mail.send` instead.",
+        DeprecationWarning)
+
     subject = force_unicode(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = []
@@ -66,6 +68,10 @@ def send_queued_mail():
 
 def send_templated_mail(template_name, from_address, to_addresses,
                         context={}, priority=PRIORITY.medium):
+    warnings.warn(
+        "The `send_templated_mail` command is deprecated and will be removed "
+        "in a future relase. Please use `post_office.mail.send` instead.",
+        DeprecationWarning)
     email_template = get_email_template(template_name)
     for address in to_addresses:
         email = Email.objects.from_template(from_address, address, email_template,
