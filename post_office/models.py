@@ -8,7 +8,7 @@ from django.template import Context, Template
 from jsonfield import JSONField
 from post_office import cache
 from .settings import get_email_backend
-from .validators import validate_email_with_name
+from .validators import validate_email_with_name, validate_template_syntax
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
@@ -137,9 +137,12 @@ class EmailTemplate(models.Model):
     Model to hold template information from db
     """
     name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
-    subject = models.CharField(max_length=255, blank=True)
-    content = models.TextField(blank=True)
-    html_content = models.TextField(blank=True)
+    subject = models.CharField(max_length=255, blank=True,
+                               validators=[validate_template_syntax])
+    content = models.TextField(blank=True,
+                               validators=[validate_template_syntax])
+    html_content = models.TextField(blank=True,
+                                    validators=[validate_template_syntax])
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
