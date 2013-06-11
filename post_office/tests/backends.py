@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.mail import backends, EmailMultiAlternatives, send_mail
+from django.core.mail import backends, EmailMultiAlternatives, send_mail, EmailMessage
 from django.test import TestCase
 from django.test.utils import override_settings
 
@@ -71,3 +71,15 @@ class BackendTest(TestCase):
         message.send()
         email = Email.objects.latest('id')
         self.assertEqual(email.html_message, 'html')
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_headers_sent(self):
+        """
+        Test that headers are correctly set on the outgoing emails.
+        """
+        message = EmailMessage('subject', 'body', 'from@example.com',
+                               ['recipient@example.com'],
+                               headers={'Reply-To': 'reply@example.com'})
+        message.send()
+        email = Email.objects.latest('id')
+        self.assertEqual(email.headers, {'Reply-To': 'reply@example.com'})
