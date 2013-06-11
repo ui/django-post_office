@@ -25,6 +25,7 @@ class EmailBackend(BaseEmailBackend):
             subject = email.subject
             from_email = email.from_email
             message = email.body
+            headers = email.extra_headers
 
             # Check whether email has 'text/html' alternative
             alternatives = getattr(email, 'alternatives', ())
@@ -39,4 +40,4 @@ class EmailBackend(BaseEmailBackend):
                 Email.objects.create(from_email=from_email, to=recipient,
                     subject=subject, html_message=html_message,
                     message=message, status=STATUS.queued,
-                    priority=PRIORITY.medium)
+                    headers=headers, priority=PRIORITY.medium)
