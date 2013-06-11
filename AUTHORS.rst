@@ -1,6 +1,9 @@
 Author:
-Selwin Ong
+
+* Selwin Ong (@selwin)
 
 Contributors:
-Gilang Chandrasa
-Steven -only-
+
+* Gilang Chandrasa (@gchandrasa)
+* Steven -only- (@SeiryuZ)
+* Wouter de Vries (@wadevries)
