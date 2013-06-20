@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives, get_connection
+from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.test.utils import override_settings
 
@@ -215,3 +216,25 @@ class ModelTest(TestCase):
         self.assertEqual(emails[0].message, 'Message Bob')
         self.assertEqual(emails[0].html_message, '<b>Bob</b>')
         self.assertEqual(emails[0].headers, headers)
+
+    def test_invalid_syntax(self):
+        """
+        Ensures that invalid template syntax will result in validation errors
+        when saving a ModelForm of an EmailTemplate.
+        """
+        data = dict(
+            name='cost',
+            subject='Hi there!{{ }}',
+            content='Welcome {{ name|titl }} to the site.',
+            html_content='{% block content %}<h1>Welcome to the site</h1>'
+        )
+
+        EmailTemplateForm = modelform_factory(EmailTemplate)
+        form = EmailTemplateForm(data)
+
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors, {
+            'subject': [u"Empty variable tag"],
+            'content': [u"Invalid filter: 'titl'"],
+            'html_content': [u"Unclosed tags: endblock "]
+        })
