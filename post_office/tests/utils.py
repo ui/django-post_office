@@ -29,41 +29,6 @@ class UtilsTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.status, STATUS.sent)
 
-    def test_send_queued_mail(self):
-        """
-        Check that only queued messages are sent.
-        """
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-                             subject='Test', message='Message', status=STATUS.sent)
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-                             subject='Test', message='Message', status=STATUS.failed)
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-                             subject='Test', message='Message', status=None)
-
-        # This should be the only email that gets sent
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-                             subject='Queued', message='Message', status=STATUS.queued)
-        send_queued_mail()
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, 'Queued')
-
-    def test_send_scheduled_mail(self):
-        """
-        Ensure that scheduled emails aren't sent out ahead of schedule
-        """
-        scheduled_time = datetime.now() + timedelta(days=1)
-        email = Email.objects.create(to='to@example.com', from_email='f@a.com',
-                                     subject='Queued', message='Message',
-                                     scheduled_time=scheduled_time, status=STATUS.queued)
-        send_queued_mail()
-        self.assertEqual(len(mail.outbox), 0)
-
-        # Email should only be sent if we move the scheduled_time back
-        email.scheduled_time = scheduled_time - timedelta(days=2)
-        email.save()
-        send_queued_mail()
-        self.assertEqual(len(mail.outbox), 1)
-
     def test_email_validator(self):
         # These should validate
         validate_email_with_name('email@example.com')

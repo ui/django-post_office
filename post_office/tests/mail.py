@@ -1,10 +1,12 @@
+from datetime import date
+
 from django.core import mail
 
 from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS
-from ..mail import send_queued, _send_bulk
+from ..mail import get_queued, send_queued, _send_bulk
 
 
 connection_counter = 0
@@ -94,3 +96,36 @@ class MailTest(TestCase):
                                        message='', status=STATUS.queued)
         _send_bulk([email, email_2])
         self.assertEqual(connection_counter, 1)
+
+    def test_get_queued(self):
+        """
+        Ensure get_queued returns only emails that should be sent
+        """
+        kwargs = {
+            'to': 'to@example.com',
+            'from_email': 'bob@example.com',
+            'subject': 'Test',
+            'message': 'Message',
+        }
+        self.assertEqual(list(get_queued()), [])
+        
+        # Emails with statuses failed, sent or None shouldn't be returned
+        Email.objects.create(status=STATUS.failed, **kwargs)
+        Email.objects.create(status=None, **kwargs)
+        Email.objects.create(status=STATUS.sent, **kwargs)
+        self.assertEqual(list(get_queued()), [])
+
+        # Email with queued status and None as scheduled_time should be included
+        queued_email = Email.objects.create(status=STATUS.queued,
+                                            scheduled_time=None, **kwargs)
+        self.assertEqual(list(get_queued()), [queued_email])
+
+        # Email scheduled for the future should not be included
+        Email.objects.create(status=STATUS.queued,
+                             scheduled_time=date(2020, 12, 13), **kwargs)
+        self.assertEqual(list(get_queued()), [queued_email])
+
+        # Email scheduled in the past should be included
+        past_email = Email.objects.create(status=STATUS.queued,
+            scheduled_time=date(2010, 12, 13), **kwargs)
+        self.assertEqual(list(get_queued()), [queued_email, past_email])

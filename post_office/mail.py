@@ -76,13 +76,22 @@ def send(recipients, sender=None, template=None, context={}, subject='',
     return emails
 
 
+def get_queued():
+    """
+    Returns a list of emails that should be sent:
+     - Status is queued
+     - Has scheduled_time lower than the current time or None
+    """
+    return Email.objects.filter(status=STATUS.queued) \
+        .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
+        .order_by('-priority')
+
+
 def send_queued(num_processes=1):
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
-    queued_emails = Email.objects.filter(status=STATUS.queued) \
-        .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
-        .order_by('-priority')
+    queued_emails = get_queued()
 
     if queued_emails:
         if num_processes == 1:
