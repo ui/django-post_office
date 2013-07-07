@@ -1,4 +1,4 @@
-from multiprocessing import Process, Queue
+from multiprocessing import Pool
 
 from django.conf import settings
 from django.core.mail import get_connection
@@ -76,7 +76,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
     return emails
 
 
-def send_queued():
+def send_queued(num_processes=1):
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
@@ -85,13 +85,23 @@ def send_queued():
         .order_by('-priority')
 
     if queued_emails:
-        result_tuple = _send_bulk(queued_emails)
+        if num_processes == 1:
+            total_sent, total_failed = _send_bulk(queued_emails)
+        else:
+            # Group emails into X sublists
+            # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html
+            email_lists = [queued_emails[i::num_processes] for i in range(num_processes)]
+            pool = Pool(num_processes)
+            results = pool.map(_send_bulk, email_lists)
+            total_sent = sum([result[0] for result in results])
+            total_failed = sum([result[1] for result in results])            
 
     print '%s emails attempted, %s sent, %s failed' % (
         len(queued_emails),
-        result_tuple[0],
-        result_tuple[1]
+        total_sent,
+        total_failed
     )
+    return (total_sent, total_failed)
 
 
 def _send_bulk(emails):
@@ -113,5 +123,5 @@ def _send_bulk(emails):
             failed_count += 1
     if connection:
         connection.close()
-
+    
     return (sent_count, failed_count)
