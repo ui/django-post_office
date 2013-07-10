@@ -54,7 +54,7 @@ To get started, make sure you have Django's admin interface enabled. Create an
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com', 'recipient2@example.com'],
+        ['recipient1@example.com'],
         'from@example.com',
         template='welcome_email', # Could be an EmailTemplate instance or name
         context={'foo': 'bar'},
@@ -102,7 +102,7 @@ call the ``send`` command without the ``template`` argument.
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com', 'recipient2@example.com'],
+        ['recipient1@example.com'],
         'from@example.com',
         subject='Welcome!',
         message='Welcome home, {{ name }}!',
@@ -200,8 +200,8 @@ set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 Management Commands
 -------------------
 
-* ``send_queued_mail`` - send queued emails, those that aren't successfully
-  sent they will be marked as ``failed``.
+* ``send_queued_mail`` - send queued emails, the ones aren't successfully
+  sent will be marked as ``failed``.
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
   (defaults to 90).
