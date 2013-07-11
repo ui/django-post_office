@@ -178,7 +178,7 @@ For example if you want to use `django-ses <https://github.com/hmarr/django-ses>
 Caching
 -------
 
-By default, ``post_office`` will cache ``EmailTemplate``s if Django's caching
+By default, ``post_office`` will cache ``EmailTemplate`` instances if Django's caching
 mechanism is configured. If for some reason you want to disable caching, you can
 set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 
