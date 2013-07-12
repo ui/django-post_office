@@ -1,3 +1,5 @@
+import warnings
+
 from collections import namedtuple
 
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -19,6 +21,11 @@ STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 class EmailManager(models.Manager):
     def from_template(self, from_email, to_email, template,
                       context={}, priority=PRIORITY.medium):
+        warnings.warn(
+            "`Email.objects.from_template()` is deprecated and will be removed "
+            "in a future relase. Use `post_office.mail.from_template` instead.",
+            DeprecationWarning)
+
         status = None if priority == PRIORITY.now else STATUS.queued
         context = Context(context)
         template_content = Template(template.content)
