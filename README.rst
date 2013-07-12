@@ -5,12 +5,12 @@ Django Post Office
 Django Post Office is a simple app to send and manage your emails in Django.
 Some awesome features are:
 
- * Allows you to send email asynchronously
- * Supports HTML email
- * Supports database based email templates
- * Built in scheduling support 
- * Works well with task queues
- * Uses multiprocessing to send a large number of emails in parallel
+* Allows you to send email asynchronously
+* Supports HTML email
+* Supports database based email templates
+* Built in scheduling support 
+* Works well with task queues
+* Uses multiprocessing to send a large number of emails in parallel
 
 
 Dependencies
