@@ -2,11 +2,15 @@
 Django Post Office
 ==================
 
-Django Post Office is a simple app that allows you to send email asynchronously
-in Django. Supports HTML email, database backed templates and logging.
+Django Post Office is a simple app to send and manage your emails in Django.
+Some awesome features are:
 
-``post_office`` is implemented as a Django ``EmailBackend`` so you don't need to
-change any of your code to start sending email asynchronously.
+ * Allows you to send email asynchronously
+ * Supports HTML email
+ * Supports database based email templates
+ * Built in scheduling support 
+ * Works well with task queues
+ * Uses multiprocessing to send a large number of emails in parallel
 
 
 Dependencies
@@ -21,7 +25,7 @@ Installation
 .. image:: https://travis-ci.org/ui/django-post_office.png?branch=master
 
 
-* Install from PyPI (or you can `manually download it from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
+* Install from PyPI (or you `manually download from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
 
     pip install django-post_office
 
@@ -200,15 +204,16 @@ set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 Management Commands
 -------------------
 
-* ``send_queued_mail`` - send queued emails, those that aren't successfully
-  sent they will be marked as ``failed``.
+* ``send_queued_mail`` - send queued emails, those aren't successfully sent
+  will be marked as ``failed``. If you have a lot of emails, you can
+  pass in ``-`p` or ``--processes`` flag to use multiple processes.
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
   (defaults to 90).
 
 You may want to set these up via cron to run regularly::
 
-    * * * * * (cd $PROJECT; python manage.py send_queued_mail >> $PROJECT/cron_mail.log 2>&1)
+    * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
 
 
@@ -222,6 +227,12 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.5.0
+-------------
+* Email sending can now be parallelized using multiple processes (multiprocessing)
+* Email templates are now validated before save
+* Fixed a bug where custom headers aren't properly sent
 
 Version 0.4.0
 -------------
