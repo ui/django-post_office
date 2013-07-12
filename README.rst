@@ -9,7 +9,7 @@ Some awesome features are:
 * Supports HTML email
 * Supports database based email templates
 * Built in scheduling support 
-* Works well with task queues
+* Works well with task queues like `RQ <http://python-rq.org>` or `Celery <http://www.celeryproject.org>`
 * Uses multiprocessing to send a large number of emails in parallel
 
 
