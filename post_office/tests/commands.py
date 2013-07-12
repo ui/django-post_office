@@ -3,7 +3,7 @@ import datetime
 from django.core.management import call_command
 from django.test import TestCase
 
-from ..models import Email
+from ..models import Email, STATUS
 
 try:
     from django.utils.timezone import now
@@ -31,3 +31,12 @@ class CommandTest(TestCase):
         email.save()
         call_command('cleanup_mail', days=30)
         self.assertEqual(Email.objects.count(), 0)
+
+    def test_send_queued_mail(self):
+        """
+        Quick check that ``send_queued_mail`` doesn't error out.
+        """
+        email = Email.objects.create(from_email='from@example.com',
+                                     to='to@example.com', status=STATUS.queued)
+        call_command('send_queued_mail', processes=1)
+        self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 1)

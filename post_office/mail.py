@@ -87,20 +87,20 @@ def get_queued():
         .order_by('-priority')
 
 
-def send_queued(num_processes=1):
+def send_queued(processes=1):
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
     queued_emails = get_queued()
 
     if queued_emails:
-        if num_processes == 1:
+        if processes == 1:
             total_sent, total_failed = _send_bulk(queued_emails)
         else:
             # Group emails into X sublists
             # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html
-            email_lists = [queued_emails[i::num_processes] for i in range(num_processes)]
-            pool = Pool(num_processes)
+            email_lists = [queued_emails[i::processes] for i in range(processes)]
+            pool = Pool(processes)
             results = pool.map(_send_bulk, email_lists)
             total_sent = sum([result[0] for result in results])
             total_failed = sum([result[1] for result in results])            

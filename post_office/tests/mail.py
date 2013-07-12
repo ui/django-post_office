@@ -66,7 +66,7 @@ class MailTest(TestCase):
         Email.objects.create(**kwargs)
         Email.objects.create(**kwargs)
         Email.objects.create(**kwargs)
-        total_sent, total_failed = send_queued(num_processes=2)
+        total_sent, total_failed = send_queued(processes=2)
         self.assertEqual(total_sent, 3)
         
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
