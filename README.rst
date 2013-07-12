@@ -58,7 +58,7 @@ To get started, make sure you have Django's admin interface enabled. Create an
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com', 'recipient2@example.com'],
+        ['recipient1@example.com'],
         'from@example.com',
         template='welcome_email', # Could be an EmailTemplate instance or name
         context={'foo': 'bar'},
@@ -106,7 +106,7 @@ call the ``send`` command without the ``template`` argument.
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com', 'recipient2@example.com'],
+        ['recipient1@example.com'],
         'from@example.com',
         subject='Welcome!',
         message='Welcome home, {{ name }}!',
@@ -182,7 +182,7 @@ For example if you want to use `django-ses <https://github.com/hmarr/django-ses>
 Caching
 -------
 
-By default, ``post_office`` will cache ``EmailTemplate``s if Django's caching
+By default, ``post_office`` will cache ``EmailTemplate`` instances if Django's caching
 mechanism is configured. If for some reason you want to disable caching, you can
 set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 
@@ -217,8 +217,8 @@ You may want to set these up via cron to run regularly::
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
 
 
-Testing
-=======
+Running Tests
+=============
 
 To run ``post_office``'s test suite::
 
