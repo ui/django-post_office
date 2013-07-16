@@ -2,6 +2,7 @@ from multiprocessing import Pool
 
 from django.conf import settings
 from django.core.mail import get_connection
+from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 
@@ -92,15 +93,17 @@ def send_queued(processes=1):
     Sends out all queued mails that has scheduled_time less than now or None
     """
     queued_emails = get_queued()
-    total_sent, total_failed = (0, 0)
-
+    total_sent, total_failed = 0, 0
     if queued_emails:
         if processes == 1:
-            total_sent, total_failed = _send_bulk(queued_emails)
+            total_sent, total_failed = _send_bulk(queued_emails, False)
         else:
             # Group emails into X sublists
             # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html
-            email_lists = [queued_emails[i::processes] for i in range(processes)]
+            # We need to evaluate the queued_emails to avoid incorrectly splitting emails due to
+            # lazy nature of django ORM
+            if len(queued_emails):
+                email_lists = [queued_emails[i::processes] for i in range(processes)]
             pool = Pool(processes)
             results = pool.map(_send_bulk, email_lists)
             total_sent = sum([result[0] for result in results])
@@ -114,9 +117,13 @@ def send_queued(processes=1):
     return (total_sent, total_failed)
 
 
-def _send_bulk(emails):
-    sent_count = 0
-    failed_count = 0
+def _send_bulk(emails, multiprocessing=True):
+    # Multiprocessing does not play well with database connection
+    # Fix: Close connections on forking process
+    # https://groups.google.com/forum/#!topic/django-users/eCAIY9DAfG0
+    if multiprocessing:
+        db_connection.close()
+    sent_count, failed_count = 0, 0
 
     # Try to open a connection, if we can't just pass in None as connection
     try:
