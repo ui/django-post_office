@@ -92,6 +92,7 @@ def send_queued(processes=1):
     Sends out all queued mails that has scheduled_time less than now or None
     """
     queued_emails = get_queued()
+    total_sent, total_failed = (0, 0)
 
     if queued_emails:
         if processes == 1:
@@ -103,7 +104,7 @@ def send_queued(processes=1):
             pool = Pool(processes)
             results = pool.map(_send_bulk, email_lists)
             total_sent = sum([result[0] for result in results])
-            total_failed = sum([result[1] for result in results])            
+            total_failed = sum([result[1] for result in results])
 
     print '%s emails attempted, %s sent, %s failed' % (
         len(queued_emails),
@@ -132,5 +133,5 @@ def _send_bulk(emails):
             failed_count += 1
     if connection:
         connection.close()
-    
+
     return (sent_count, failed_count)

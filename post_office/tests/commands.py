@@ -36,7 +36,10 @@ class CommandTest(TestCase):
         """
         Quick check that ``send_queued_mail`` doesn't error out.
         """
-        email = Email.objects.create(from_email='from@example.com',
-                                     to='to@example.com', status=STATUS.queued)
+        # Make sure that send_queued_mail with empty queue does not raise error
+        call_command('send_queued_mail', processes=1)
+
+        Email.objects.create(from_email='from@example.com', to='to@example.com',
+                             status=STATUS.queued)
         call_command('send_queued_mail', processes=1)
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 1)
