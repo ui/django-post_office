@@ -96,7 +96,7 @@ def send_queued(processes=1):
     total_sent, total_failed = 0, 0
     if queued_emails:
         if processes == 1:
-            total_sent, total_failed = _send_bulk(queued_emails, False)
+            total_sent, total_failed = _send_bulk(queued_emails, uses_multiprocessing=False)
         else:
             email_lists = split_emails(queued_emails, processes)
             pool = Pool(processes)
@@ -112,11 +112,11 @@ def send_queued(processes=1):
     return (total_sent, total_failed)
 
 
-def _send_bulk(emails, multiprocessing=True):
+def _send_bulk(emails, uses_multiprocessing=True):
     # Multiprocessing does not play well with database connection
     # Fix: Close connections on forking process
     # https://groups.google.com/forum/#!topic/django-users/eCAIY9DAfG0
-    if multiprocessing:
+    if uses_multiprocessing:
         db_connection.close()
     sent_count, failed_count = 0, 0
 
