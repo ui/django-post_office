@@ -8,7 +8,7 @@ from django.template import Context, Template
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_email_backend
-from .utils import get_email_template, send_mail
+from .utils import get_email_template, send_mail, split_emails
 
 try:
     from django.utils import timezone
@@ -98,12 +98,7 @@ def send_queued(processes=1):
         if processes == 1:
             total_sent, total_failed = _send_bulk(queued_emails, False)
         else:
-            # Group emails into X sublists
-            # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html
-            # We need to evaluate the queued_emails to avoid incorrectly splitting emails due to
-            # lazy nature of django ORM
-            if len(queued_emails):
-                email_lists = [queued_emails[i::processes] for i in range(processes)]
+            email_lists = split_emails(queued_emails, processes)
             pool = Pool(processes)
             results = pool.map(_send_bulk, email_lists)
             total_sent = sum([result[0] for result in results])

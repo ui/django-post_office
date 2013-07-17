@@ -101,3 +101,9 @@ def get_email_template(name):
             email_template = EmailTemplate.objects.get(name=name)
             cache.set(name, email_template)
             return email_template
+
+
+def split_emails(emails, split_count=1):
+    # Group emails into X sublists
+    # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html
+    return [emails[i::split_count] for i in range(split_count)]

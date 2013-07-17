@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate
-from ..utils import send_mail, send_queued_mail, get_email_template, send_templated_mail
+from ..utils import send_mail, send_queued_mail, get_email_template, send_templated_mail, split_emails
 from ..validators import validate_email_with_name
 
 
@@ -79,3 +79,13 @@ class UtilsTest(TestCase):
             self.assertEqual(email.body, 'Hi AwesomeBoy')
             self.assertEqual(email.alternatives, [('<p>Hi AwesomeBoy</p>', 'text/html')])
             self.assertEqual(email.to, [to_address])
+
+    def test_split_emails(self):
+        """
+        Check that split emails correctly divide email lists for multiprocessing
+        """
+        for i in range(225):
+            Email.objects.create(from_email='from@example.com', to='to@example.com')
+        expected_size = [57, 56, 56, 56]
+        email_list = split_emails(Email.objects.all(), 4)
+        self.assertEqual(expected_size, [len(emails) for emails in email_list])
