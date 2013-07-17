@@ -2,12 +2,13 @@ from multiprocessing import Pool
 
 from django.conf import settings
 from django.core.mail import get_connection
+from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_email_backend
-from .utils import get_email_template, send_mail
+from .utils import get_email_template, send_mail, split_emails
 
 try:
     from django.utils import timezone
@@ -92,18 +93,16 @@ def send_queued(processes=1):
     Sends out all queued mails that has scheduled_time less than now or None
     """
     queued_emails = get_queued()
-
+    total_sent, total_failed = 0, 0
     if queued_emails:
         if processes == 1:
-            total_sent, total_failed = _send_bulk(queued_emails)
+            total_sent, total_failed = _send_bulk(queued_emails, uses_multiprocessing=False)
         else:
-            # Group emails into X sublists
-            # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html
-            email_lists = [queued_emails[i::processes] for i in range(processes)]
+            email_lists = split_emails(queued_emails, processes)
             pool = Pool(processes)
             results = pool.map(_send_bulk, email_lists)
             total_sent = sum([result[0] for result in results])
-            total_failed = sum([result[1] for result in results])            
+            total_failed = sum([result[1] for result in results])
 
     print '%s emails attempted, %s sent, %s failed' % (
         len(queued_emails),
@@ -113,9 +112,13 @@ def send_queued(processes=1):
     return (total_sent, total_failed)
 
 
-def _send_bulk(emails):
-    sent_count = 0
-    failed_count = 0
+def _send_bulk(emails, uses_multiprocessing=True):
+    # Multiprocessing does not play well with database connection
+    # Fix: Close connections on forking process
+    # https://groups.google.com/forum/#!topic/django-users/eCAIY9DAfG0
+    if uses_multiprocessing:
+        db_connection.close()
+    sent_count, failed_count = 0, 0
 
     # Try to open a connection, if we can't just pass in None as connection
     try:
@@ -132,5 +135,5 @@ def _send_bulk(emails):
             failed_count += 1
     if connection:
         connection.close()
-    
+
     return (sent_count, failed_count)
