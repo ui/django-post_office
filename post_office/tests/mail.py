@@ -60,15 +60,14 @@ class MailTest(TestCase):
             'message': 'Message',
             'status': STATUS.queued
         }
-        
+
         # All three emails should be sent
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 0)
-        Email.objects.create(**kwargs)
-        Email.objects.create(**kwargs)
-        Email.objects.create(**kwargs)
-        total_sent, total_failed = send_queued(processes=2)
-        self.assertEqual(total_sent, 3)
-        
+        for i in range(225):
+            Email.objects.create(**kwargs)
+        total_sent, total_failed = send_queued(processes=4)
+        self.assertEqual(total_sent, 225)
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_send_bulk(self):
         """
@@ -108,7 +107,7 @@ class MailTest(TestCase):
             'message': 'Message',
         }
         self.assertEqual(list(get_queued()), [])
-        
+
         # Emails with statuses failed, sent or None shouldn't be returned
         Email.objects.create(status=STATUS.failed, **kwargs)
         Email.objects.create(status=None, **kwargs)
@@ -127,5 +126,5 @@ class MailTest(TestCase):
 
         # Email scheduled in the past should be included
         past_email = Email.objects.create(status=STATUS.queued,
-            scheduled_time=date(2010, 12, 13), **kwargs)
+                                          scheduled_time=date(2010, 12, 13), **kwargs)
         self.assertEqual(list(get_queued()), [queued_email, past_email])
