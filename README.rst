@@ -228,6 +228,10 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.5.1
+-------------
+* Fixes various multiprocessing bugs
+
 Version 0.5.0
 -------------
 * Email sending can now be parallelized using multiple processes (multiprocessing)
