@@ -44,14 +44,3 @@ class CommandTest(TestCase):
         call_command('send_queued_mail', processes=1)
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 1)
 
-    def test_multiprocess_send_queued_mail(self):
-        """
-        Check that ``send_queued_mail`` play nicely with multiprocess
-        """
-        Email.objects.all().delete()
-        for i in range(200):
-            Email.objects.create(from_email='from@example.com', to='to@example.com',
-                                 status=STATUS.queued)
-        call_command('send_queued_mail', processes=4)
-
-        # self.assertFalse(Email.objects.filter(status=STATUS.queued).exists())
