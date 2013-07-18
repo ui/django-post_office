@@ -99,8 +99,10 @@ def send_queued(processes=1):
     """
     queued_emails = get_queued()
     total_sent, total_failed = 0, 0
-
-    logger.info('Started sending emails with %s processes.' % processes)
+    total_email = len(queued_emails) 
+    
+    logger.info('Started sending %s emails with %s processes.' %
+                (total_email, processes))
 
     if queued_emails:
         if processes == 1:
@@ -112,7 +114,7 @@ def send_queued(processes=1):
             total_sent = sum([result[0] for result in results])
             total_failed = sum([result[1] for result in results])
     message = '%s emails attempted, %s sent, %s failed' % (
-        len(queued_emails),
+        total_email,
         total_sent,
         total_failed
     )

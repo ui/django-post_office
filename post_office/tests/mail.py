@@ -63,10 +63,10 @@ class MailTest(TestCase):
 
         # All three emails should be sent
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 0)
-        for i in range(225):
+        for i in range(3):
             Email.objects.create(**kwargs)
-        total_sent, total_failed = send_queued(processes=4)
-        self.assertEqual(total_sent, 225)
+        total_sent, total_failed = send_queued(processes=2)
+        self.assertEqual(total_sent, 3)
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_send_bulk(self):
