@@ -23,6 +23,6 @@ class Command(BaseCommand):
         with FileLock(tempfile.gettempdir() + "/post_office", timeout=1):
             try:
                 send_queued(options['processes'])
-            except Exception, e:
+            except Exception as e:
                 logger.error(e, exc_info=sys.exc_info(), extra={'status_code': 500})
                 raise

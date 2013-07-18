@@ -146,9 +146,8 @@ def _send_bulk(emails, uses_multiprocessing=True):
             else:
                 failed_count += 1
                 logger.debug('Failed to send email #%d' % email.id)
-    except Exception:
-        message = 'Exception found when sending email #%s' % email.id
-        logger.error(message, exc_info=sys.exc_info(), extra={'status_code': 500})
+    except Exception as e:
+        logger.error(e, exc_info=sys.exc_info(), extra={'status_code': 500})
 
     if connection:
         connection.close()
