@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.template import Context, Template
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
-from .settings import get_email_backend
+from .settings import get_batch_size, get_email_backend
 from .utils import get_email_template, send_mail, split_emails
 from .logutils import setup_loghandlers
 
@@ -90,7 +90,7 @@ def get_queued():
     """
     return Email.objects.filter(status=STATUS.queued) \
         .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
-        .order_by('-priority')
+        .order_by('-priority')[:get_batch_size()]
 
 
 def send_queued(processes=1):

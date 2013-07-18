@@ -1,10 +1,12 @@
 from datetime import date
 
 from django.core import mail
+from django.conf import settings
 
 from django.test import TestCase
 from django.test.utils import override_settings
 
+from ..settings import get_batch_size
 from ..models import Email, STATUS
 from ..mail import get_queued, send_queued, _send_bulk
 
@@ -128,3 +130,11 @@ class MailTest(TestCase):
         past_email = Email.objects.create(status=STATUS.queued,
                                           scheduled_time=date(2010, 12, 13), **kwargs)
         self.assertEqual(list(get_queued()), [queued_email, past_email])
+
+    def test_get_batch_size(self):
+        """
+        Ensure BATCH_SIZE setting is read correctly.
+        """
+        self.assertEqual(get_batch_size(), 5000)
+        setattr(settings, 'POST_OFFICE', {'BATCH_SIZE': 100})
+        self.assertEqual(get_batch_size(), 100)
