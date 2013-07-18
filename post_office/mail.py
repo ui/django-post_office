@@ -1,3 +1,5 @@
+import sys
+
 from multiprocessing import Pool
 
 from django.conf import settings
@@ -145,7 +147,8 @@ def _send_bulk(emails, uses_multiprocessing=True):
                 failed_count += 1
                 logger.debug('Failed to send email #%d' % email.id)
     except Exception:
-        logger.error('Exception found when sending email #%s' % email.id)
+        message = 'Exception found when sending email #%s' % email.id
+        logger.error(message, exc_info=sys.exc_info(), extra={'status_code': 500})
 
     if connection:
         connection.close()
