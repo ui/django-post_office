@@ -1,3 +1,5 @@
+import sys
+
 from multiprocessing import Pool
 
 from django.conf import settings
@@ -9,6 +11,7 @@ from django.template import Context, Template
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_email_backend
 from .utils import get_email_template, send_mail, split_emails
+from .logutils import setup_loghandlers
 
 try:
     from django.utils import timezone
@@ -16,6 +19,8 @@ try:
 except ImportError:
     import datetime
     now = datetime.datetime.now
+
+logger = setup_loghandlers("INFO")
 
 
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
@@ -94,6 +99,9 @@ def send_queued(processes=1):
     """
     queued_emails = get_queued()
     total_sent, total_failed = 0, 0
+
+    logger.info('Started sending emails with %s processes.' % processes)
+
     if queued_emails:
         if processes == 1:
             total_sent, total_failed = _send_bulk(queued_emails, uses_multiprocessing=False)
@@ -103,12 +111,12 @@ def send_queued(processes=1):
             results = pool.map(_send_bulk, email_lists)
             total_sent = sum([result[0] for result in results])
             total_failed = sum([result[1] for result in results])
-
-    print '%s emails attempted, %s sent, %s failed' % (
+    message = '%s emails attempted, %s sent, %s failed' % (
         len(queued_emails),
         total_sent,
         total_failed
     )
+    logger.info(message)
     return (total_sent, total_failed)
 
 
@@ -119,6 +127,8 @@ def _send_bulk(emails, uses_multiprocessing=True):
     if uses_multiprocessing:
         db_connection.close()
     sent_count, failed_count = 0, 0
+    email_count = len(emails)
+    logger.info('Process started, sending %s emails' % email_count)
 
     # Try to open a connection, if we can't just pass in None as connection
     try:
@@ -127,13 +137,22 @@ def _send_bulk(emails, uses_multiprocessing=True):
     except Exception:
         connection = None
 
-    for email in emails:
-        status = email.dispatch(connection)
-        if status == STATUS.sent:
-            sent_count += 1
-        else:
-            failed_count += 1
+    try:
+        for email in emails:
+            status = email.dispatch(connection)
+            if status == STATUS.sent:
+                sent_count += 1
+                logger.debug('Successfully sent email #%d' % email.id)
+            else:
+                failed_count += 1
+                logger.debug('Failed to send email #%d' % email.id)
+    except Exception as e:
+        logger.error(e, exc_info=sys.exc_info(), extra={'status_code': 500})
+
     if connection:
         connection.close()
+
+    logger.info('Process finished, %s emails attempted, %s sent, %s failed' %
+               (email_count, sent_count, failed_count))
 
     return (sent_count, failed_count)
