@@ -98,7 +98,7 @@ def send_queued(processes=1):
     queued_emails = get_queued()
     total_sent, total_failed = 0, 0
 
-    logger.info('Sending queued email with %d processes' % processes)
+    logger.info('Started sending emails with %s processes.' % processes)
 
     if queued_emails:
         if processes == 1:
@@ -126,7 +126,7 @@ def _send_bulk(emails, uses_multiprocessing=True):
         db_connection.close()
     sent_count, failed_count = 0, 0
     email_count = len(emails)
-    logger.info('Starting send bulk emails, %s emails attempted' % email_count)
+    logger.info('Process started, sending %s emails' % email_count)
 
     # Try to open a connection, if we can't just pass in None as connection
     try:
@@ -135,19 +135,22 @@ def _send_bulk(emails, uses_multiprocessing=True):
     except Exception:
         connection = None
 
-    for email in emails:
-        status = email.dispatch(connection)
-        if status == STATUS.sent:
-            sent_count += 1
-            logger.debug('Successfully sent email #%d' % email.id)
-        else:
-            failed_count += 1
-            logger.debug('Failed to send email #%d' % email.id)
+    try:
+        for email in emails:
+            status = email.dispatch(connection)
+            if status == STATUS.sent:
+                sent_count += 1
+                logger.debug('Successfully sent email #%d' % email.id)
+            else:
+                failed_count += 1
+                logger.debug('Failed to send email #%d' % email.id)
+    except Exception:
+        logger.error('Exception found when sending email #%s' % email.id)
 
     if connection:
         connection.close()
 
-    logger.info('Finish sending bulk emails, %s emails attempted, %s sent, %s failed' %
+    logger.info('Process finished, %s emails attempted, %s sent, %s failed' %
                (email_count, sent_count, failed_count))
 
     return (sent_count, failed_count)
