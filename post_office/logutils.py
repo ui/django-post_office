@@ -14,7 +14,7 @@ def setup_loghandlers(level=None):
 
             "formatters": {
                 "post_office": {
-                    "format": "[%(levelname)s]%(asctime)s  Process-%(process)d: %(message)s",
+                    "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
                     "datefmt": "%d-%m-%Y %H:%M:%S",
                 },
             },
