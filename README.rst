@@ -217,6 +217,56 @@ You may want to set these up via cron to run regularly::
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
 
 
+Logging
+-------
+
+You can configure ``post-office``'s logging from Django's ``settings.py``. For
+example:
+
+.. code-block:: python
+    
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "post_office": {
+                "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
+                "datefmt": "%d-%m-%Y %H:%M:%S",
+            },
+        },
+        "handlers": {
+            "post_office": {
+                "level": "DEBUG",
+                "class": "logging.StreamHandler",
+                "formatter": "post_office"
+            },
+            # If you use sentry for logging
+            'sentry': {
+                'level': 'ERROR',
+                'class': 'raven.contrib.django.handlers.SentryHandler',
+            },
+        },
+        'loggers': {
+        "post_office": {
+            "handlers": ["post_office", "sentry"],
+            "level": "INFO"
+        },
+    }
+
+Batch Size
+----------
+
+If you may want to limit the number of emails sent in a batch (sometimes useful
+in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
+number of queued emails fetched in one batch. 
+
+.. code-block:: python
+
+    POST_OFFICE = {
+        'BATCH_SIZE': 5000
+    }
+
+
 Running Tests
 =============
 
@@ -227,6 +277,11 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.5.2
+-------------
+* Added logging
+* Added BATCH_SIZE configuration option
 
 Version 0.5.1
 -------------
