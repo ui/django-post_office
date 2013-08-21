@@ -56,6 +56,13 @@ def send(recipients, sender=None, template=None, context={}, subject='',
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
 
+    if isinstance(priority, (str, unicode)):
+        # Try to find enum representation
+        priority = getattr(PRIORITY, priority, None)
+
+        if priority is None:
+            raise ValueError('Invalid priority')
+
     if template:
         if subject:
             raise ValueError('You can\'t specify both "template" and "subject" arguments')
