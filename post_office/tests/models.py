@@ -238,3 +238,15 @@ class ModelTest(TestCase):
             'content': [u"Invalid filter: 'titl'"],
             'html_content': [u"Unclosed tags: endblock "]
         })
+    def test_string_priority(self):
+        """
+        Regression test for:
+        https://github.com/ui/django-post_office/issues/23
+        """
+        emails = send(['to1@example.com'], 'from@a.com', priority='low')
+
+        self.assertEquals(emails[0].priority, PRIORITY.low)
+
+    def test_string_priority_exception(self):
+        invalid_priority_send = lambda: send(['to1@example.com'], 'from@a.com', priority='hgh')
+        self.assertRaises(ValueError, invalid_priority_send)
