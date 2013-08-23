@@ -56,7 +56,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
 
-    if isinstance(priority, (str, unicode)):
+    if isinstance(priority, basestring):
         # Try to find enum representation
         priority = getattr(PRIORITY, priority, None)
 
