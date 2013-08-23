@@ -61,7 +61,8 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         priority = getattr(PRIORITY, priority, None)
 
         if priority is None:
-            raise ValueError('Invalid priority')
+            raise ValueError('Invalid priority, must be one of: %s' %
+                             ', '.join(PRIORITY._fields))
 
     if template:
         if subject:

@@ -238,6 +238,7 @@ class ModelTest(TestCase):
             'content': [u"Invalid filter: 'titl'"],
             'html_content': [u"Unclosed tags: endblock "]
         })
+
     def test_string_priority(self):
         """
         Regression test for:
@@ -249,4 +250,11 @@ class ModelTest(TestCase):
 
     def test_string_priority_exception(self):
         invalid_priority_send = lambda: send(['to1@example.com'], 'from@a.com', priority='hgh')
-        self.assertRaises(ValueError, invalid_priority_send)
+
+        with self.assertRaises(ValueError) as context:
+            invalid_priority_send()
+
+        self.assertEquals(
+            context.exception.message,
+            'Invalid priority, must be one of: low, medium, high, now'
+        )
