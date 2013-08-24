@@ -2,12 +2,13 @@ from datetime import datetime, timedelta
 
 from django.conf import settings as django_settings
 from django.core import mail
+from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate
+from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from ..mail import from_template, send
 
 
@@ -189,7 +190,7 @@ class ModelTest(TestCase):
 
     def test_send_without_template(self):
         headers = {'Reply-to': 'reply@email.com'}
-        scheduled_time = datetime.now() + timedelta(days=1)        
+        scheduled_time = datetime.now() + timedelta(days=1)
         emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
                       subject='foo', message='bar', html_message='baz',
                       context={'name': 'Alice'}, headers=headers,
@@ -257,3 +258,30 @@ class ModelTest(TestCase):
             str(context.exception),
             'Invalid priority, must be one of: low, medium, high, now'
         )
+
+    def test_attachment_filename(self):
+        email = Email.objects.create(to='to@example.com',
+                                     from_email='from@example.com')
+        attachment = Attachment(email=email)
+        attachment.attached_file.save(
+            'test.txt',
+            content=ContentFile('test file content'),
+            save=True
+        )
+        self.assertEquals(attachment.original_filename, 'test.txt')
+
+    def test_email_attachments_send(self):
+        email = Email.objects.create(to='to@example.com',
+                                     from_email='from@example.com',
+                                     subject='Subject')
+
+        attachment = Attachment(email=email)
+        attachment.attached_file.save(
+            'test.txt', content=ContentFile('test file content'),
+            save=True
+        )
+        message = email.email_message()
+
+        self.assertTrue(isinstance(message, EmailMultiAlternatives))
+        self.assertEqual(message.attachments,
+                         [('test.txt', 'test file content', None)])

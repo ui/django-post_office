@@ -92,6 +92,11 @@ class Email(models.Model):
                                      headers=self.headers)
         if self.html_message:
             msg.attach_alternative(self.html_message, "text/html")
+
+        for attachment in self.attachments.all():
+            msg.attach(attachment.original_filename,
+                       attachment.attached_file.read())
+
         return msg
 
     def dispatch(self, connection=None):
@@ -169,3 +174,21 @@ class EmailTemplate(models.Model):
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
+
+
+class Attachment(models.Model):
+    """
+    A model describing an email attachment.
+    """
+    def get_upload_path(self, filename):
+        """Overriding to store the original filename"""
+        if not self.original_filename:
+            self.original_filename = filename  # set original filename
+
+        # TODO: save with uuid4 instead?
+        return 'post_office_attachments/' + filename
+
+    email = models.ForeignKey(Email, related_name='attachments')
+    attached_file = models.FileField(upload_to=get_upload_path,
+                                     null=False, blank=False)
+    original_filename = models.CharField(max_length=255)
