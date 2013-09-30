@@ -27,9 +27,11 @@ def setup_loghandlers(level=None):
                 },
             },
 
-            "root": {
-                "handlers": ["post_office"],
-                "level": level or "DEBUG"
+            "loggers": {
+                "post_office": {
+                    "handlers": ["post_office"],
+                    "level": level or "DEBUG"
+                }
             }
         })
     return logger
