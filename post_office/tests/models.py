@@ -1,5 +1,5 @@
+from decimal import Decimal
 from datetime import datetime, timedelta
-
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -135,6 +135,69 @@ class ModelTest(TestCase):
         self.assertEqual(email.subject, 'Subject: bar')
         self.assertEqual(email.message, 'Message: bar')
         self.assertEqual(email.html_message, 'HTML: bar')
+
+    def test_language_template(self):
+        """
+        Test basic template selection based on language
+        """
+        email_template1 = EmailTemplate.objects.create(
+            name='welcome', subject='Welcome', content='Hello')
+        email_template2 = EmailTemplate.objects.create(
+            name='welcome', subject='Bienvenue', content='Bonjour', language='fr'
+        )
+
+        email = from_template('from@example.com', 'to@example.com', 'welcome',
+                              language='fr')
+        self.assertEqual(email.subject, 'Bienvenue')
+        self.assertEqual(email.message, 'Bonjour')
+
+        email = from_template('from@example.com', 'to@example.com', 'welcome')
+        self.assertEqual(email.subject, 'Welcome')
+        self.assertEqual(email.message, 'Hello')
+
+    @override_settings(POST_OFFICE_FALLBACK_LANGUAGE='en')
+    def test_language_fallback(self):
+        email_template1 = EmailTemplate.objects.create(
+            name='welcome', subject='Welcome', content='Hello', language='en')
+        email_template2 = EmailTemplate.objects.create(
+            name='welcome', subject='Bienvenue', content='Bonjour',
+            language='fr')
+
+        email = from_template('from@example.com', 'to@example.com', 'welcome',
+                              language='de')
+        self.assertEqual(email.subject, 'Welcome')
+        self.assertEqual(email.message, 'Hello')
+
+    @override_settings(POST_OFFICE_FALLBACK_LANGUAGE=None)
+    def test_language_fallback_disabled(self):
+        email_template1 = EmailTemplate.objects.create(
+            name='welcome', subject='Welcome', content='Hello')
+        email_template2 = EmailTemplate.objects.create(
+            name='welcome', subject='Bienvenue', content='Bonjour', language='fr'
+        )
+
+        self.assertRaises(EmailTemplate.DoesNotExist, from_template,
+                          'from@example.com', 'to@example.com', 'welcome',
+                          language='no')
+
+    @override_settings(USE_L10N=True, USE_THOUSAND_SEPARATOR=True)
+    def test_localization(self):
+        EmailTemplate.objects.create(
+            name='cost', subject='Pay {{ amount }}',
+            content='You have to pay {{ amount }}', language='en-us')
+        EmailTemplate.objects.create(
+            name='cost', subject='Betaal {{ amount }}',
+            content='U moet {{ amount }} betalen', language='nl')
+
+        email = from_template('from@example.com', 'to@example.com', 'cost',
+                              {'amount': Decimal("1234.56")}, language='en-us')
+        self.assertEqual(email.subject, "Pay 1,234.56")
+        self.assertEqual(email.message, "You have to pay 1,234.56")
+
+        email2 = from_template('from@example.com', 'to@example.com', 'cost',
+                               {'amount': Decimal("1234.56")}, language='nl')
+        self.assertEqual(email2.subject, "Betaal 1.234,56")
+        self.assertEqual(email2.message, "U moet 1.234,56 betalen")
 
     def test_default_sender(self):
         emails = send(['to@example.com'], subject='foo')

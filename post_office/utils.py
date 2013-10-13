@@ -87,19 +87,40 @@ def send_templated_mail(template_name, from_address, to_addresses,
             email.dispatch()
 
 
-def get_email_template(name):
+def load_email_template(name, language):
+    """
+    Loads the email template from the database. It tries to fetch the template
+    in the correct language. If that fails and POST_OFFICE_FALLBACK_LANGUAGE is
+    set to something else than False, it attempts to load the template in that
+    fallback language.
+    """
+    if hasattr(settings, 'POST_OFFICE_FALLBACK_LANGUAGE') and settings.POST_OFFICE_FALLBACK_LANGUAGE is False:
+        fallback_language = False
+    else:
+        fallback_language = getattr(settings, 'POST_OFFICE_FALLBACK_LANGUAGE', settings.LANGUAGE_CODE)
+    try:
+        return EmailTemplate.objects.get(name=name, language=language)
+    except EmailTemplate.DoesNotExist:
+        if fallback_language:
+            return EmailTemplate.objects.get(name=name,
+                                             language=fallback_language)
+        else:
+            raise
+
+
+def get_email_template(name, language=None):
     """
     Function to get email template object that checks from cache first if caching is enabled
     """
     if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
-        return EmailTemplate.objects.get(name=name)
+        return load_email_template(name, language)
     else:
-        email_template = cache.get(name)
+        email_template = cache.get(name, language)
         if email_template is not None:
             return email_template
         else:
-            email_template = EmailTemplate.objects.get(name=name)
-            cache.set(name, email_template)
+            email_template = load_email_template(name, language)
+            cache.set(name, email_template, language)
             return email_template
 
 

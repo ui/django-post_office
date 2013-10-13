@@ -6,6 +6,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.encoding import smart_unicode
 from django.template import Context, Template
+from django.conf import settings
 
 from jsonfield import JSONField
 from post_office import cache
@@ -144,6 +145,8 @@ class EmailTemplate(models.Model):
     Model to hold template information from db
     """
     name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
+    language = models.CharField(max_length=10, choices=settings.LANGUAGES,
+                                blank=True, null=True)
     subject = models.CharField(max_length=255, blank=True,
                                validators=[validate_template_syntax])
     content = models.TextField(blank=True,
@@ -155,11 +158,12 @@ class EmailTemplate(models.Model):
 
     class Meta:
         ordering = ('name',)
+        unique_together = ('name', 'language')
 
     def __unicode__(self):
         return str(self.name)
 
     def save(self, *args, **kwargs):
         template = super(EmailTemplate, self).save(*args, **kwargs)
-        cache.delete(self.name)
+        cache.delete(self.name, self.language) # TODO: what if language changed?
         return template

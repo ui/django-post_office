@@ -25,8 +25,9 @@ class CacheTest(TestCase):
         """
             Test for converting names to cache key
         """
-        self.assertEqual('post_office:template:test', cache.get_cache_key('test'))
-        self.assertEqual('post_office:template:test-slugify', cache.get_cache_key('test slugify'))
+        self.assertEqual('post_office:template:test:None', cache.get_cache_key('test'))
+        self.assertEqual('post_office:template:test:en', cache.get_cache_key('test', 'en'))
+        self.assertEqual('post_office:template:test-slugify:None', cache.get_cache_key('test slugify'))
 
     def test_basic_cache_operations(self):
         """
@@ -35,7 +36,9 @@ class CacheTest(TestCase):
         # clean test cache
         cache.cache_backend.clear()
         self.assertEqual(None, cache.get('test-cache'))
-        cache.set('test-cache', 'awesome content')
-        self.assertTrue('awesome content', cache.get('test-cache'))
-        cache.delete('test-cache')
+        cache.set('test-cache', 'awesome content', 'en')
         self.assertEqual(None, cache.get('test-cache'))
+        self.assertEqual(None, cache.get('test-cache', 'fr'))
+        self.assertEqual('awesome content', cache.get('test-cache', 'en'))
+        cache.delete('test-cache', 'en')
+        self.assertEqual(None, cache.get('test-cache', 'en'))

@@ -7,6 +7,7 @@ from django.core.mail import get_connection
 from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
+from django.utils import translation
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend
@@ -24,19 +25,22 @@ logger = setup_loghandlers("INFO")
 
 
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
-                  headers=None, priority=PRIORITY.medium):
+                  headers=None, priority=PRIORITY.medium, language=None):
     """Returns an Email instance from provided template and context."""
     # template can be an EmailTemplate instance of name
     if isinstance(template, EmailTemplate):
         template = template
     else:
-        template = get_email_template(template)
+        template = get_email_template(template, language)
     status = None if priority == PRIORITY.now else STATUS.queued
     context = Context(context)
     template_content = Template(template.content)
     template_content_html = Template(template.html_content)
     template_subject = Template(template.subject)
-    return Email.objects.create(
+    old_language = translation.get_language()
+    if language:
+        translation.activate(language)
+    email = Email.objects.create(
         from_email=sender, to=recipient,
         subject=template_subject.render(context),
         message=template_content.render(context),
@@ -44,17 +48,28 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
         scheduled_time=scheduled_time,
         headers=headers, priority=priority, status=status
     )
+    if language:
+        translation.activate(old_language)
+    return email
 
 
 def send(recipients, sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None,
-         headers=None, priority=PRIORITY.medium):
+         headers=None, priority=PRIORITY.medium, language=None):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
+
+    if language:
+        if subject:
+            raise ValueError('You can\'t specify both "language" and "subject" arguments')
+        if message:
+            raise ValueError('You can\'t specify both "language" and "message" arguments')
+        if html_message:
+            raise ValueError('You can\'t specify both "language" and "html_message" arguments')
 
     if isinstance(priority, basestring):
         # Try to find enum representation
@@ -72,7 +87,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-        emails = [from_template(sender, recipient, template, context, scheduled_time, headers, priority)
+        emails = [from_template(sender, recipient, template, context, scheduled_time, headers, priority, language)
                   for recipient in recipients]
         if priority == PRIORITY.now:
             for email in emails:
