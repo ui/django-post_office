@@ -2,11 +2,15 @@
 Django Post Office
 ==================
 
-Django Post Office is a simple app that allows you to send email asynchronously
-in Django. Supports HTML email, database backed templates and logging.
+Django Post Office is a simple app to send and manage your emails in Django.
+Some awesome features are:
 
-``post_office`` is implemented as a Django ``EmailBackend`` so you don't need to
-change any of your code to start sending email asynchronously.
+* Allows you to send email asynchronously
+* Supports HTML email
+* Supports database based email templates
+* Built in scheduling support 
+* Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
+* Uses multiprocessing to send a large number of emails in parallel
 
 
 Dependencies
@@ -21,7 +25,7 @@ Installation
 .. image:: https://travis-ci.org/ui/django-post_office.png?branch=master
 
 
-* Install from PyPI (or you can `manually download it from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
+* Install from PyPI (or you `manually download from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
 
     pip install django-post_office
 
@@ -54,7 +58,7 @@ To get started, make sure you have Django's admin interface enabled. Create an
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com', 'recipient2@example.com'],
+        ['recipient1@example.com'],
         'from@example.com',
         template='welcome_email', # Could be an EmailTemplate instance or name
         context={'foo': 'bar'},
@@ -77,19 +81,21 @@ mail.send()
 ``mail.send`` is the most important function in this library, it takes these
 arguments:
 
-============ ======== =========================
-Argument     Required Description
-============ ======== =========================
-recipients   Yes      list of recipient email addresses
-sender       No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
-template     No       ``EmailTemplate`` instance or name
-context      No       A dictionary used when email is being rendered
-subject      No       Email subject (if ``template`` is not specified)
-message      No       Email content (if ``template`` is not specified)
-html_message No       Email's HTML content (if ``template`` is not specified)
-priority     No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
-language     No       Select the ``EmailTemplate`` with this language
-============ ======== =========================
+=============== ======== =========================
+Argument        Required Description
+=============== ======== =========================
+recipients      Yes      list of recipient email addresses
+sender          No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
+template        No       ``EmailTemplate`` instance or name
+context         No       A dictionary used when email is being rendered
+subject         No       Email subject (if ``template`` is not specified)
+message         No       Email content (if ``template`` is not specified)
+html_message    No       Email's HTML content (if ``template`` is not specified)
+headers         No       A dictionary of extra headers to put on the message
+scheduled_time  No       A date/datetime object indicating when the email should be sent
+priority        No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
+language        No       Select the ``EmailTemplate`` with this language
+=============== ======== =========================
 
 Here are a few examples.
 
@@ -101,11 +107,13 @@ call the ``send`` command without the ``template`` argument.
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com', 'recipient2@example.com'],
+        ['recipient1@example.com'],
         'from@example.com',
         subject='Welcome!',
         message='Welcome home, {{ name }}!',
         html_message='Welcome home, <b>{{ name }}</b>!',
+        headers={'Reply-to': 'reply@example.com'},
+        scheduled_time=date(2014, 1, 1),
         context={'name': 'Alice'},
     )
 
@@ -212,7 +220,7 @@ For example if you want to use `django-ses <https://github.com/hmarr/django-ses>
 Caching
 -------
 
-By default, ``post_office`` will cache ``EmailTemplate``s if Django's caching
+By default, ``post_office`` will cache ``EmailTemplate`` instances if Django's caching
 mechanism is configured. If for some reason you want to disable caching, you can
 set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 
@@ -234,20 +242,71 @@ set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 Management Commands
 -------------------
 
-* ``send_queued_mail`` - send queued emails, those that aren't successfully
-  sent they will be marked as ``failed``.
+* ``send_queued_mail`` - send queued emails, those aren't successfully sent
+  will be marked as ``failed``. If you have a lot of emails, you can
+  pass in ``-`p` or ``--processes`` flag to use multiple processes.
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
   (defaults to 90).
 
 You may want to set these up via cron to run regularly::
 
-    * * * * * (cd $PROJECT; python manage.py send_queued_mail >> $PROJECT/cron_mail.log 2>&1)
+    * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
 
 
-Testing
-=======
+Logging
+-------
+
+You can configure ``post-office``'s logging from Django's ``settings.py``. For
+example:
+
+.. code-block:: python
+    
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "post_office": {
+                "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
+                "datefmt": "%d-%m-%Y %H:%M:%S",
+            },
+        },
+        "handlers": {
+            "post_office": {
+                "level": "DEBUG",
+                "class": "logging.StreamHandler",
+                "formatter": "post_office"
+            },
+            # If you use sentry for logging
+            'sentry': {
+                'level': 'ERROR',
+                'class': 'raven.contrib.django.handlers.SentryHandler',
+            },
+        },
+        'loggers': {
+        "post_office": {
+            "handlers": ["post_office", "sentry"],
+            "level": "INFO"
+        },
+    }
+
+Batch Size
+----------
+
+If you may want to limit the number of emails sent in a batch (sometimes useful
+in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
+number of queued emails fetched in one batch. 
+
+.. code-block:: python
+
+    POST_OFFICE = {
+        'BATCH_SIZE': 5000
+    }
+
+
+Running Tests
+=============
 
 To run ``post_office``'s test suite::
 
@@ -256,6 +315,28 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.5.2
+-------------
+* Added logging
+* Added BATCH_SIZE configuration option
+
+Version 0.5.1
+-------------
+* Fixes various multiprocessing bugs
+
+Version 0.5.0
+-------------
+* Email sending can now be parallelized using multiple processes (multiprocessing)
+* Email templates are now validated before save
+* Fixed a bug where custom headers aren't properly sent
+
+Version 0.4.0
+-------------
+* Added support for sending emails with custom headers (you'll need to run 
+  South when upgrading from earlier versions)
+* Added support for scheduled email sending
+* Backend now properly persist emails with HTML alternatives
 
 Version 0.3.1
 -------------

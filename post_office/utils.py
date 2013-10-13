@@ -1,5 +1,8 @@
+import warnings
+
 from django.conf import settings
 from django.core.mail import get_connection
+from django.db.models import Q
 from django.utils.encoding import force_unicode
 
 from post_office import cache
@@ -7,16 +10,19 @@ from .models import Email, PRIORITY, STATUS, EmailTemplate
 from .settings import get_email_backend
 
 
+try:
+    from django.utils import timezone
+    now = timezone.now
+except ImportError:
+    import datetime
+    now = datetime.datetime.now
+
+
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              priority=PRIORITY.medium):
+              scheduled_time=None, headers=None, priority=PRIORITY.medium):
     """
-    Add a new message to the mail queue.
-
-    This is a replacement for Django's ``send_mail`` core email method.
-
-    The `fail_silently``, ``auth_user`` and ``auth_password`` arguments are
-    only provided to match the signature of the emulated function. These
-    arguments are not used.
+    Add a new message to the mail queue. This is a replacement for Django's
+    ``send_mail`` core email method.
     """
 
     subject = force_unicode(subject)
@@ -27,7 +33,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
             Email.objects.create(
                 from_email=from_email, to=address, subject=subject,
                 message=message, html_message=html_message, status=status,
-                priority=priority
+                headers=headers, priority=priority, scheduled_time=scheduled_time
             )
         )
     if priority == PRIORITY.now:
@@ -38,11 +44,13 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
 
 def send_queued_mail():
     """
-    Sends out all queued mails
+    Sends out all queued mails that has scheduled_time less than now or None
     """
     sent_count = 0
     failed_count = 0
-    queued_emails = Email.objects.filter(status=STATUS.queued).order_by('-priority')
+    queued_emails = Email.objects.filter(status=STATUS.queued) \
+        .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
+        .order_by('-priority')
 
     if queued_emails:
 
@@ -65,11 +73,16 @@ def send_queued_mail():
                                                               sent_count, failed_count)
 
 
-def send_templated_mail(template_name, from_address, to_addresses, context={}, priority=PRIORITY.medium):
+def send_templated_mail(template_name, from_address, to_addresses,
+                        context={}, priority=PRIORITY.medium):
+    warnings.warn(
+        "The `send_templated_mail` command is deprecated and will be removed "
+        "in a future relase. Please use `post_office.mail.send` instead.",
+        DeprecationWarning)
     email_template = get_email_template(template_name)
     for address in to_addresses:
         email = Email.objects.from_template(from_address, address, email_template,
-            context, priority)
+                                            context, priority)
         if priority == PRIORITY.now:
             email.dispatch()
 
@@ -109,3 +122,11 @@ def get_email_template(name, language=None):
             email_template = load_email_template(name, language)
             cache.set(name, email_template, language)
             return email_template
+
+
+def split_emails(emails, split_count=1):
+    # Group emails into X sublists
+    # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html
+    # Strange bug, only return 100 email if we do not evaluate the list
+    if list(emails):
+        return [emails[i::split_count] for i in range(split_count)]

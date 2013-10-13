@@ -1,11 +1,13 @@
 from decimal import Decimal
+from datetime import datetime, timedelta
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives, get_connection
+from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, Log, STATUS, EmailTemplate
+from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate
 from ..mail import from_template, send
 
 
@@ -222,32 +224,100 @@ class ModelTest(TestCase):
         Ensure mail.send correctly creates templated emails to recipients
         """
         Email.objects.all().delete()
+        headers = {'Reply-to': 'reply@email.com'}
         email_template = EmailTemplate.objects.create(name='foo', subject='bar',
                                                       content='baz')
+        scheduled_time = datetime.now() + timedelta(days=1)
+        emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
+                      headers=headers, template=email_template,
+                      scheduled_time=scheduled_time)
+        self.assertEqual(len(emails), 2)
+        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(emails[0].headers, headers)
+        self.assertEqual(emails[0].scheduled_time, scheduled_time)
+
+        self.assertEqual(emails[1].to, 'to2@example.com')
+        self.assertEqual(emails[1].headers, headers)
+
+        # Test without header
+        Email.objects.all().delete()
         emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
                       template=email_template)
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(emails[0].headers, None)
+
         self.assertEqual(emails[1].to, 'to2@example.com')
+        self.assertEqual(emails[1].headers, None)
 
     def test_send_without_template(self):
+        headers = {'Reply-to': 'reply@email.com'}
+        scheduled_time = datetime.now() + timedelta(days=1)        
         emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
                       subject='foo', message='bar', html_message='baz',
-                      context={'name': 'Alice'})
+                      context={'name': 'Alice'}, headers=headers,
+                      scheduled_time=scheduled_time, priority=PRIORITY.low)
+
         self.assertEqual(len(emails), 2)
         self.assertEqual(emails[0].to, 'to1@example.com')
         self.assertEqual(emails[0].subject, 'foo')
         self.assertEqual(emails[0].message, 'bar')
         self.assertEqual(emails[0].html_message, 'baz')
+        self.assertEqual(emails[0].headers, headers)
+        self.assertEqual(emails[0].priority, PRIORITY.low)
+        self.assertEqual(emails[0].scheduled_time, scheduled_time)
         self.assertEqual(emails[1].to, 'to2@example.com')
 
         # Same thing, but now with context
         emails = send(['to1@example.com'], 'from@a.com',
                       subject='Hi {{ name }}', message='Message {{ name }}',
                       html_message='<b>{{ name }}</b>',
-                      context={'name': 'Bob'})
+                      context={'name': 'Bob'}, headers=headers)
         self.assertEqual(len(emails), 1)
         self.assertEqual(emails[0].to, 'to1@example.com')
         self.assertEqual(emails[0].subject, 'Hi Bob')
         self.assertEqual(emails[0].message, 'Message Bob')
         self.assertEqual(emails[0].html_message, '<b>Bob</b>')
+        self.assertEqual(emails[0].headers, headers)
+
+    def test_invalid_syntax(self):
+        """
+        Ensures that invalid template syntax will result in validation errors
+        when saving a ModelForm of an EmailTemplate.
+        """
+        data = dict(
+            name='cost',
+            subject='Hi there!{{ }}',
+            content='Welcome {{ name|titl }} to the site.',
+            html_content='{% block content %}<h1>Welcome to the site</h1>'
+        )
+
+        EmailTemplateForm = modelform_factory(EmailTemplate)
+        form = EmailTemplateForm(data)
+
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors, {
+            'subject': [u"Empty variable tag"],
+            'content': [u"Invalid filter: 'titl'"],
+            'html_content': [u"Unclosed tags: endblock "]
+        })
+
+    def test_string_priority(self):
+        """
+        Regression test for:
+        https://github.com/ui/django-post_office/issues/23
+        """
+        emails = send(['to1@example.com'], 'from@a.com', priority='low')
+
+        self.assertEquals(emails[0].priority, PRIORITY.low)
+
+    def test_string_priority_exception(self):
+        invalid_priority_send = lambda: send(['to1@example.com'], 'from@a.com', priority='hgh')
+
+        with self.assertRaises(ValueError) as context:
+            invalid_priority_send()
+
+        self.assertEquals(
+            context.exception.message,
+            'Invalid priority, must be one of: low, medium, high, now'
+        )

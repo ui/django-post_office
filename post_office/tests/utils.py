@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.core import mail
 from django.core.exceptions import ValidationError
 
@@ -5,7 +7,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate
-from ..utils import send_mail, send_queued_mail, get_email_template, send_templated_mail
+from ..utils import send_mail, send_queued_mail, get_email_template, send_templated_mail, split_emails
 from ..validators import validate_email_with_name
 
 
@@ -27,30 +29,12 @@ class UtilsTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.status, STATUS.sent)
 
-    def test_send_queued_mail(self):
-        """
-        Check that only queued messages are sent.
-        """
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Test', message='Message', status=STATUS.sent)
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Test', message='Message', status=STATUS.failed)
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Test', message='Message', status=None)
-
-        # This should be the only email that gets sent
-        Email.objects.create(to='to@example.com', from_email='from@example.com',
-            subject='Queued', message='Message', status=STATUS.queued)
-        send_queued_mail()
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, 'Queued')
-
     def test_email_validator(self):
         # These should validate
         validate_email_with_name('email@example.com')
         validate_email_with_name('Alice Bob <email@example.com>')
         Email.objects.create(to='to@example.com', from_email='Alice <from@example.com>',
-            subject='Test', message='Message', status=STATUS.sent)
+                             subject='Test', message='Message', status=STATUS.sent)
 
         # Should also support international domains
         validate_email_with_name('Alice Bob <email@example.co.id>')
@@ -79,11 +63,13 @@ class UtilsTest(TestCase):
 
         # Create email template
         EmailTemplate.objects.create(name=template_name, content='Hi {{name}}',
-            html_content='<p>Hi {{name}}</p>', subject='Happy Holidays!')
+                                     html_content='<p>Hi {{name}}</p>',
+                                     subject='Happy Holidays!')
 
         # Send templated mail
-        send_templated_mail(template_name, 'from@example.com',
-            to_addresses, context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
+        send_templated_mail(template_name, 'from@example.com', to_addresses,
+                            context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
+
         send_queued_mail()
 
         # Check for the message integrity
@@ -93,3 +79,13 @@ class UtilsTest(TestCase):
             self.assertEqual(email.body, 'Hi AwesomeBoy')
             self.assertEqual(email.alternatives, [('<p>Hi AwesomeBoy</p>', 'text/html')])
             self.assertEqual(email.to, [to_address])
+
+    def test_split_emails(self):
+        """
+        Check that split emails correctly divide email lists for multiprocessing
+        """
+        for i in range(225):
+            Email.objects.create(from_email='from@example.com', to='to@example.com')
+        expected_size = [57, 56, 56, 56]
+        email_list = split_emails(Email.objects.all(), 4)
+        self.assertEqual(expected_size, [len(emails) for emails in email_list])

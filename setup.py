@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='django-post_office',
-    version='0.3.1',
+    version='0.5.1',
     author='Selwin Ong',
     author_email='selwin.ong@gmail.com',
     packages=['post_office'],
@@ -14,7 +14,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     package_data={'': ['README.rst']},
-    install_requires=['django>=1.2'],
+    install_requires=['django>=1.2', 'django-jsonfield'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

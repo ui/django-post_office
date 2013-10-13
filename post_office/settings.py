@@ -27,3 +27,17 @@ def get_cache_backend():
             except InvalidCacheBackendError:
                 pass
     return None
+
+
+def get_config():
+    """
+    Returns Post Office's configuration in dictionary format. e.g:
+    POST_OFFICE = {
+        'BATCH_SIZE': 1000
+    }
+    """
+    return getattr(settings, 'POST_OFFICE', {})
+
+
+def get_batch_size():
+    return get_config().get('BATCH_SIZE', 5000)
