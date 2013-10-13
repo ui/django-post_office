@@ -152,7 +152,7 @@ For example, if you put "Hello, {{ name }}" in the subject line and pass in
         name='morning_greeting',
         subject='Morning, {{ name|capfirst }}',
         content='Hi {{ name }}, how are you feeling today?',
-        html_content='Hi <b>{{ name }}</b>, how are you feeling today?',
+        html_content='Hi <strong>{{ name }}</strong>, how are you feeling today?',
     )
 
     mail.send(
