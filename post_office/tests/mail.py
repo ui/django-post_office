@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.core import mail
 from django.conf import settings
@@ -7,8 +7,8 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..settings import get_batch_size
-from ..models import Email, STATUS
-from ..mail import get_queued, send_queued, _send_bulk
+from ..models import Email, PRIORITY, STATUS
+from ..mail import create, get_queued, send_queued, _send_bulk
 
 
 connection_counter = 0
@@ -138,3 +138,55 @@ class MailTest(TestCase):
         self.assertEqual(get_batch_size(), 5000)
         setattr(settings, 'POST_OFFICE', {'BATCH_SIZE': 100})
         self.assertEqual(get_batch_size(), 100)
+
+    def test_create(self):
+        """
+        Test basic email creation
+        """
+
+        # Test that email is persisted only when commi=True
+        email = create(
+            sender='from@example.com', recipient='to@example.com',
+            commit=False
+        )
+        self.assertEqual(email.id, None)
+        email = create(
+            sender='from@example.com', recipient='to@example.com',
+            commit=True
+        )
+        self.assertNotEqual(email.id, None)
+
+        # Test that email is created with the right status
+        email = create(
+            sender='from@example.com', recipient='to@example.com',
+            priority=PRIORITY.now
+        )
+        self.assertEqual(email.status, None)
+        email = create(
+            sender='from@example.com', recipient='to@example.com',
+            priority=PRIORITY.high
+        )
+        self.assertEqual(email.status, STATUS.queued)
+
+        # Test that email is created with the right content
+        context = {
+            'subject': 'My subject',
+            'message': 'My message',
+            'html': 'My html',
+        }
+        now = datetime.now()
+        email = create(
+            sender='from@example.com', recipient='to@example.com',
+            subject='Test {{ subject }}', message='Test {{ message }}',
+            html_message='Test {{ html }}', context=context,
+            scheduled_time=now, headers={'header': 'Test header'},
+        )
+        self.assertEqual(email.from_email, 'from@example.com')
+        self.assertEqual(email.to, 'to@example.com')
+        self.assertEqual(email.subject, 'Test My subject')
+        self.assertEqual(email.message, 'Test My message')
+        self.assertEqual(email.html_message, 'Test My html')
+        self.assertEqual(email.scheduled_time, now)
+        self.assertEqual(email.headers, {'header': 'Test header'})
+
+        

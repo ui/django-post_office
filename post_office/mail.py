@@ -10,7 +10,7 @@ from django.template import Context, Template
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend
-from .utils import get_email_template, send_mail, split_emails
+from .utils import get_email_template, split_emails
 from .logutils import setup_loghandlers
 
 try:
@@ -23,26 +23,46 @@ except ImportError:
 logger = setup_loghandlers("INFO")
 
 
+def create(sender, recipient, subject='', message='', html_message='',
+           context={}, scheduled_time=None, headers=None,
+           priority=PRIORITY.medium, commit=True):
+    """
+    Creates an email from supplied keyword arguments
+    """
+    status = None if priority == PRIORITY.now else STATUS.queued
+    if context:
+        context = Context(context)
+        subject = Template(subject).render(context)
+        message = Template(message).render(context)
+        html_message = Template(html_message).render(context)
+
+    email = Email(
+        from_email=sender, to=recipient,
+        subject=subject,
+        message=message,
+        html_message=html_message,
+        scheduled_time=scheduled_time,
+        headers=headers, priority=priority, status=status
+    )
+    if commit:
+        email.save()
+    return email
+
+
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
-                  headers=None, priority=PRIORITY.medium):
-    """Returns an Email instance from provided template and context."""
+                  headers=None, priority=PRIORITY.medium, commit=True):
+    """Loads an email template and create an email from it."""
     # template can be an EmailTemplate instance of name
     if isinstance(template, EmailTemplate):
         template = template
     else:
         template = get_email_template(template)
-    status = None if priority == PRIORITY.now else STATUS.queued
-    context = Context(context)
-    template_content = Template(template.content)
-    template_content_html = Template(template.html_content)
-    template_subject = Template(template.subject)
-    return Email.objects.create(
-        from_email=sender, to=recipient,
-        subject=template_subject.render(context),
-        message=template_content.render(context),
-        html_message=template_content_html.render(context),
-        scheduled_time=scheduled_time,
-        headers=headers, priority=priority, status=status
+
+    return create(
+        sender=sender, recipient=recipient, subject=template.subject,
+        message=template.content, html_message=template.html_content,
+        context=context, scheduled_time=scheduled_time, headers=headers,
+        priority=priority, commit=commit
     )
 
 
@@ -74,19 +94,15 @@ def send(recipients, sender=None, template=None, context={}, subject='',
 
         emails = [from_template(sender, recipient, template, context, scheduled_time, headers, priority)
                   for recipient in recipients]
-        if priority == PRIORITY.now:
-            for email in emails:
-                email.dispatch()
     else:
-        if context:
-            context = Context(context)
-            subject = Template(subject).render(context)
-            message = Template(message).render(context)
-            html_message = Template(html_message).render(context)
-        emails = send_mail(subject=subject, message=message, from_email=sender,
-                           recipient_list=recipients, html_message=html_message,
-                           scheduled_time=scheduled_time, headers=headers,
-                           priority=priority)
+        emails = [create(sender, recipient, subject, message,
+                         html_message, context, scheduled_time, headers, priority)
+                  for recipient in recipients]
+
+    if priority == PRIORITY.now:
+        for email in emails:
+            email.dispatch()
+
     return emails
 
 
@@ -107,7 +123,7 @@ def send_queued(processes=1):
     """
     queued_emails = get_queued()
     total_sent, total_failed = 0, 0
-    total_email = len(queued_emails) 
+    total_email = len(queued_emails)
     
     logger.info('Started sending %s emails with %s processes.' %
                 (total_email, processes))
