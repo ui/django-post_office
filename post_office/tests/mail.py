@@ -8,7 +8,8 @@ from django.test.utils import override_settings
 
 from ..settings import get_batch_size
 from ..models import Email, PRIORITY, STATUS
-from ..mail import create, get_queued, send_queued, _send_bulk
+from ..mail import (create, get_queued, parse_priority,
+                    send_many, send_queued, _send_bulk)
 
 
 connection_counter = 0
@@ -189,4 +190,18 @@ class MailTest(TestCase):
         self.assertEqual(email.scheduled_time, now)
         self.assertEqual(email.headers, {'header': 'Test header'})
 
-        
+    def test_parse_priority(self):
+        self.assertEqual(parse_priority('now'), PRIORITY.now)
+        self.assertEqual(parse_priority('high'), PRIORITY.high)
+        self.assertEqual(parse_priority('medium'), PRIORITY.medium)
+        self.assertEqual(parse_priority('low'), PRIORITY.low)
+
+    def test_send_many(self):
+        """Test send_many creates the right emails """
+        kwargs_list = [
+            {'sender': 'from@example.com', 'recipients': ['a@example.com']},
+            {'sender': 'from@example.com', 'recipients': ['b@example.com']},
+        ]
+        send_many(kwargs_list)
+        self.assertEqual(Email.objects.filter(to='a@example.com').count(), 1)
+

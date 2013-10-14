@@ -23,6 +23,17 @@ except ImportError:
 logger = setup_loghandlers("INFO")
 
 
+def parse_priority(priority):
+    # If priority is given as a string, returns the enum representation
+    if isinstance(priority, basestring):
+        priority = getattr(PRIORITY, priority, None)
+
+        if priority is None:
+            raise ValueError('Invalid priority, must be one of: %s' %
+                             ', '.join(PRIORITY._fields))
+    return priority
+
+
 def create(sender, recipient, subject='', message='', html_message='',
            context={}, scheduled_time=None, headers=None,
            priority=PRIORITY.medium, commit=True):
@@ -68,21 +79,17 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
 
 def send(recipients, sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None,
-         headers=None, priority=PRIORITY.medium):
+         headers=None, priority=PRIORITY.medium, commit=True):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
-
-    if isinstance(priority, basestring):
-        # Try to find enum representation
-        priority = getattr(PRIORITY, priority, None)
-
-        if priority is None:
-            raise ValueError('Invalid priority, must be one of: %s' %
-                             ', '.join(PRIORITY._fields))
+    
+    priority = parse_priority(priority)
+    if not commit and priority == PRIORITY.now:
+        raise ValueError("send_many() can't be used to send emails with priority = 'now'")
 
     if template:
         if subject:
@@ -92,11 +99,12 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-        emails = [from_template(sender, recipient, template, context, scheduled_time, headers, priority)
+        emails = [from_template(sender, recipient, template, context,
+                                scheduled_time, headers, priority, commit=commit)
                   for recipient in recipients]
     else:
-        emails = [create(sender, recipient, subject, message,
-                         html_message, context, scheduled_time, headers, priority)
+        emails = [create(sender, recipient, subject, message, html_message,
+                         context, scheduled_time, headers, priority, commit=commit)
                   for recipient in recipients]
 
     if priority == PRIORITY.now:
@@ -104,6 +112,18 @@ def send(recipients, sender=None, template=None, context={}, subject='',
             email.dispatch()
 
     return emails
+
+
+def send_many(kwargs_list):
+    """
+    Similar to mail.send(), but this function accepts a list of kwargs.
+    Internally, it uses Django's bulk_create command for efficiency reasons.
+    Currently send_many() can't be used to send emails with priority = 'now'.
+    """
+    emails = []
+    for kwargs in kwargs_list:
+        emails.extend(send(commit=False, **kwargs))
+    Email.objects.bulk_create(emails)
 
 
 def get_queued():
