@@ -201,6 +201,39 @@ set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
     }
 
 
+send_many()
+-----------
+
+Starting from version 0.6.0, ``post-office`` includes ``mail.send_many()``
+that's much more performant (generates less database queries) when
+sending a large number of emails. Since this function uses Django's
+`bulk_create <https://docs.djangoproject.com/en/1.5/ref/models/querysets/#bulk-create>`_ command, it's only usable on Django >= 1.4.
+
+Behavior wise, ``mail.send_many()`` is almost identical to ``mail.send()``,
+with the exception that it accepts a list of keyword arguments that you'd
+usually pass into ``mail.send()``:
+
+.. code-block:: python
+
+    from post_office import mail
+    
+    first_email = {
+        'sender': 'from@example.com',
+        'recipients': ['alice@example.com'],
+        'subject': 'Hi!',
+        'message': 'Hi Alice!'
+    }
+    second_email = {
+        'sender': 'from@example.com',
+        'recipients': ['bob@example.com'],
+        'subject': 'Hi!',
+        'message': 'Hi Bob!'
+    }
+    kwargs_list = [first_email, second_email]
+
+    mail.send_many(kwargs_list)
+    
+
 Management Commands
 -------------------
 
@@ -277,6 +310,11 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.6.0
+-------------
+* Added mail.send_many() that's much more performant when sending
+  a large number emails
 
 Version 0.5.2
 -------------
