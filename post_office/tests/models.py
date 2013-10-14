@@ -255,6 +255,6 @@ class ModelTest(TestCase):
             invalid_priority_send()
 
         self.assertEquals(
-            context.exception.message,
+            str(context.exception),
             'Invalid priority, must be one of: low, medium, high, now'
         )
