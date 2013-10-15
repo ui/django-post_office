@@ -8,6 +8,7 @@ from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 
+from .compat import string_types
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend
 from .utils import get_email_template, split_emails
@@ -20,12 +21,13 @@ except ImportError:
     import datetime
     now = datetime.datetime.now
 
+
 logger = setup_loghandlers("INFO")
 
 
 def parse_priority(priority):
     # If priority is given as a string, returns the enum representation
-    if isinstance(priority, basestring):
+    if isinstance(priority, string_types):
         priority = getattr(PRIORITY, priority, None)
 
         if priority is None:

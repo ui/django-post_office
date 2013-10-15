@@ -3,7 +3,11 @@ import warnings
 from django.conf import settings
 from django.core.mail import get_connection
 from django.db.models import Q
-from django.utils.encoding import force_unicode
+
+try:
+    from django.utils.encoding import force_text    
+except ImportError:
+    from django.utils.encoding import force_unicode as force_text
 
 from post_office import cache
 from .models import Email, PRIORITY, STATUS, EmailTemplate
@@ -25,7 +29,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     ``send_mail`` core email method.
     """
 
-    subject = force_unicode(subject)
+    subject = force_text(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = []
     for address in recipient_list:
@@ -69,8 +73,9 @@ def send_queued_mail():
                 failed_count += 1
         if connection:
             connection.close()
-    print '{0} emails attempted, {1} sent, {2} failed'.format(len(queued_emails),
-                                                              sent_count, failed_count)
+    print('%s emails attempted, %s sent, %s failed' % (
+        len(queued_emails), sent_count, failed_count)
+    )
 
 
 def send_templated_mail(template_name, from_address, to_addresses,

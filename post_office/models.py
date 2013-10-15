@@ -1,10 +1,16 @@
+import sys
 import warnings
 
 from collections import namedtuple
 
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import models
-from django.utils.encoding import smart_unicode
+
+try:
+    from django.utils.encoding import smart_text # For Django >= 1.5
+except ImportError:
+    from django.utils.encoding import smart_unicode as smart_text
+
 from django.template import Context, Template
 
 from jsonfield import JSONField
@@ -80,7 +86,7 @@ class Email(models.Model):
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object
         from a ``Message`` instance, depending on whether html_message is empty.
         """
-        subject = smart_unicode(self.subject)
+        subject = smart_text(self.subject)
         msg = EmailMultiAlternatives(subject, self.message, self.from_email,
                                      [self.to], connection=connection,
                                      headers=self.headers)
@@ -106,9 +112,9 @@ class Email(models.Model):
             if connection_opened:
                 connection.close()
 
-        except Exception, err:
+        except Exception as err:
             status = STATUS.failed
-            message = unicode(err)
+            message = sys.exc_info()[1]
 
         self.status = status
         self.save()

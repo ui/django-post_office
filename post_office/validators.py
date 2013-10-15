@@ -3,6 +3,8 @@ import re
 from django.core.exceptions import ValidationError
 from django.template import Template, TemplateSyntaxError
 
+from .compat import text_type
+
 
 email_re = re.compile(r'\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b', re.IGNORECASE)
 
@@ -36,5 +38,5 @@ def validate_template_syntax(source):
     try:
         t = Template(source)
     except TemplateSyntaxError as err:
-        raise ValidationError(unicode(err))
+        raise ValidationError(text_type(err))
 
