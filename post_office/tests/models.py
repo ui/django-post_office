@@ -245,8 +245,7 @@ class ModelTest(TestCase):
         https://github.com/ui/django-post_office/issues/23
         """
         emails = send(['to1@example.com'], 'from@a.com', priority='low')
-
-        self.assertEquals(emails[0].priority, PRIORITY.low)
+        self.assertEqual(emails[0].priority, PRIORITY.low)
 
     def test_string_priority_exception(self):
         invalid_priority_send = lambda: send(['to1@example.com'], 'from@a.com', priority='hgh')
@@ -254,7 +253,7 @@ class ModelTest(TestCase):
         with self.assertRaises(ValueError) as context:
             invalid_priority_send()
 
-        self.assertEquals(
+        self.assertEqual(
             str(context.exception),
             'Invalid priority, must be one of: low, medium, high, now'
         )
