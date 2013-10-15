@@ -313,6 +313,7 @@ Changelog
 
 Version 0.6.0
 -------------
+* Support for Python 3!
 * Added mail.send_many() that's much more performant when sending
   a large number emails
 
