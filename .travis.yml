@@ -3,10 +3,11 @@ language: python
 python:
   - "2.6"
   - "2.7"
+  - "3.3"
 
 env:
-  - DJANGO=django==1.5.1 --use-mirrors
-  - DJANGO=django==1.4.5 --use-mirrors
+  - DJANGO=django==1.5.4
+  - DJANGO=django==1.4.5
 
 before_install:
   # Workaround for a permissions issue with Travis virtual machine images
