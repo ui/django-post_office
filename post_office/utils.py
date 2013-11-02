@@ -10,7 +10,7 @@ except ImportError:
     from django.utils.encoding import force_unicode as force_text
 
 from post_office import cache
-from .models import Email, PRIORITY, STATUS, EmailTemplate
+from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_email_backend
 
 
@@ -23,7 +23,8 @@ except ImportError:
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              scheduled_time=None, headers=None, priority=PRIORITY.medium):
+              scheduled_time=None, headers=None, priority=PRIORITY.medium,
+              attachments=None):
     """
     Add a new message to the mail queue. This is a replacement for Django's
     ``send_mail`` core email method.
@@ -33,13 +34,13 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = []
     for address in recipient_list:
-        emails.append(
-            Email.objects.create(
-                from_email=from_email, to=address, subject=subject,
-                message=message, html_message=html_message, status=status,
-                headers=headers, priority=priority, scheduled_time=scheduled_time
-            )
+        email = Email.objects.create(
+            from_email=from_email, to=address, subject=subject,
+            message=message, html_message=html_message, status=status,
+            headers=headers, priority=priority, scheduled_time=scheduled_time
         )
+        add_attachments(email, attachments)
+        emails.append(email)
     if priority == PRIORITY.now:
         for email in emails:
             email.dispatch()
@@ -114,3 +115,14 @@ def split_emails(emails, split_count=1):
     # Strange bug, only return 100 email if we do not evaluate the list
     if list(emails):
         return [emails[i::split_count] for i in range(split_count)]
+
+
+def add_attachments(email, attachments=None):
+    """
+    Add attachments to an Email instance.
+    attachments is a dict of filename file-like objects, the keys are filenames
+    """
+    attachments = attachments or {}
+    for filename, file_content in attachments.items():
+        attachment = Attachment(email=email)
+        attachment.attached_file.save(filename, content=file_content, save=True)

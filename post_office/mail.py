@@ -11,7 +11,7 @@ from django.template import Context, Template
 from .compat import string_types
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend
-from .utils import get_email_template, split_emails
+from .utils import get_email_template, split_emails, add_attachments
 from .logutils import setup_loghandlers
 
 try:
@@ -38,7 +38,7 @@ def parse_priority(priority):
 
 def create(sender, recipient, subject='', message='', html_message='',
            context={}, scheduled_time=None, headers=None,
-           priority=PRIORITY.medium, commit=True):
+           priority=PRIORITY.medium, attachments=None, commit=True):
     """
     Creates an email from supplied keyword arguments
     """
@@ -57,31 +57,34 @@ def create(sender, recipient, subject='', message='', html_message='',
         scheduled_time=scheduled_time,
         headers=headers, priority=priority, status=status
     )
+    add_attachments(email, attachments)
     if commit:
         email.save()
     return email
 
 
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
-                  headers=None, priority=PRIORITY.medium, commit=True):
+                  headers=None, priority=PRIORITY.medium, attachments=None, commit=True):
     """Loads an email template and create an email from it."""
-    # template can be an EmailTemplate instance of name
+    # template can be an EmailTemplate instance or name
     if isinstance(template, EmailTemplate):
         template = template
     else:
         template = get_email_template(template)
 
-    return create(
+    email = create(
         sender=sender, recipient=recipient, subject=template.subject,
         message=template.content, html_message=template.html_content,
         context=context, scheduled_time=scheduled_time, headers=headers,
         priority=priority, commit=commit
     )
+    add_attachments(email, attachments)
+    return email
 
 
 def send(recipients, sender=None, template=None, context={}, subject='',
-         message='', html_message='', scheduled_time=None,
-         headers=None, priority=PRIORITY.medium, commit=True):
+         message='', html_message='', scheduled_time=None, headers=None,
+         priority=PRIORITY.medium, attachments=None, commit=True):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
@@ -101,12 +104,12 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-        emails = [from_template(sender, recipient, template, context,
-                                scheduled_time, headers, priority, commit=commit)
+        emails = [from_template(sender, recipient, template, context, scheduled_time,
+                                headers, priority, attachments, commit)
                   for recipient in recipients]
     else:
-        emails = [create(sender, recipient, subject, message, html_message,
-                         context, scheduled_time, headers, priority, commit=commit)
+        emails = [create(sender, recipient, subject, message, html_message, context,
+                         scheduled_time, headers, priority, attachments, commit)
                   for recipient in recipients]
 
     if priority == PRIORITY.now:
