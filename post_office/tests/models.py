@@ -263,12 +263,12 @@ class ModelTest(TestCase):
         email = Email.objects.create(to='to@example.com',
                                      from_email='from@example.com')
         attachment = Attachment(email=email)
-        attachment.attached_file.save(
+        attachment.file.save(
             'test.txt',
             content=ContentFile('test file content'),
             save=True
         )
-        self.assertEquals(attachment.original_filename, 'test.txt')
+        self.assertEquals(attachment.name, 'test.txt')
 
     def test_email_attachments_send(self):
         email = Email.objects.create(to='to@example.com',
@@ -276,7 +276,7 @@ class ModelTest(TestCase):
                                      subject='Subject')
 
         attachment = Attachment(email=email)
-        attachment.attached_file.save(
+        attachment.file.save(
             'test.txt', content=ContentFile('test file content'),
             save=True
         )

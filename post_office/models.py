@@ -94,8 +94,7 @@ class Email(models.Model):
             msg.attach_alternative(self.html_message, "text/html")
 
         for attachment in self.attachments.all():
-            msg.attach(attachment.original_filename,
-                       attachment.attached_file.read())
+            msg.attach(attachment.name, attachment.file.read())
 
         return msg
 
@@ -182,11 +181,11 @@ class Attachment(models.Model):
     """
     def get_upload_path(self, filename):
         """Overriding to store the original filename"""
-        if not self.original_filename:
-            self.original_filename = filename  # set original filename
+        if not self.name:
+            self.name = filename  # set original filename
 
         return 'post_office_attachments/' + filename
 
     email = models.ForeignKey(Email, related_name='attachments')
-    attached_file = models.FileField(upload_to=get_upload_path)
-    original_filename = models.CharField(max_length=255)
+    file = models.FileField(upload_to=get_upload_path)
+    name = models.CharField(max_length=255, help_text='The original filename')

@@ -12,8 +12,8 @@ class Migration(SchemaMigration):
         db.create_table(u'post_office_attachment', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('email', self.gf('django.db.models.fields.related.ForeignKey')(related_name='attachments', to=orm['post_office.Email'])),
-            ('attached_file', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
-            ('original_filename', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('file', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
         ))
         db.send_create_signal(u'post_office', ['Attachment'])
 
@@ -26,10 +26,10 @@ class Migration(SchemaMigration):
     models = {
         u'post_office.attachment': {
             'Meta': {'object_name': 'Attachment'},
-            'attached_file': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
             'email': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'attachments'", 'to': u"orm['post_office.Email']"}),
+            'file': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'original_filename': ('django.db.models.fields.CharField', [], {'max_length': '255'})
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'})
         },
         u'post_office.email': {
             'Meta': {'ordering': "('-created',)", 'object_name': 'Email'},

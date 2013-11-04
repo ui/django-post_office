@@ -5,7 +5,7 @@ from django.core.mail import get_connection
 from django.db.models import Q
 
 try:
-    from django.utils.encoding import force_text    
+    from django.utils.encoding import force_text
 except ImportError:
     from django.utils.encoding import force_unicode as force_text
 
@@ -125,4 +125,4 @@ def add_attachments(email, attachments=None):
     attachments = attachments or {}
     for filename, file_content in attachments.items():
         attachment = Attachment(email=email)
-        attachment.attached_file.save(filename, content=file_content, save=True)
+        attachment.file.save(filename, content=file_content, save=True)
