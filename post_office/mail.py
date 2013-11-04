@@ -57,9 +57,9 @@ def create(sender, recipient, subject='', message='', html_message='',
         scheduled_time=scheduled_time,
         headers=headers, priority=priority, status=status
     )
-    add_attachments(email, attachments)
     if commit:
         email.save()
+    add_attachments(email, attachments)
     return email
 
 
@@ -93,8 +93,11 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         sender = settings.DEFAULT_FROM_EMAIL
     
     priority = parse_priority(priority)
-    if not commit and priority == PRIORITY.now:
-        raise ValueError("send_many() can't be used to send emails with priority = 'now'")
+    if not commit:
+        if priority == PRIORITY.now:
+            raise ValueError("send_many() can't be used to send emails with priority = 'now'")
+        if attachments:
+            raise ValueError("Can't add attachments with send_many()")
 
     if template:
         if subject:
