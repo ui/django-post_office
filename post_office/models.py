@@ -185,10 +185,8 @@ class Attachment(models.Model):
         if not self.original_filename:
             self.original_filename = filename  # set original filename
 
-        # TODO: save with uuid4 instead?
         return 'post_office_attachments/' + filename
 
     email = models.ForeignKey(Email, related_name='attachments')
-    attached_file = models.FileField(upload_to=get_upload_path,
-                                     null=False, blank=False)
+    attached_file = models.FileField(upload_to=get_upload_path)
     original_filename = models.CharField(max_length=255)
