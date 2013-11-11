@@ -10,6 +10,7 @@ from django.test.utils import override_settings
 
 from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from ..mail import from_template, send
+from ..compat import text_type
 
 
 class ModelTest(TestCase):
@@ -284,4 +285,4 @@ class ModelTest(TestCase):
 
         self.assertTrue(isinstance(message, EmailMultiAlternatives))
         self.assertEqual(message.attachments,
-                         [('test.txt', 'test file content', None)])
+                         [('test.txt', b'test file content', None)])
