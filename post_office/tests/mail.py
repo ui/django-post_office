@@ -205,3 +205,6 @@ class MailTest(TestCase):
         send_many(kwargs_list)
         self.assertEqual(Email.objects.filter(to='a@example.com').count(), 1)
 
+    def test_send_with_attachments(self):
+        pass
+

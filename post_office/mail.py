@@ -91,7 +91,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
-    
+
     priority = parse_priority(priority)
     if not commit:
         if priority == PRIORITY.now:
@@ -142,7 +142,7 @@ def get_queued():
     """
     return Email.objects.filter(status=STATUS.queued) \
         .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
-        .order_by('-priority')[:get_batch_size()]
+        .order_by('-priority').prefetch_related('attachments')[:get_batch_size()]
 
 
 def send_queued(processes=1):
@@ -152,7 +152,7 @@ def send_queued(processes=1):
     queued_emails = get_queued()
     total_sent, total_failed = 0, 0
     total_email = len(queued_emails)
-    
+
     logger.info('Started sending %s emails with %s processes.' %
                 (total_email, processes))
 
