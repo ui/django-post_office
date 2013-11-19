@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
 
 from django.core import mail
+from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 
 from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate
-from ..utils import send_mail, send_queued_mail, get_email_template, send_templated_mail, split_emails
+from ..utils import (send_mail, send_queued_mail, get_email_template, send_templated_mail,
+                     split_emails, add_attachments)
 from ..validators import validate_email_with_name
 
 
@@ -89,3 +91,16 @@ class UtilsTest(TestCase):
         expected_size = [57, 56, 56, 56]
         email_list = split_emails(Email.objects.all(), 4)
         self.assertEqual(expected_size, [len(emails) for emails in email_list])
+
+    def test_add_attachments(self):
+        Email.objects.create(subject='subject', message='message', from_email='from@example.com',
+                             to='to@example.com', priority=PRIORITY.medium)
+        email = Email.objects.latest('id')
+
+        add_attachments(email, {
+            'attachment_file1.txt': ContentFile('content'),
+            'attachment_file2.txt': ContentFile('content'),
+        })
+
+        self.assertEquals(email.attachments.count(), 2)
+        self.assertEquals(email.attachments.all()[0].file.read(), 'content')
