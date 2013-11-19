@@ -95,4 +95,4 @@ class BackendTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.attachments.count(), 1)
         self.assertEqual(email.attachments.all()[0].name, 'attachment.txt')
-        self.assertEqual(email.attachments.all()[0].file.read(), 'attachment content')
+        self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')

@@ -37,8 +37,8 @@ class EmailBackend(BaseEmailBackend):
             else:
                 html_message = ''
 
-            attachments = {name: ContentFile(content)
-                           for name, content, _ in email.attachments}
+            attachments = dict([(name, ContentFile(content))
+                               for name, content, _ in email.attachments])
 
             for recipient in email.to:
                 create(sender=from_email, recipient=recipient, subject=subject,
