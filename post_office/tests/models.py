@@ -271,18 +271,35 @@ class ModelTest(TestCase):
         )
         self.assertEquals(attachment.name, 'test.txt')
 
-    def test_email_attachments_send(self):
+    def test_attachments_email_message(self):
         email = Email.objects.create(to='to@example.com',
                                      from_email='from@example.com',
                                      subject='Subject')
 
         attachment = Attachment(email=email)
         attachment.file.save(
-            'test.txt', content=ContentFile('test file content'),
-            save=True
+            'test.txt', content=ContentFile('test file content'), save=True
         )
         message = email.email_message()
 
         self.assertTrue(isinstance(message, EmailMultiAlternatives))
         self.assertEqual(message.attachments,
+                         [('test.txt', b'test file content', None)])
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_dispatch_with_attachments(self):
+        email = Email.objects.create(to='to@example.com',
+                                     from_email='from@example.com',
+                                     subject='Subject', message='message')
+
+        attachment = Attachment(email=email)
+        attachment.file.save(
+            'test.txt', content=ContentFile('test file content'), save=True
+        )
+
+        email.dispatch()
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Subject')
+        self.assertEqual(mail.outbox[0].attachments,
                          [('test.txt', b'test file content', None)])
