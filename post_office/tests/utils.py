@@ -103,4 +103,4 @@ class UtilsTest(TestCase):
         })
 
         self.assertEquals(email.attachments.count(), 2)
-        self.assertEquals(email.attachments.all()[0].file.read(), 'content')
+        self.assertEquals(email.attachments.all()[0].file.read(), b'content')
