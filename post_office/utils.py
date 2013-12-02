@@ -117,7 +117,7 @@ def split_emails(emails, split_count=1):
         return [emails[i::split_count] for i in range(split_count)]
 
 
-def add_attachments(email, attachments=None):
+def add_attachments(emails, attachments=None):
     """
     Add attachments to an Email instance.
 
@@ -136,7 +136,7 @@ def add_attachments(email, attachments=None):
 
         attachment = Attachment()
         attachment.file.save(filename, content=content, save=True)
-        attachment.emails.add(email)
+        attachment.emails.add(*emails)
 
         if opened_file:
             opened_file.close()

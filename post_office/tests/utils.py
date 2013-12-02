@@ -97,7 +97,7 @@ class UtilsTest(TestCase):
                              to='to@example.com', priority=PRIORITY.medium)
         email = Email.objects.latest('id')
 
-        add_attachments(email, {
+        add_attachments([email], {
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         })
@@ -110,7 +110,7 @@ class UtilsTest(TestCase):
                              to='to@example.com', priority=PRIORITY.medium)
         email = Email.objects.latest('id')
 
-        add_attachments(email, {
+        add_attachments([email], {
             'attachment_file.py': __file__,
         })
 

@@ -38,7 +38,7 @@ def parse_priority(priority):
 
 def create(sender, recipient, subject='', message='', html_message='',
            context={}, scheduled_time=None, headers=None,
-           priority=PRIORITY.medium, attachments=None, commit=True):
+           priority=PRIORITY.medium, commit=True):
     """
     Creates an email from supplied keyword arguments
     """
@@ -59,12 +59,11 @@ def create(sender, recipient, subject='', message='', html_message='',
     )
     if commit:
         email.save()
-    add_attachments(email, attachments)
     return email
 
 
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
-                  headers=None, priority=PRIORITY.medium, attachments=None, commit=True):
+                  headers=None, priority=PRIORITY.medium, commit=True):
     """Loads an email template and create an email from it."""
     # template can be an EmailTemplate instance or name
     if isinstance(template, EmailTemplate):
@@ -72,14 +71,12 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
     else:
         template = get_email_template(template)
 
-    email = create(
+    return create(
         sender=sender, recipient=recipient, subject=template.subject,
         message=template.content, html_message=template.html_content,
         context=context, scheduled_time=scheduled_time, headers=headers,
         priority=priority, commit=commit
     )
-    add_attachments(email, attachments)
-    return email
 
 
 def send(recipients, sender=None, template=None, context={}, subject='',
@@ -108,12 +105,15 @@ def send(recipients, sender=None, template=None, context={}, subject='',
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
         emails = [from_template(sender, recipient, template, context, scheduled_time,
-                                headers, priority, attachments, commit)
+                                headers, priority, commit)
                   for recipient in recipients]
     else:
         emails = [create(sender, recipient, subject, message, html_message, context,
-                         scheduled_time, headers, priority, attachments, commit)
+                         scheduled_time, headers, priority, commit)
                   for recipient in recipients]
+
+    if attachments:
+        add_attachments(emails, attachments)
 
     if priority == PRIORITY.now:
         for email in emails:
