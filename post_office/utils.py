@@ -23,8 +23,7 @@ except ImportError:
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
-              scheduled_time=None, headers=None, priority=PRIORITY.medium,
-              attachments=None):
+              scheduled_time=None, headers=None, priority=PRIORITY.medium):
     """
     Add a new message to the mail queue. This is a replacement for Django's
     ``send_mail`` core email method.
@@ -34,13 +33,13 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = []
     for address in recipient_list:
-        email = Email.objects.create(
-            from_email=from_email, to=address, subject=subject,
-            message=message, html_message=html_message, status=status,
-            headers=headers, priority=priority, scheduled_time=scheduled_time
+        emails.append(
+            Email.objects.create(
+                from_email=from_email, to=address, subject=subject,
+                message=message, html_message=html_message, status=status,
+                headers=headers, priority=priority, scheduled_time=scheduled_time
+            )
         )
-        add_attachments(email, attachments)
-        emails.append(email)
     if priority == PRIORITY.now:
         for email in emails:
             email.dispatch()
