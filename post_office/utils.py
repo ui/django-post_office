@@ -1,6 +1,7 @@
 import warnings
 
 from django.conf import settings
+from django.core.files import File
 from django.core.mail import get_connection
 from django.db.models import Q
 
@@ -10,9 +11,9 @@ except ImportError:
     from django.utils.encoding import force_unicode as force_text
 
 from post_office import cache
+from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_email_backend
-
 
 try:
     from django.utils import timezone
@@ -119,9 +120,16 @@ def split_emails(emails, split_count=1):
 def add_attachments(email, attachments=None):
     """
     Add attachments to an Email instance.
-    attachments is a dict of filename file-like objects, the keys are filenames
+
+    attachments is a dict of:
+        * Key - the filename to be used for the attachment.
+        * Value - file-like object, or a filename to open.
     """
     attachments = attachments or {}
-    for filename, file_content in attachments.items():
+    for filename, content in attachments.items():
+        if isinstance(content, string_types):
+            # `content` is a filename - try to open the file
+            content = File(file(content, 'rb'))
+
         attachment = Attachment(email=email)
-        attachment.file.save(filename, content=file_content, save=True)
+        attachment.file.save(filename, content=content, save=True)

@@ -104,3 +104,15 @@ class UtilsTest(TestCase):
 
         self.assertEquals(email.attachments.count(), 2)
         self.assertEquals(email.attachments.all()[0].file.read(), b'content')
+
+    def test_add_attachments_open_file(self):
+        Email.objects.create(subject='subject', message='message', from_email='from@example.com',
+                             to='to@example.com', priority=PRIORITY.medium)
+        email = Email.objects.latest('id')
+
+        add_attachments(email, {
+            'attachment_file.py': __file__,
+        })
+
+        self.assertEquals(email.attachments.count(), 1)
+        self.assertTrue(email.attachments.all()[0].file.read())
