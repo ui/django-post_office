@@ -127,9 +127,15 @@ def add_attachments(email, attachments=None):
     """
     attachments = attachments or {}
     for filename, content in attachments.items():
+        opened_file = None
+
         if isinstance(content, string_types):
             # `content` is a filename - try to open the file
-            content = File(file(content, 'rb'))
+            opened_file = open(content, 'rb')
+            content = File(opened_file)
 
         attachment = Attachment(email=email)
         attachment.file.save(filename, content=content, save=True)
+
+        if opened_file:
+            opened_file.close()
