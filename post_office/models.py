@@ -1,5 +1,6 @@
 import sys
 import warnings
+from uuid import uuid4
 
 from collections import namedtuple
 
@@ -183,6 +184,8 @@ class Attachment(models.Model):
         """Overriding to store the original filename"""
         if not self.name:
             self.name = filename  # set original filename
+
+        filename = '{name}.{ext}'.format(name=uuid4().hex, ext=filename.split('.')[-1])
 
         return 'post_office_attachments/' + filename
 
