@@ -134,8 +134,9 @@ def add_attachments(email, attachments=None):
             opened_file = open(content, 'rb')
             content = File(opened_file)
 
-        attachment = Attachment(email=email)
+        attachment = Attachment()
         attachment.file.save(filename, content=content, save=True)
+        attachment.emails.add(email)
 
         if opened_file:
             opened_file.close()

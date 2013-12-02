@@ -73,8 +73,9 @@ class Email(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
-    objects = EmailManager()
     headers = JSONField(blank=True, null=True)
+
+    objects = EmailManager()
 
     class Meta:
         ordering = ('-created',)
@@ -189,6 +190,6 @@ class Attachment(models.Model):
 
         return 'post_office_attachments/' + filename
 
-    email = models.ForeignKey(Email, related_name='attachments')
     file = models.FileField(upload_to=get_upload_path)
     name = models.CharField(max_length=255, help_text='The original filename')
+    emails = models.ManyToManyField(Email, related_name='attachments')

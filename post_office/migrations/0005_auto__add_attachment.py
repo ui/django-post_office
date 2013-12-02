@@ -11,22 +11,33 @@ class Migration(SchemaMigration):
         # Adding model 'Attachment'
         db.create_table(u'post_office_attachment', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('email', self.gf('django.db.models.fields.related.ForeignKey')(related_name='attachments', to=orm['post_office.Email'])),
             ('file', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
             ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
         ))
         db.send_create_signal(u'post_office', ['Attachment'])
+
+        # Adding M2M table for field emails on 'Attachment'
+        m2m_table_name = db.shorten_name(u'post_office_attachment_emails')
+        db.create_table(m2m_table_name, (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('attachment', models.ForeignKey(orm[u'post_office.attachment'], null=False)),
+            ('email', models.ForeignKey(orm[u'post_office.email'], null=False))
+        ))
+        db.create_unique(m2m_table_name, ['attachment_id', 'email_id'])
 
 
     def backwards(self, orm):
         # Deleting model 'Attachment'
         db.delete_table(u'post_office_attachment')
 
+        # Removing M2M table for field emails on 'Attachment'
+        db.delete_table(db.shorten_name(u'post_office_attachment_emails'))
+
 
     models = {
         u'post_office.attachment': {
             'Meta': {'object_name': 'Attachment'},
-            'email': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'attachments'", 'to': u"orm['post_office.Email']"}),
+            'emails': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'attachments'", 'symmetrical': 'False', 'to': u"orm['post_office.Email']"}),
             'file': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'})

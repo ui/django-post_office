@@ -261,9 +261,8 @@ class ModelTest(TestCase):
         )
 
     def test_attachment_filename(self):
-        email = Email.objects.create(to='to@example.com',
-                                     from_email='from@example.com')
-        attachment = Attachment(email=email)
+        attachment = Attachment()
+
         attachment.file.save(
             'test.txt',
             content=ContentFile('test file content'),
@@ -276,10 +275,11 @@ class ModelTest(TestCase):
                                      from_email='from@example.com',
                                      subject='Subject')
 
-        attachment = Attachment(email=email)
+        attachment = Attachment()
         attachment.file.save(
             'test.txt', content=ContentFile('test file content'), save=True
         )
+        email.attachments.add(attachment)
         message = email.email_message()
 
         self.assertTrue(isinstance(message, EmailMultiAlternatives))
@@ -292,11 +292,11 @@ class ModelTest(TestCase):
                                      from_email='from@example.com',
                                      subject='Subject', message='message')
 
-        attachment = Attachment(email=email)
+        attachment = Attachment()
         attachment.file.save(
             'test.txt', content=ContentFile('test file content'), save=True
         )
-
+        email.attachments.add(attachment)
         email.dispatch()
 
         self.assertEqual(len(mail.outbox), 1)
