@@ -117,7 +117,7 @@ def split_emails(emails, split_count=1):
         return [emails[i::split_count] for i in range(split_count)]
 
 
-def add_attachments(emails, attachments=None):
+def add_attachments(emails, attachments):
     """
     Add attachments to an Email instance.
 

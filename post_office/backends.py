@@ -44,4 +44,5 @@ class EmailBackend(BaseEmailBackend):
             emails = [create(sender=from_email, recipient=recipient, subject=subject,
                              message=message, html_message=html_message, headers=headers)
                       for recipient in email.to]
-            add_attachments(emails, attachments)
+            if attachments:
+                add_attachments(emails, attachments)
