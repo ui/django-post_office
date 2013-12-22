@@ -2,7 +2,7 @@ from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
 
 from .mail import create
-from .utils import add_attachments, create_attachments
+from .utils import create_attachments
 
 
 class EmailBackend(BaseEmailBackend):
@@ -49,4 +49,4 @@ class EmailBackend(BaseEmailBackend):
                 attachments = create_attachments(attachment_files)
 
                 for email in emails:
-                    add_attachments(email, attachments)
+                    email.attachments.add(*attachments)

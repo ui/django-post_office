@@ -145,10 +145,3 @@ def create_attachments(attachment_files):
             opened_file.close()
 
     return attachments
-
-
-def add_attachments(email, attachments):
-    """
-    Add attachments to an Email instance.
-    """
-    email.attachments.add(*attachments)

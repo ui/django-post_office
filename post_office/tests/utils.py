@@ -9,7 +9,7 @@ from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
 from ..utils import (send_mail, send_queued_mail, get_email_template, send_templated_mail,
-                     split_emails, add_attachments, create_attachments)
+                     split_emails, create_attachments)
 from ..validators import validate_email_with_name
 
 
@@ -114,17 +114,3 @@ class UtilsTest(TestCase):
         self.assertTrue(attachments[0].pk)
         self.assertTrue(attachments[0].file.read())
         self.assertEquals(attachments[0].name, 'attachment_file.py')
-
-    def test_add_attachments(self):
-        attachments = create_attachments({
-            'attachment_file1.txt': ContentFile('content'),
-            'attachment_file2.txt': ContentFile('content'),
-        })
-        email = Email.objects.create(subject='subject', message='message',
-                                     from_email='from@example.com',
-                                     to='to@example.com', priority=PRIORITY.medium)
-
-        add_attachments(email, attachments)
-
-        self.assertEquals(email.attachments.count(), 2)
-        self.assertEquals(email.attachments.all()[0].file.read(), b'content')
