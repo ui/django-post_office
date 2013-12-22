@@ -7,9 +7,9 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, STATUS, PRIORITY, EmailTemplate
+from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
 from ..utils import (send_mail, send_queued_mail, get_email_template, send_templated_mail,
-                     split_emails, add_attachments)
+                     split_emails, add_attachments, create_attachments)
 from ..validators import validate_email_with_name
 
 
@@ -92,27 +92,39 @@ class UtilsTest(TestCase):
         email_list = split_emails(Email.objects.all(), 4)
         self.assertEqual(expected_size, [len(emails) for emails in email_list])
 
-    def test_add_attachments(self):
-        Email.objects.create(subject='subject', message='message', from_email='from@example.com',
-                             to='to@example.com', priority=PRIORITY.medium)
-        email = Email.objects.latest('id')
-
-        add_attachments([email], {
+    def test_create_attachments(self):
+        attachments = create_attachments({
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         })
 
-        self.assertEquals(email.attachments.count(), 2)
-        self.assertEquals(email.attachments.all()[0].file.read(), b'content')
+        self.assertEqual(len(attachments), 2)
+        self.assertIsInstance(attachments[0], Attachment)
+        self.assertTrue(attachments[0].pk)
+        self.assertEquals(attachments[0].file.read(), 'content')
+        self.assertEquals(attachments[0].name, 'attachment_file1.txt')
 
-    def test_add_attachments_open_file(self):
-        Email.objects.create(subject='subject', message='message', from_email='from@example.com',
-                             to='to@example.com', priority=PRIORITY.medium)
-        email = Email.objects.latest('id')
-
-        add_attachments([email], {
+    def test_create_attachments_open_file(self):
+        attachments = create_attachments({
             'attachment_file.py': __file__,
         })
 
-        self.assertEquals(email.attachments.count(), 1)
-        self.assertTrue(email.attachments.all()[0].file.read())
+        self.assertEqual(len(attachments), 1)
+        self.assertIsInstance(attachments[0], Attachment)
+        self.assertTrue(attachments[0].pk)
+        self.assertTrue(attachments[0].file.read())
+        self.assertEquals(attachments[0].name, 'attachment_file.py')
+
+    def test_add_attachments(self):
+        attachments = create_attachments({
+            'attachment_file1.txt': ContentFile('content'),
+            'attachment_file2.txt': ContentFile('content'),
+        })
+        email = Email.objects.create(subject='subject', message='message',
+                                     from_email='from@example.com',
+                                     to='to@example.com', priority=PRIORITY.medium)
+
+        add_attachments(email, attachments)
+
+        self.assertEquals(email.attachments.count(), 2)
+        self.assertEquals(email.attachments.all()[0].file.read(), b'content')

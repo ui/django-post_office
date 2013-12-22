@@ -11,7 +11,7 @@ from django.template import Context, Template
 from .compat import string_types
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend
-from .utils import get_email_template, split_emails, add_attachments
+from .utils import get_email_template, split_emails, add_attachments, create_attachments
 from .logutils import setup_loghandlers
 
 try:
@@ -113,7 +113,9 @@ def send(recipients, sender=None, template=None, context={}, subject='',
                   for recipient in recipients]
 
     if attachments:
-        add_attachments(emails, attachments)
+        attachments = create_attachments(attachments)
+        for email in emails:
+            add_attachments(email, attachments)
 
     if priority == PRIORITY.now:
         for email in emails:

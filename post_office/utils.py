@@ -117,16 +117,18 @@ def split_emails(emails, split_count=1):
         return [emails[i::split_count] for i in range(split_count)]
 
 
-def add_attachments(emails, attachments):
+def create_attachments(attachment_files):
     """
-    Add attachments to an Email instance.
+    Create Attachment instances from files
 
-    attachments is a dict of:
+    attachment_files is a dict of:
         * Key - the filename to be used for the attachment.
         * Value - file-like object, or a filename to open.
+
+    Returns a list of Attachment objects
     """
-    attachments = attachments or {}
-    for filename, content in attachments.items():
+    attachments = []
+    for filename, content in attachment_files.items():
         opened_file = None
 
         if isinstance(content, string_types):
@@ -136,7 +138,17 @@ def add_attachments(emails, attachments):
 
         attachment = Attachment()
         attachment.file.save(filename, content=content, save=True)
-        attachment.emails.add(*emails)
+
+        attachments.append(attachment)
 
         if opened_file:
             opened_file.close()
+
+    return attachments
+
+
+def add_attachments(email, attachments):
+    """
+    Add attachments to an Email instance.
+    """
+    email.attachments.add(*attachments)
