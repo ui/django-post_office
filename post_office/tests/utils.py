@@ -101,7 +101,7 @@ class UtilsTest(TestCase):
         self.assertEqual(len(attachments), 2)
         self.assertIsInstance(attachments[0], Attachment)
         self.assertTrue(attachments[0].pk)
-        self.assertEquals(attachments[0].file.read(), 'content')
+        self.assertEquals(attachments[0].file.read(), b'content')
         self.assertEquals(attachments[0].name, 'attachment_file1.txt')
 
     def test_create_attachments_open_file(self):
