@@ -100,7 +100,7 @@ class ModelTest(TestCase):
         self.assertEqual(email.status, STATUS.failed)
         self.assertEqual(log.email, email)
         self.assertEqual(log.status, STATUS.failed)
-        self.assertIn('does not define a "backend" class', log.message)
+        self.assertIn('does not define a "backend"', log.message)
 
     def test_from_template(self):
         """

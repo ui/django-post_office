@@ -35,7 +35,7 @@ settings.configure(
     ),
     DEFAULT_FROM_EMAIL='default@example.com',
     ROOT_URLCONF = 'post_office.test_urls',
-
+    TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner',
 )
 
 from django.test.utils import get_runner

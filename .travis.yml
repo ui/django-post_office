@@ -6,13 +6,14 @@ python:
   - "3.3"
 
 env:
-  - DJANGO=1.5.4
-  - DJANGO=1.4.5
+  - DJANGO=1.4.9
+  - DJANGO=1.5.5
+  - DJANGO=1.6.1
 
 matrix:
   exclude:
     - python: "3.3"
-      env: DJANGO=1.4.5
+      env: DJANGO=1.4.9
 
 before_install:
   # Workaround for a permissions issue with Travis virtual machine images
