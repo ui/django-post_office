@@ -141,7 +141,7 @@ def create_attachments(attachment_files):
 
         attachments.append(attachment)
 
-        if opened_file:
+        if opened_file is not None:
             opened_file.close()
 
     return attachments
