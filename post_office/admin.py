@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.text import Truncator
 
 from .models import Email, Log, EmailTemplate
 
@@ -29,7 +30,22 @@ class LogAdmin(admin.ModelAdmin):
 
 
 class EmailTemplateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'subject', 'created')
+    list_display = ('name', 'description_shortened', 'subject', 'created')
+    search_fields = ('name', 'description', 'subject')
+    fieldsets = [
+        (None, {
+            'fields': ('name', 'description'),
+        }),
+        ('Email', {
+            'fields': ('subject', 'content', 'html_content'),
+        }),
+    ]
+
+    def description_shortened(self, instance):
+        return Truncator(instance.description.split('\n')[0]).chars(200)
+    description_shortened.short_description = 'description'
+    description_shortened.admin_order_field = 'description'
+
 
 admin.site.register(Email, EmailAdmin)
 admin.site.register(Log, LogAdmin)
