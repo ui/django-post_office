@@ -94,6 +94,9 @@ html_message    No       Email's HTML content (if ``template`` is not specified)
 headers         No       A dictionary of extra headers to put on the message
 scheduled_time  No       A date/datetime object indicating when the email should be sent
 priority        No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
+attachments     No       Email attachments - A dictionary where the keys are the wanted filenames,
+                         and the values are either files or file-like objects, or full path of
+                         the file.
 =============== ======== =========================
 
 Here are a few examples.
@@ -135,6 +138,24 @@ regardless of how many emails you have in your queue:
 This is useful if you already use something like `django-rq <https://github.com/ui/django-rq>`_
 to send emails asynchronously and only need to store email related activities and logs.
 
+Sending an email with attachments:
+
+.. code-block:: python
+
+    from django.core.files.base import ContentFile
+    from post_office import mail
+
+    mail.send(
+        ['recipient1@example.com'],
+        'from@example.com',
+        template='welcome_email',
+        context={'foo': 'bar'},
+        priority='now',
+        attachments={
+            'attachment1.doc', '/path/to/file/file1.doc',
+            'attachment2.txt', ContentFile('file content'),
+        }
+    )
 
 Template Tags and Variables
 ---------------------------
@@ -232,6 +253,8 @@ usually pass into ``mail.send()``:
     kwargs_list = [first_email, second_email]
 
     mail.send_many(kwargs_list)
+
+Attachments are not supported with ``mail.send_many()``.
     
 
 Management Commands

@@ -1,18 +1,19 @@
 import warnings
 
 from django.conf import settings
+from django.core.files import File
 from django.core.mail import get_connection
 from django.db.models import Q
 
 try:
-    from django.utils.encoding import force_text    
+    from django.utils.encoding import force_text
 except ImportError:
     from django.utils.encoding import force_unicode as force_text
 
 from post_office import cache
-from .models import Email, PRIORITY, STATUS, EmailTemplate
+from .compat import string_types
+from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_email_backend
-
 
 try:
     from django.utils import timezone
@@ -114,3 +115,33 @@ def split_emails(emails, split_count=1):
     # Strange bug, only return 100 email if we do not evaluate the list
     if list(emails):
         return [emails[i::split_count] for i in range(split_count)]
+
+
+def create_attachments(attachment_files):
+    """
+    Create Attachment instances from files
+
+    attachment_files is a dict of:
+        * Key - the filename to be used for the attachment.
+        * Value - file-like object, or a filename to open.
+
+    Returns a list of Attachment objects
+    """
+    attachments = []
+    for filename, content in attachment_files.items():
+        opened_file = None
+
+        if isinstance(content, string_types):
+            # `content` is a filename - try to open the file
+            opened_file = open(content, 'rb')
+            content = File(opened_file)
+
+        attachment = Attachment()
+        attachment.file.save(filename, content=content, save=True)
+
+        attachments.append(attachment)
+
+        if opened_file is not None:
+            opened_file.close()
+
+    return attachments

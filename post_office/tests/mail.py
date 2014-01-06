@@ -1,15 +1,16 @@
 from datetime import date, datetime
 
 from django.core import mail
+from django.core.files.base import ContentFile
 from django.conf import settings
 
 from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..settings import get_batch_size
-from ..models import Email, PRIORITY, STATUS
+from ..models import Email, Attachment, PRIORITY, STATUS
 from ..mail import (create, get_queued, parse_priority,
-                    send_many, send_queued, _send_bulk)
+                    send, send_many, send_queued, _send_bulk)
 
 
 connection_counter = 0
@@ -205,3 +206,31 @@ class MailTest(TestCase):
         send_many(kwargs_list)
         self.assertEqual(Email.objects.filter(to='a@example.com').count(), 1)
 
+    def test_send_with_attachments(self):
+        attachments = {
+            'attachment_file1.txt': ContentFile('content'),
+            'attachment_file2.txt': ContentFile('content'),
+        }
+        emails = send(recipients=['a@example.com', 'b@example.com'],
+                      sender='from@example.com', message='message',
+                      subject='subject', attachments=attachments)
+
+        self.assertEquals(len(emails), 2)
+
+        email = emails[0]
+        self.assertTrue(email.pk)
+        self.assertEquals(email.attachments.count(), 2)
+
+    def test_send_with_attachments_multiple_emails(self):
+        """Test reusing the same attachment objects for several email objects"""
+        attachments = {
+            'attachment_file1.txt': ContentFile('content'),
+            'attachment_file2.txt': ContentFile('content'),
+        }
+        emails = send(recipients=['a@example.com', 'b@example.com'],
+                      sender='from@example.com', message='message',
+                      subject='subject', attachments=attachments)
+
+        self.assertEquals(emails[0].attachments.count(), 2)
+        self.assertEquals(emails[1].attachments.count(), 2)
+        self.assertEquals(Attachment.objects.count(), 2)

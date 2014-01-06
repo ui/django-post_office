@@ -2,13 +2,15 @@ from datetime import datetime, timedelta
 
 from django.conf import settings as django_settings
 from django.core import mail
+from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate
+from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from ..mail import from_template, send
+from ..compat import text_type
 
 
 class ModelTest(TestCase):
@@ -189,7 +191,7 @@ class ModelTest(TestCase):
 
     def test_send_without_template(self):
         headers = {'Reply-to': 'reply@email.com'}
-        scheduled_time = datetime.now() + timedelta(days=1)        
+        scheduled_time = datetime.now() + timedelta(days=1)
         emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
                       subject='foo', message='bar', html_message='baz',
                       context={'name': 'Alice'}, headers=headers,
@@ -257,3 +259,47 @@ class ModelTest(TestCase):
             str(context.exception),
             'Invalid priority, must be one of: low, medium, high, now'
         )
+
+    def test_attachment_filename(self):
+        attachment = Attachment()
+
+        attachment.file.save(
+            'test.txt',
+            content=ContentFile('test file content'),
+            save=True
+        )
+        self.assertEquals(attachment.name, 'test.txt')
+
+    def test_attachments_email_message(self):
+        email = Email.objects.create(to='to@example.com',
+                                     from_email='from@example.com',
+                                     subject='Subject')
+
+        attachment = Attachment()
+        attachment.file.save(
+            'test.txt', content=ContentFile('test file content'), save=True
+        )
+        email.attachments.add(attachment)
+        message = email.email_message()
+
+        self.assertTrue(isinstance(message, EmailMultiAlternatives))
+        self.assertEqual(message.attachments,
+                         [('test.txt', b'test file content', None)])
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_dispatch_with_attachments(self):
+        email = Email.objects.create(to='to@example.com',
+                                     from_email='from@example.com',
+                                     subject='Subject', message='message')
+
+        attachment = Attachment()
+        attachment.file.save(
+            'test.txt', content=ContentFile('test file content'), save=True
+        )
+        email.attachments.add(attachment)
+        email.dispatch()
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Subject')
+        self.assertEqual(mail.outbox[0].attachments,
+                         [('test.txt', b'test file content', None)])

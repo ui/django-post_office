@@ -11,7 +11,7 @@ from django.template import Context, Template
 from .compat import string_types
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend
-from .utils import get_email_template, split_emails
+from .utils import get_email_template, split_emails, create_attachments
 from .logutils import setup_loghandlers
 
 try:
@@ -65,7 +65,7 @@ def create(sender, recipient, subject='', message='', html_message='',
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
                   headers=None, priority=PRIORITY.medium, commit=True):
     """Loads an email template and create an email from it."""
-    # template can be an EmailTemplate instance of name
+    # template can be an EmailTemplate instance or name
     if isinstance(template, EmailTemplate):
         template = template
     else:
@@ -80,18 +80,21 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
 
 
 def send(recipients, sender=None, template=None, context={}, subject='',
-         message='', html_message='', scheduled_time=None,
-         headers=None, priority=PRIORITY.medium, commit=True):
+         message='', html_message='', scheduled_time=None, headers=None,
+         priority=PRIORITY.medium, attachments=None, commit=True):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
-    
+
     priority = parse_priority(priority)
-    if not commit and priority == PRIORITY.now:
-        raise ValueError("send_many() can't be used to send emails with priority = 'now'")
+    if not commit:
+        if priority == PRIORITY.now:
+            raise ValueError("send_many() can't be used to send emails with priority = 'now'")
+        if attachments:
+            raise ValueError("Can't add attachments with send_many()")
 
     if template:
         if subject:
@@ -101,13 +104,18 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-        emails = [from_template(sender, recipient, template, context,
-                                scheduled_time, headers, priority, commit=commit)
+        emails = [from_template(sender, recipient, template, context, scheduled_time,
+                                headers, priority, commit)
                   for recipient in recipients]
     else:
-        emails = [create(sender, recipient, subject, message, html_message,
-                         context, scheduled_time, headers, priority, commit=commit)
+        emails = [create(sender, recipient, subject, message, html_message, context,
+                         scheduled_time, headers, priority, commit)
                   for recipient in recipients]
+
+    if attachments:
+        attachments = create_attachments(attachments)
+        for email in emails:
+            email.attachments.add(*attachments)
 
     if priority == PRIORITY.now:
         for email in emails:
@@ -136,7 +144,7 @@ def get_queued():
     """
     return Email.objects.filter(status=STATUS.queued) \
         .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
-        .order_by('-priority')[:get_batch_size()]
+        .order_by('-priority').prefetch_related('attachments')[:get_batch_size()]
 
 
 def send_queued(processes=1):
@@ -146,7 +154,7 @@ def send_queued(processes=1):
     queued_emails = get_queued()
     total_sent, total_failed = 0, 0
     total_email = len(queued_emails)
-    
+
     logger.info('Started sending %s emails with %s processes.' %
                 (total_email, processes))
 

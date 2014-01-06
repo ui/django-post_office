@@ -1,5 +1,6 @@
 import sys
 import warnings
+from uuid import uuid4
 
 from collections import namedtuple
 
@@ -72,8 +73,9 @@ class Email(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
-    objects = EmailManager()
     headers = JSONField(blank=True, null=True)
+
+    objects = EmailManager()
 
     class Meta:
         ordering = ('-created',)
@@ -92,6 +94,10 @@ class Email(models.Model):
                                      headers=self.headers)
         if self.html_message:
             msg.attach_alternative(self.html_message, "text/html")
+
+        for attachment in self.attachments.all():
+            msg.attach(attachment.name, attachment.file.read())
+
         return msg
 
     def dispatch(self, connection=None):
@@ -169,3 +175,21 @@ class EmailTemplate(models.Model):
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
+
+
+class Attachment(models.Model):
+    """
+    A model describing an email attachment.
+    """
+    def get_upload_path(self, filename):
+        """Overriding to store the original filename"""
+        if not self.name:
+            self.name = filename  # set original filename
+
+        filename = '{name}.{ext}'.format(name=uuid4().hex, ext=filename.split('.')[-1])
+
+        return 'post_office_attachments/' + filename
+
+    file = models.FileField(upload_to=get_upload_path)
+    name = models.CharField(max_length=255, help_text='The original filename')
+    emails = models.ManyToManyField(Email, related_name='attachments')

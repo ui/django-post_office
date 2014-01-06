@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
 
 from django.core import mail
+from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, STATUS, PRIORITY, EmailTemplate
-from ..utils import send_mail, send_queued_mail, get_email_template, send_templated_mail, split_emails
+from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
+from ..utils import (send_mail, send_queued_mail, get_email_template, send_templated_mail,
+                     split_emails, create_attachments)
 from ..validators import validate_email_with_name
 
 
@@ -89,3 +91,26 @@ class UtilsTest(TestCase):
         expected_size = [57, 56, 56, 56]
         email_list = split_emails(Email.objects.all(), 4)
         self.assertEqual(expected_size, [len(emails) for emails in email_list])
+
+    def test_create_attachments(self):
+        attachments = create_attachments({
+            'attachment_file1.txt': ContentFile('content'),
+            'attachment_file2.txt': ContentFile('content'),
+        })
+
+        self.assertEqual(len(attachments), 2)
+        self.assertIsInstance(attachments[0], Attachment)
+        self.assertTrue(attachments[0].pk)
+        self.assertEquals(attachments[0].file.read(), b'content')
+        self.assertTrue(attachments[0].name.startswith('attachment_file'))
+
+    def test_create_attachments_open_file(self):
+        attachments = create_attachments({
+            'attachment_file.py': __file__,
+        })
+
+        self.assertEqual(len(attachments), 1)
+        self.assertIsInstance(attachments[0], Attachment)
+        self.assertTrue(attachments[0].pk)
+        self.assertTrue(attachments[0].file.read())
+        self.assertEquals(attachments[0].name, 'attachment_file.py')
