@@ -157,7 +157,7 @@ class EmailTemplate(models.Model):
     """
     name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
     description = models.TextField(blank=True,
-            help_text='Description of this email template. The first line of the description will be displayed in the admin list.')
+                                   help_text='Description of this email template.')
     subject = models.CharField(max_length=255, blank=True,
                                validators=[validate_template_syntax])
     content = models.TextField(blank=True,
