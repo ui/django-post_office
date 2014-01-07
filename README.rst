@@ -16,7 +16,7 @@ Some awesome features are:
 Dependencies
 ============
 
-* `django >= 1.2 <http://djangoproject.com/>`_
+* `django >= 1.4 <http://djangoproject.com/>`_
 
 
 Installation
@@ -138,7 +138,7 @@ regardless of how many emails you have in your queue:
 This is useful if you already use something like `django-rq <https://github.com/ui/django-rq>`_
 to send emails asynchronously and only need to store email related activities and logs.
 
-Sending an email with attachments:
+If you want to send an email with attachments:
 
 .. code-block:: python
 
@@ -198,13 +198,83 @@ use a different backend, you can do so by changing ``POST_OFFICE_BACKEND``.
 For example if you want to use `django-ses <https://github.com/hmarr/django-ses>`_::
 
     POST_OFFICE_BACKEND = 'django_ses.SESBackend'
+    
 
+Management Commands
+-------------------
+
+* ``send_queued_mail`` - send queued emails, those aren't successfully sent
+  will be marked as ``failed``. If you have a lot of emails, you can
+  pass in ``-p`` or ``--processes`` flag to use multiple processes.
+
+* ``cleanup_mail`` - delete all emails created before an X number of days
+  (defaults to 90).
+
+You may want to set these up via cron to run regularly::
+
+    * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
+    0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
+
+
+Logging
+-------
+
+You can configure ``post-office``'s logging from Django's ``settings.py``. For
+example:
+
+.. code-block:: python
+    
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "post_office": {
+                "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
+                "datefmt": "%d-%m-%Y %H:%M:%S",
+            },
+        },
+        "handlers": {
+            "post_office": {
+                "level": "DEBUG",
+                "class": "logging.StreamHandler",
+                "formatter": "post_office"
+            },
+            # If you use sentry for logging
+            'sentry': {
+                'level': 'ERROR',
+                'class': 'raven.contrib.django.handlers.SentryHandler',
+            },
+        },
+        'loggers': {
+            "post_office": {
+                "handlers": ["post_office", "sentry"],
+                "level": "INFO"
+            },
+        },
+    }
+
+Batch Size
+----------
+
+If you may want to limit the number of emails sent in a batch (sometimes useful
+in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
+number of queued emails fetched in one batch. 
+
+.. code-block:: python
+
+    POST_OFFICE = {
+        'BATCH_SIZE': 5000
+    }
+
+
+Performance
+===========
 
 Caching
 -------
 
-By default, ``post_office`` will cache ``EmailTemplate`` instances if Django's caching
-mechanism is configured. If for some reason you want to disable caching, you can
+if Django's caching mechanism is configured, ``post_office`` will cache
+``EmailTemplate`` instances . If for some reason you want to disable caching,
 set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 
 .. code-block:: python
@@ -255,72 +325,6 @@ usually pass into ``mail.send()``:
     mail.send_many(kwargs_list)
 
 Attachments are not supported with ``mail.send_many()``.
-    
-
-Management Commands
--------------------
-
-* ``send_queued_mail`` - send queued emails, those aren't successfully sent
-  will be marked as ``failed``. If you have a lot of emails, you can
-  pass in ``-`p` or ``--processes`` flag to use multiple processes.
-
-* ``cleanup_mail`` - delete all emails created before an X number of days
-  (defaults to 90).
-
-You may want to set these up via cron to run regularly::
-
-    * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
-    0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
-
-
-Logging
--------
-
-You can configure ``post-office``'s logging from Django's ``settings.py``. For
-example:
-
-.. code-block:: python
-    
-    LOGGING = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "post_office": {
-                "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
-                "datefmt": "%d-%m-%Y %H:%M:%S",
-            },
-        },
-        "handlers": {
-            "post_office": {
-                "level": "DEBUG",
-                "class": "logging.StreamHandler",
-                "formatter": "post_office"
-            },
-            # If you use sentry for logging
-            'sentry': {
-                'level': 'ERROR',
-                'class': 'raven.contrib.django.handlers.SentryHandler',
-            },
-        },
-        'loggers': {
-        "post_office": {
-            "handlers": ["post_office", "sentry"],
-            "level": "INFO"
-        },
-    }
-
-Batch Size
-----------
-
-If you may want to limit the number of emails sent in a batch (sometimes useful
-in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
-number of queued emails fetched in one batch. 
-
-.. code-block:: python
-
-    POST_OFFICE = {
-        'BATCH_SIZE': 5000
-    }
 
 
 Running Tests
@@ -333,6 +337,12 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.7.0
+-------------
+* Support for sending email with attachments. Thanks Yuri Prezument (@yprez)!
+* Added ``description`` field to ``EmailTemplate`` model to store human readable
+  description of templates. Thanks Michael P. Jung (@bikeshedder)!
 
 Version 0.6.0
 -------------
