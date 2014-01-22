@@ -25,7 +25,7 @@ class AdminViewTest(TestCase):
 
     def test_admin_change_page(self):
         """Ensure that changing an email object in admin works."""
-        mail.send(recipients=['test@example.com'])
+        mail.send(recipients=['test@example.com'], headers={'foo': 'bar'})
         email = Email.objects.latest('id')
         response = self.client.get(reverse('admin:post_office_email_change', args=[email.id]))
         self.assertEqual(response.status_code, 200)
