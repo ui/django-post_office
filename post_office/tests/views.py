@@ -16,7 +16,7 @@ class AdminViewTest(TestCase):
     def setUp(self):
         user = User.objects.create_superuser(admin_username, admin_email, admin_pass)
         self.client = Client()
-        self.client.login(username=user.username, password=user.password)
+        self.client.login(username=user.username, password=admin_pass)
 
     # Small test to make sure the admin interface is loaded
     def test_admin_interface(self):
