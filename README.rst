@@ -334,6 +334,12 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.7.0
+-------------
+* Added support for sending attachments. Thanks @yprez!
+* Changed ``django-jsonfield`` dependency to ``jsonfield`` for Python 3 support reasons.
+* Minor bug fixes.
+
 Version 0.6.0
 -------------
 * Support for Python 3!
