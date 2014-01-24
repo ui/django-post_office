@@ -16,7 +16,8 @@ Some awesome features are:
 Dependencies
 ============
 
-* `django >= 1.2 <http://djangoproject.com/>`_
+* `django >= 1.4 <http://djangoproject.com/>`_
+* `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
 
 
 Installation
@@ -333,6 +334,10 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Version 0.7.1
+-------------
+* Python 3 compatibility fix.
 
 Version 0.7.0
 -------------
