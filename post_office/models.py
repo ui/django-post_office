@@ -16,6 +16,7 @@ from django.template import Context, Template
 
 from jsonfield import JSONField
 from post_office import cache
+from .compat import text_type
 from .settings import get_email_backend
 from .validators import validate_email_with_name, validate_template_syntax
 
@@ -148,7 +149,7 @@ class Log(models.Model):
         ordering = ('-date',)
 
     def __unicode__(self):
-        return unicode(self.date)
+        return text_type(self.date)
 
 
 class EmailTemplate(models.Model):

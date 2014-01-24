@@ -10,7 +10,6 @@ from django.test.utils import override_settings
 
 from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from ..mail import from_template, send
-from ..compat import text_type
 
 
 class ModelTest(TestCase):
