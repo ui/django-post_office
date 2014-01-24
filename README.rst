@@ -23,7 +23,7 @@ Dependencies
 Installation
 ============
 
-.. image:: https://travis-ci.org/ui/django-post_office.png?branch=master
+|Build Status|
 
 
 * Install from PyPI (or you `manually download from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
@@ -400,3 +400,7 @@ Version 0.2
 Version 0.1.5
 -------------
 * Errors when opening connection in ``Email.dispatch`` method are now logged
+
+
+.. |Build Status| image:: https://travis-ci.org/ui/django-post_office.png?branch=master
+   :target: https://travis-ci.org/ui/django-post_office
