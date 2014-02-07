@@ -339,6 +339,11 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.7.2
+-------------
+* Made a few tweaks that makes ``post_office`` much more efficient on systems with
+  large number of rows (millions).
+
 Version 0.7.1
 -------------
 * Python 3 compatibility fix.
