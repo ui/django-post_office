@@ -78,9 +78,6 @@ class Email(models.Model):
 
     objects = EmailManager()
 
-    class Meta:
-        ordering = ('-created',)
-
     def __unicode__(self):
         return self.to
 
@@ -167,9 +164,6 @@ class EmailTemplate(models.Model):
                                     validators=[validate_template_syntax])
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ('name',)
 
     def __unicode__(self):
         return self.name
