@@ -16,6 +16,7 @@ from django.template import Context, Template
 
 from jsonfield import JSONField
 from post_office import cache
+from .compat import text_type
 from .settings import get_email_backend
 from .validators import validate_email_with_name, validate_template_syntax
 
@@ -76,9 +77,6 @@ class Email(models.Model):
     headers = JSONField(blank=True, null=True)
 
     objects = EmailManager()
-
-    class Meta:
-        ordering = ('-created',)
 
     def __unicode__(self):
         return self.to
@@ -148,7 +146,7 @@ class Log(models.Model):
         ordering = ('-date',)
 
     def __unicode__(self):
-        return str(self.date)
+        return text_type(self.date)
 
 
 class EmailTemplate(models.Model):
@@ -167,11 +165,8 @@ class EmailTemplate(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ('name',)
-
     def __unicode__(self):
-        return str(self.name)
+        return self.name
 
     def save(self, *args, **kwargs):
         template = super(EmailTemplate, self).save(*args, **kwargs)

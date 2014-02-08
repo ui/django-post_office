@@ -25,5 +25,5 @@ class Command(BaseCommand):
 
         cutoff_date = now() - datetime.timedelta(days)
         count = Email.objects.filter(created__lt=cutoff_date).count()
-        Email.objects.filter(created__lt=cutoff_date).delete()
+        Email.objects.only('id').filter(created__lt=cutoff_date).delete()
         print("Deleted {0} mails created before {1} ".format(count, cutoff_date))

@@ -17,12 +17,13 @@ Dependencies
 ============
 
 * `django >= 1.4 <http://djangoproject.com/>`_
+* `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
 
 
 Installation
 ============
 
-.. image:: https://travis-ci.org/ui/django-post_office.png?branch=master
+|Build Status|
 
 
 * Install from PyPI (or you `manually download from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
@@ -338,11 +339,23 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+<<<<<<< HEAD
 Version 0.7.0
 -------------
 * Support for sending email with attachments. Thanks Yuri Prezument (@yprez)!
 * Added ``description`` field to ``EmailTemplate`` model to store human readable
   description of templates. Thanks Michael P. Jung (@bikeshedder)!
+=======
+Version 0.7.1
+-------------
+* Python 3 compatibility fix.
+
+Version 0.7.0
+-------------
+* Added support for sending attachments. Thanks @yprez!
+* Changed ``django-jsonfield`` dependency to ``jsonfield`` for Python 3 support reasons.
+* Minor bug fixes.
+>>>>>>> 42003fa3b9b37d8a65484450612d8417e050f392
 
 Version 0.6.0
 -------------
@@ -399,3 +412,7 @@ Version 0.2
 Version 0.1.5
 -------------
 * Errors when opening connection in ``Email.dispatch`` method are now logged
+
+
+.. |Build Status| image:: https://travis-ci.org/ui/django-post_office.png?branch=master
+   :target: https://travis-ci.org/ui/django-post_office
