@@ -339,13 +339,6 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
-<<<<<<< HEAD
-Version 0.7.0
--------------
-* Support for sending email with attachments. Thanks Yuri Prezument (@yprez)!
-* Added ``description`` field to ``EmailTemplate`` model to store human readable
-  description of templates. Thanks Michael P. Jung (@bikeshedder)!
-=======
 Version 0.7.1
 -------------
 * Python 3 compatibility fix.
@@ -353,9 +346,10 @@ Version 0.7.1
 Version 0.7.0
 -------------
 * Added support for sending attachments. Thanks @yprez!
+* Added ``description`` field to ``EmailTemplate`` model to store human readable
+  description of templates. Thanks Michael P. Jung (@bikeshedder)!
 * Changed ``django-jsonfield`` dependency to ``jsonfield`` for Python 3 support reasons.
 * Minor bug fixes.
->>>>>>> 42003fa3b9b37d8a65484450612d8417e050f392
 
 Version 0.6.0
 -------------
