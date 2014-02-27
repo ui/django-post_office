@@ -248,6 +248,10 @@ class ModelTest(TestCase):
         emails = send(['to1@example.com'], 'from@a.com', priority='low')
         self.assertEqual(emails[0].priority, PRIORITY.low)
 
+    def test_default_priority(self):
+        emails = send(['to1@example.com'], 'from@a.com')
+        self.assertEqual(emails[0].priority, PRIORITY.medium)
+
     def test_string_priority_exception(self):
         invalid_priority_send = lambda: send(['to1@example.com'], 'from@a.com', priority='hgh')
 

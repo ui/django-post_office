@@ -267,6 +267,19 @@ number of queued emails fetched in one batch.
         'BATCH_SIZE': 5000
     }
 
+Default priority
+----------------
+
+The default priority for emails is ``'medium'``, but this can be altered by
+setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
+(e.g. based on Celery) becomes trivial when set to ``'now'``.
+
+.. code-block:: python
+
+    POST_OFFICE = {
+        'DEFAULT_PRIORITY': 'now'
+    }
+
 
 Performance
 ===========
@@ -338,6 +351,12 @@ To run ``post_office``'s test suite::
 
 Changelog
 =========
+
+Unreleased
+----------
+* Added a new setting ``DEFAULT_PRIORITY`` to set the default priority for emails.
+* All settings in post_office.mail now support passing a priority as string,
+  e.g. ``'low'``.
 
 Version 0.7.2
 -------------
