@@ -10,7 +10,7 @@ from django.template import Context, Template
 
 from .compat import string_types
 from .models import Email, EmailTemplate, PRIORITY, STATUS
-from .settings import get_batch_size, get_email_backend
+from .settings import get_batch_size, get_email_backend, get_default_priority
 from .utils import get_email_template, split_emails, create_attachments
 from .logutils import setup_loghandlers
 
@@ -26,6 +26,8 @@ logger = setup_loghandlers("INFO")
 
 
 def parse_priority(priority):
+    if priority is None:
+        priority = get_default_priority()
     # If priority is given as a string, returns the enum representation
     if isinstance(priority, string_types):
         priority = getattr(PRIORITY, priority, None)
@@ -38,10 +40,11 @@ def parse_priority(priority):
 
 def create(sender, recipient, subject='', message='', html_message='',
            context={}, scheduled_time=None, headers=None,
-           priority=PRIORITY.medium, commit=True):
+           priority=None, commit=True):
     """
     Creates an email from supplied keyword arguments
     """
+    priority = parse_priority(priority)
     status = None if priority == PRIORITY.now else STATUS.queued
     if context:
         context = Context(context)
@@ -63,7 +66,7 @@ def create(sender, recipient, subject='', message='', html_message='',
 
 
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
-                  headers=None, priority=PRIORITY.medium, commit=True):
+                  headers=None, priority=None, commit=True):
     """Loads an email template and create an email from it."""
     # template can be an EmailTemplate instance or name
     if isinstance(template, EmailTemplate):
@@ -71,6 +74,7 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
     else:
         template = get_email_template(template)
 
+    priority = parse_priority(priority)
     return create(
         sender=sender, recipient=recipient, subject=template.subject,
         message=template.content, html_message=template.html_content,
@@ -81,7 +85,7 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
 
 def send(recipients, sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
-         priority=PRIORITY.medium, attachments=None, commit=True):
+         priority=None, attachments=None, commit=True):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
