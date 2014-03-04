@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.files.base import ContentFile
-from django.core.mail import EmailMultiAlternatives, get_connection
+from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -17,19 +17,31 @@ class ModelTest(TestCase):
     def test_email_message(self):
         """
         Test to make sure that model's "email_message" method
-        returns proper ``EmailMultiAlternatives`` with html attachment.
+        returns proper email classes.
         """
 
+        # If ``html_message`` is set, ``EmailMultiAlternatives`` is expected
         email = Email.objects.create(to='to@example.com',
             from_email='from@example.com', subject='Subject',
             message='Message', html_message='<p>HTML</p>')
         message = email.email_message()
-        self.assertTrue(isinstance(message, EmailMultiAlternatives))
+        self.assertEqual(type(message), EmailMultiAlternatives)
         self.assertEqual(message.from_email, 'from@example.com')
         self.assertEqual(message.to, ['to@example.com'])
         self.assertEqual(message.subject, 'Subject')
         self.assertEqual(message.body, 'Message')
         self.assertEqual(message.alternatives, [('<p>HTML</p>', 'text/html')])
+
+        # Without ``html_message``, ``EmailMessage`` class is expected
+        email = Email.objects.create(to='to@example.com',
+            from_email='from@example.com', subject='Subject',
+            message='Message')
+        message = email.email_message()
+        self.assertEqual(type(message), EmailMessage)
+        self.assertEqual(message.from_email, 'from@example.com')
+        self.assertEqual(message.to, ['to@example.com'])
+        self.assertEqual(message.subject, 'Subject')
+        self.assertEqual(message.body, 'Message')
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_dispatch(self):
@@ -285,7 +297,6 @@ class ModelTest(TestCase):
         email.attachments.add(attachment)
         message = email.email_message()
 
-        self.assertTrue(isinstance(message, EmailMultiAlternatives))
         self.assertEqual(message.attachments,
                          [('test.txt', b'test file content', None)])
 
