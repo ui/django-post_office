@@ -23,9 +23,9 @@ class BackendTest(TestCase):
         """
         Ensure that email backend properly queue email messages.
         """
-        send_mail('Test backend', 'Message', 'from@example.com', ['to@example.com'])
+        send_mail('Test', 'Message', 'from@example.com', ['to@example.com'])
         email = Email.objects.latest('id')
-        self.assertEqual(email.subject, 'Test backend')
+        self.assertEqual(email.subject, 'Test')
         self.assertEqual(email.status, STATUS.queued)
         self.assertEqual(email.priority, PRIORITY.medium)
 
@@ -96,3 +96,12 @@ class BackendTest(TestCase):
         self.assertEqual(email.attachments.count(), 1)
         self.assertEqual(email.attachments.all()[0].name, 'attachment.txt')
         self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')
+
+    @override_settings(POST_OFFICE={'DEFAULT_PRIORITY': 'now'},
+                       EMAIL_BACKEND='post_office.EmailBackend',
+                       POST_OFFICE_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_default_priority_now(self):
+        # If DEFAULT_PRIORITY is "now", mails should be sent right away
+        send_mail('Test', 'Message', 'from@example.com', ['to@example.com'])
+        email = Email.objects.latest('id')
+        self.assertEqual(email.status, STATUS.sent)

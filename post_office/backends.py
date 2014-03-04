@@ -2,6 +2,7 @@ from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
 
 from .mail import create
+from .settings import get_default_priority
 from .utils import create_attachments
 
 
@@ -20,10 +21,8 @@ class EmailBackend(BaseEmailBackend):
         """
         if not email_messages:
             return
-        num_sent = 0
 
         for email in email_messages:
-            num_sent += 1
             subject = email.subject
             from_email = email.from_email
             message = email.body
@@ -50,3 +49,7 @@ class EmailBackend(BaseEmailBackend):
 
                 for email in emails:
                     email.attachments.add(*attachments)
+
+            if get_default_priority() == 'now':
+                for email in emails:
+                    email.dispatch()
