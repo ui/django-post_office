@@ -87,11 +87,15 @@ class Email(models.Model):
         from a ``Message`` instance, depending on whether html_message is empty.
         """
         subject = smart_text(self.subject)
-        msg = EmailMultiAlternatives(subject, self.message, self.from_email,
-                                     [self.to], connection=connection,
-                                     headers=self.headers)
         if self.html_message:
+            msg = EmailMultiAlternatives(subject, self.message, self.from_email,
+                                         [self.to], connection=connection,
+                                         headers=self.headers)
             msg.attach_alternative(self.html_message, "text/html")
+        else:
+            msg = EmailMessage(subject, self.message, self.from_email,
+                                         [self.to], connection=connection,
+                                         headers=self.headers)
 
         for attachment in self.attachments.all():
             msg.attach(attachment.name, attachment.file.read())
