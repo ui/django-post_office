@@ -35,3 +35,5 @@ SECRET_KEY = 'a'
 ROOT_URLCONF = 'post_office.test_urls'
 
 DEFAULT_FROM_EMAIL = 'webmaster@example.com'
+
+TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
