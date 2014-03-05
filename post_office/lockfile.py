@@ -1,27 +1,29 @@
-"""
-A file lock implementation that tries to avoid platform specific
-issues. It is inspired by a whole bunch of different implementations
-listed below.
+# This module is taken from https://gist.github.com/ionrock/3015700
 
- - https://bitbucket.org/jaraco/yg.lockfile/src/6c448dcbf6e5/yg/lockfile/__init__.py
- - http://svn.zope.org/zc.lockfile/trunk/src/zc/lockfile/__init__.py?rev=121133&view=markup
- - http://stackoverflow.com/questions/489861/locking-a-file-in-python
- - http://www.evanfosmark.com/2009/01/cross-platform-file-locking-support-in-python/
- - http://packages.python.org/lockfile/lockfile.html
+# A file lock implementation that tries to avoid platform specific
+# issues. It is inspired by a whole bunch of different implementations
+# listed below.
 
-There are some tests below and a blog posting conceptually the
-problems I wanted to try and solve. The tests reflect these ideas.
+#  - https://bitbucket.org/jaraco/yg.lockfile/src/6c448dcbf6e5/yg/lockfile/__init__.py
+#  - http://svn.zope.org/zc.lockfile/trunk/src/zc/lockfile/__init__.py?rev=121133&view=markup
+#  - http://stackoverflow.com/questions/489861/locking-a-file-in-python
+#  - http://www.evanfosmark.com/2009/01/cross-platform-file-locking-support-in-python/
+#  - http://packages.python.org/lockfile/lockfile.html
 
- - http://ionrock.wordpress.com/2012/06/28/file-locking-in-python/
+# There are some tests below and a blog posting conceptually the
+# problems I wanted to try and solve. The tests reflect these ideas.
 
-I'm not advocating using this package. But if you do happen to try it
-out and have suggestions please let me know.
-"""
+#  - http://ionrock.wordpress.com/2012/06/28/file-locking-in-python/
+
+# I'm not advocating using this package. But if you do happen to try it
+# out and have suggestions please let me know.
+
 import os
 import time
 
 
-class FileLocked(Exception): pass
+class FileLocked(Exception):
+    pass
 
 
 class FileLock(object):
@@ -94,8 +96,11 @@ class FileLock(object):
                 raise FileLocked()
 
     def acquire(self):
-        self.fh = os.open(self.lockfname, os.O_CREAT|os.O_EXCL|os.O_RDWR)
-        os.write(self.fh, str(os.getpid()))
+        self.fh = os.open(self.lockfname, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+        try:
+            os.write(self.fh, str(os.getpid()))
+        except TypeError:
+            os.write(self.fh, bytes(os.getpid()))
 
     def release(self):
         if self.fh:
