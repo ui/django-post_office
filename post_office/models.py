@@ -75,6 +75,8 @@ class Email(models.Model):
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
     headers = JSONField(blank=True, null=True)
+    template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
+    context = JSONField(blank=True)
 
     objects = EmailManager()
 
@@ -87,14 +89,24 @@ class Email(models.Model):
         from a ``Message`` instance, depending on whether html_message is empty.
         """
         subject = smart_text(self.subject)
+
+        if self.template is not None:
+            _context = Context(self.context)
+            subject = Template(self.template.subject).render(_context)
+            message = Template(self.template.content).render(_context)
+            html_message = Template(self.template.html_content).render(_context)
+        else:
+            subject = self.subject
+            message = self.message
+            html_message = self.html_message
         
-        if self.html_message:
-            msg = EmailMultiAlternatives(subject, self.message, self.from_email,
+        if html_message:
+            msg = EmailMultiAlternatives(subject, message, self.from_email,
                                          [self.to], connection=connection,
                                          headers=self.headers)
-            msg.attach_alternative(self.html_message, "text/html")
+            msg.attach_alternative(html_message, "text/html")
         else:
-            msg = EmailMessage(subject, self.message, self.from_email,
+            msg = EmailMessage(subject, message, self.from_email,
                                [self.to], connection=connection,
                                headers=self.headers)
 

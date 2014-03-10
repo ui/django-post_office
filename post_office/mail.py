@@ -39,18 +39,20 @@ def parse_priority(priority):
 
 
 def create(sender, recipient, subject='', message='', html_message='',
-           context={}, scheduled_time=None, headers=None,
+           context={}, scheduled_time=None, headers=None, template=None,
            priority=None, commit=True):
     """
-    Creates an email from supplied keyword arguments
+    Creates an email from supplied keyword arguments. If template is
+    specified, email subject and content will be rendered during delivery.
     """
     priority = parse_priority(priority)
     status = None if priority == PRIORITY.now else STATUS.queued
-    if context:
-        context = Context(context)
-        subject = Template(subject).render(context)
-        message = Template(message).render(context)
-        html_message = Template(html_message).render(context)
+
+    if template is None and context:
+        _context = Context(context)
+        subject = Template(subject).render(_context)
+        message = Template(message).render(_context)
+        html_message = Template(html_message).render(_context)
 
     email = Email(
         from_email=sender, to=recipient,
@@ -58,7 +60,8 @@ def create(sender, recipient, subject='', message='', html_message='',
         message=message,
         html_message=html_message,
         scheduled_time=scheduled_time,
-        headers=headers, priority=priority, status=status
+        headers=headers, priority=priority, status=status,
+        context=context, template=template
     )
     if commit:
         email.save()
@@ -85,7 +88,8 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
 
 def send(recipients, sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
-         priority=None, attachments=None, commit=True):
+         priority=None, attachments=None, render_on_delivery=False,
+         commit=True):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
@@ -100,7 +104,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if attachments:
             raise ValueError("Can't add attachments with send_many()")
 
-    if template:
+    if template and not render_on_delivery:
         if subject:
             raise ValueError('You can\'t specify both "template" and "subject" arguments')
         if message:
@@ -113,7 +117,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
                   for recipient in recipients]
     else:
         emails = [create(sender, recipient, subject, message, html_message, context,
-                         scheduled_time, headers, priority, commit)
+                         scheduled_time, headers, template, priority, commit)
                   for recipient in recipients]
 
     if attachments:
@@ -147,6 +151,7 @@ def get_queued():
      - Has scheduled_time lower than the current time or None
     """
     return Email.objects.filter(status=STATUS.queued) \
+        .select_related('template') \
         .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
         .order_by('-priority').prefetch_related('attachments')[:get_batch_size()]
 

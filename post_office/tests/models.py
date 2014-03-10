@@ -43,6 +43,23 @@ class ModelTest(TestCase):
         self.assertEqual(message.subject, 'Subject')
         self.assertEqual(message.body, 'Message')
 
+    def test_email_message_render(self):
+        """
+        Ensure Email instance with template is properly rendered.
+        """
+        template = EmailTemplate.objects.create(
+            subject='Subject {{ name }}',
+            content='Content {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+        context = {'name': 'test'}
+        email = Email.objects.create(to='to@example.com', template=template,
+                                     from_email='from@e.com', context=context)
+        message = email.email_message()
+        self.assertEqual(message.subject, 'Subject test')
+        self.assertEqual(message.body, 'Content test')
+        self.assertEqual(message.alternatives[0][0], 'HTML test')
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_dispatch(self):
         """

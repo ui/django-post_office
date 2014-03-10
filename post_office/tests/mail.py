@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..settings import get_batch_size
-from ..models import Email, Attachment, PRIORITY, STATUS
+from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
 from ..mail import (create, get_queued, parse_priority,
                     send, send_many, send_queued, _send_bulk)
 
@@ -221,6 +221,25 @@ class MailTest(TestCase):
         self.assertTrue(email.pk)
         self.assertEquals(email.attachments.count(), 2)
 
+    def test_send_with_render_on_delivery(self):
+        """
+        Ensure that mail.send() create email instances with appropriate
+        fields being saved
+        """
+        template = EmailTemplate.objects.create(
+            subject='Subject {{ name }}',
+            content='Content {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+        context = {'name': 'test'}
+        email = send(recipients=['a@example.com', 'b@example.com'],
+                     template=template, context=context,
+                     render_on_delivery=True)[0]
+        self.assertEqual(email.subject, '')
+        self.assertEqual(email.message, '')
+        self.assertEqual(email.html_message, '')
+        self.assertEqual(email.template, template)
+
     def test_send_with_attachments_multiple_emails(self):
         """Test reusing the same attachment objects for several email objects"""
         attachments = {
@@ -234,3 +253,22 @@ class MailTest(TestCase):
         self.assertEquals(emails[0].attachments.count(), 2)
         self.assertEquals(emails[1].attachments.count(), 2)
         self.assertEquals(Attachment.objects.count(), 2)
+
+    def test_create_with_template(self):
+        """If template is supplied, subject and content won't be rendered."""
+        
+        template = EmailTemplate.objects.create(
+            subject='Subject {{ name }}',
+            content='Content {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+        context = {'name': 'test'}
+        email = create(
+            sender='from@example.com', recipient='to@example.com',
+            template=template, context=context
+        )
+        self.assertEqual(email.subject, '')
+        self.assertEqual(email.message, '')
+        self.assertEqual(email.html_message, '')
+        self.assertEqual(email.context, context)
+        self.assertEqual(email.template, template)
