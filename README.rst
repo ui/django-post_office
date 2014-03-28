@@ -82,23 +82,26 @@ mail.send()
 ``mail.send`` is the most important function in this library, it takes these
 arguments:
 
-=============== ======== =========================
-Argument        Required Description
-=============== ======== =========================
-recipients      Yes      list of recipient email addresses
-sender          No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
-template        No       ``EmailTemplate`` instance or name
-context         No       A dictionary used when email is being rendered
-subject         No       Email subject (if ``template`` is not specified)
-message         No       Email content (if ``template`` is not specified)
-html_message    No       Email's HTML content (if ``template`` is not specified)
-headers         No       A dictionary of extra headers to put on the message
-scheduled_time  No       A date/datetime object indicating when the email should be sent
-priority        No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
-attachments     No       Email attachments - A dictionary where the keys are the wanted filenames,
-                         and the values are either files or file-like objects, or full path of
-                         the file.
-=============== ======== =========================
+================== ======== =========================
+Argument           Required Description
+================== ======== =========================
+recipients         Yes      list of recipient email addresses
+sender             No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
+template           No       ``EmailTemplate`` instance or name
+context            No       A dictionary used when email is being rendered
+subject            No       Email subject (if ``template`` is not specified)
+message            No       Email content (if ``template`` is not specified)
+html_message       No       Email's HTML content (if ``template`` is not specified)
+headers            No       A dictionary of extra headers to put on the message
+scheduled_time     No       A date/datetime object indicating when the email should be sent
+priority           No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
+attachments        No       Email attachments - A dictionary where the keys are the wanted filenames,
+                            and the values are either files or file-like objects, or full path of
+                            the file.
+render_on_delivery No       Setting this to ``True`` causes email to be rendered
+                            from ``template`` during delivery. Content is never stored
+                            in the DB. Usage may result in significant space savings.
+================== ======== =========================
 
 Here are a few examples.
 
@@ -352,10 +355,13 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
-Unreleased
+0.8.0
 ----------
 * Added a new setting ``DEFAULT_PRIORITY`` to set the default priority for emails.
   Thanks Maik Hoepfel (@maikhoepfel)!
+* ``mail.send()`` gains a ``render_on_delivery`` argument that may potentially
+  result in significant storage space savings.
+* Uses a new locking mechanism that can detect zombie PID files.
 
 Version 0.7.2
 -------------
