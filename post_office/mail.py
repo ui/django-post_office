@@ -49,29 +49,43 @@ def create(sender, recipient, subject='', message='', html_message='',
     status = None if priority == PRIORITY.now else STATUS.queued
 
     if context is None:
-        context = {}
+        context = ''
 
-    if template is None and context:
-        _context = Context(context)
-        subject = Template(subject).render(_context)
-        message = Template(message).render(_context)
-        html_message = Template(html_message).render(_context)
+    # If email is to be rendered during delivery, save all necessary
+    # information
+    if render_on_delivery:
+        email = Email(
+            from_email=sender, to=recipient,
+            scheduled_time=scheduled_time,
+            headers=headers, priority=priority, status=status,
+            context=context, template=template
+        )
+    
+    else:
+        
+        if template:
+            subject = template.subject
+            message = template.content
+            html_message = template.html_content
 
-    # Don't save context if render_on_delivery is False
-    if not render_on_delivery:
-        context = {}
+        if context:
+            _context = Context(context)
+            subject = Template(subject).render(_context)
+            message = Template(message).render(_context)
+            html_message = Template(html_message).render(_context)
 
-    email = Email(
-        from_email=sender, to=recipient,
-        subject=subject,
-        message=message,
-        html_message=html_message,
-        scheduled_time=scheduled_time,
-        headers=headers, priority=priority, status=status,
-        context=context, template=template
-    )
+        email = Email(
+            from_email=sender, to=recipient,
+            subject=subject,
+            message=message,
+            html_message=html_message,
+            scheduled_time=scheduled_time,
+            headers=headers, priority=priority, status=status,
+        )
+    
     if commit:
         email.save()
+    
     return email
 
 
@@ -116,7 +130,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if attachments:
             raise ValueError("Can't add attachments with send_many()")
 
-    if template and not render_on_delivery:
+    if template:
         if subject:
             raise ValueError('You can\'t specify both "template" and "subject" arguments')
         if message:
@@ -124,14 +138,16 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-        emails = [from_template(sender, recipient, template, context, scheduled_time,
-                                headers, priority, render_on_delivery, commit)
-                  for recipient in recipients]
-    else:
-        emails = [create(sender, recipient, subject, message, html_message,
-                         context, scheduled_time, headers, template, priority,
-                         render_on_delivery, commit=commit)
-                  for recipient in recipients]
+        # template can be an EmailTemplate instance or name
+        if isinstance(template, EmailTemplate):
+            template = template
+        else:
+            template = get_email_template(template)
+
+    emails = [create(sender, recipient, subject, message, html_message,
+                     context, scheduled_time, headers, template, priority,
+                     render_on_delivery, commit=commit)
+              for recipient in recipients]
 
     if attachments:
         attachments = create_attachments(attachments)

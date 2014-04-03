@@ -240,11 +240,11 @@ class MailTest(TestCase):
         self.assertEqual(email.html_message, '')
         self.assertEqual(email.template, template)
 
-        # context shouldn't be persistent when render_on_delivery = False
+        # context shouldn't be persisted when render_on_delivery = False
         email = send(recipients=['a@example.com'],
                      template=template, context=context,
                      render_on_delivery=False)[0]
-        self.assertEqual(email.context, {})
+        self.assertEqual(email.context, '')
 
     def test_send_with_attachments_multiple_emails(self):
         """Test reusing the same attachment objects for several email objects"""
@@ -279,3 +279,22 @@ class MailTest(TestCase):
         self.assertEqual(email.html_message, '')
         self.assertEqual(email.context, context)
         self.assertEqual(email.template, template)
+
+    def test_send_with_template(self):
+        """If render_on_delivery is True, subject and content
+        won't be rendered, context also won't be saved."""
+        
+        template = EmailTemplate.objects.create(
+            subject='Subject {{ name }}',
+            content='Content {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+        context = {'name': 'test'}
+        email = send(['to@example.com'], 'from@example.com',
+                     template=template, context=context)[0]
+        email = Email.objects.get(id=email.id)
+        self.assertEqual(email.subject, 'Subject test')
+        self.assertEqual(email.message, 'Content test')
+        self.assertEqual(email.html_message, 'HTML test')
+        self.assertEqual(email.context, '')
+        self.assertEqual(email.template, None)
