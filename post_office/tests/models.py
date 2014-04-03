@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
-from ..mail import from_template, send
+from ..mail import send
 
 
 class ModelTest(TestCase):
@@ -131,40 +131,6 @@ class ModelTest(TestCase):
         self.assertEqual(log.email, email)
         self.assertEqual(log.status, STATUS.failed)
         self.assertIn('does not define a "backend"', log.message)
-
-    def test_from_template(self):
-        """
-        Test basic constructing email message with template
-        """
-
-        # Test 1, create email object from template, without context
-        email_template = EmailTemplate.objects.create(name='welcome',
-            subject='Welcome!', content='Hi there!')
-        email = from_template('from@example.com', 'to@example.com', email_template)
-        self.assertEqual(email.from_email, 'from@example.com')
-        self.assertEqual(email.to, 'to@example.com')
-        self.assertEqual(email.subject, 'Welcome!')
-        self.assertEqual(email.message, 'Hi there!')
-
-        # Passing in template name also works
-        email = from_template('from2@example.com', 'to2@example.com',
-                              email_template.name)
-        self.assertEqual(email.from_email, 'from2@example.com')
-        self.assertEqual(email.to, 'to2@example.com')
-        self.assertEqual(email.subject, 'Welcome!')
-        self.assertEqual(email.message, 'Hi there!')
-
-        # Ensure that subject, message and html_message are correctly rendered
-        email_template.subject = "Subject: {{foo}}"
-        email_template.content = "Message: {{foo}}"
-        email_template.html_content = "HTML: {{foo}}"
-        email_template.save()
-        email = from_template('from@example.com', 'to@example.com',
-                              email_template, context={'foo': 'bar'})
-
-        self.assertEqual(email.subject, 'Subject: bar')
-        self.assertEqual(email.message, 'Message: bar')
-        self.assertEqual(email.html_message, 'HTML: bar')
 
     def test_default_sender(self):
         emails = send(['to@example.com'], subject='foo')

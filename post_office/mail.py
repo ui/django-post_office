@@ -60,9 +60,9 @@ def create(sender, recipient, subject='', message='', html_message='',
             headers=headers, priority=priority, status=status,
             context=context, template=template
         )
-    
+
     else:
-        
+
         if template:
             subject = template.subject
             message = template.content
@@ -82,34 +82,11 @@ def create(sender, recipient, subject='', message='', html_message='',
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
         )
-    
+
     if commit:
         email.save()
-    
+
     return email
-
-
-def from_template(sender, recipient, template, context=None, scheduled_time=None,
-                  headers=None, priority=None, render_on_delivery=False,
-                  commit=True):
-    """Loads an email template and create an email from it."""
-    # template can be an EmailTemplate instance or name
-    if isinstance(template, EmailTemplate):
-        template = template
-    else:
-        template = get_email_template(template)
-
-    if context is None:
-        context = {}
-
-    priority = parse_priority(priority)
-    return create(
-        sender=sender, recipient=recipient, subject=template.subject,
-        message=template.content, html_message=template.html_content,
-        context=context, scheduled_time=scheduled_time, headers=headers,
-        priority=priority, render_on_delivery=render_on_delivery,
-        commit=commit
-    )
 
 
 def send(recipients, sender=None, template=None, context={}, subject='',
