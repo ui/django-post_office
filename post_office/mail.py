@@ -40,7 +40,7 @@ def parse_priority(priority):
 
 def create(sender, recipient, subject='', message='', html_message='',
            context={}, scheduled_time=None, headers=None, template=None,
-           priority=None, commit=True):
+           priority=None, render_on_delivery=False, commit=True):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -53,6 +53,10 @@ def create(sender, recipient, subject='', message='', html_message='',
         subject = Template(subject).render(_context)
         message = Template(message).render(_context)
         html_message = Template(html_message).render(_context)
+
+    # Don't save context if render_on_delivery is False
+    if not render_on_delivery:
+        context = {}
 
     email = Email(
         from_email=sender, to=recipient,
@@ -69,7 +73,8 @@ def create(sender, recipient, subject='', message='', html_message='',
 
 
 def from_template(sender, recipient, template, context={}, scheduled_time=None,
-                  headers=None, priority=None, commit=True):
+                  headers=None, priority=None, render_on_delivery=False,
+                  commit=True):
     """Loads an email template and create an email from it."""
     # template can be an EmailTemplate instance or name
     if isinstance(template, EmailTemplate):
@@ -82,7 +87,8 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
         sender=sender, recipient=recipient, subject=template.subject,
         message=template.content, html_message=template.html_content,
         context=context, scheduled_time=scheduled_time, headers=headers,
-        priority=priority, commit=commit
+        priority=priority, render_on_delivery=render_on_delivery,
+        commit=commit
     )
 
 
@@ -113,11 +119,12 @@ def send(recipients, sender=None, template=None, context={}, subject='',
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
         emails = [from_template(sender, recipient, template, context, scheduled_time,
-                                headers, priority, commit)
+                                headers, priority, render_on_delivery, commit)
                   for recipient in recipients]
     else:
-        emails = [create(sender, recipient, subject, message, html_message, context,
-                         scheduled_time, headers, template, priority, commit)
+        emails = [create(sender, recipient, subject, message, html_message,
+                         context, scheduled_time, headers, template, priority,
+                         render_on_delivery, commit=commit)
                   for recipient in recipients]
 
     if attachments:
