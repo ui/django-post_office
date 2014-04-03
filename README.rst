@@ -355,8 +355,12 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
-0.8.0
-----------
+Version 0.8.1
+-------------
+* Fixed a bug that causes context to be saved when ``render_on_delivery`` is False
+
+Version 0.8.0
+-------------
 * Added a new setting ``DEFAULT_PRIORITY`` to set the default priority for emails.
   Thanks Maik Hoepfel (@maikhoepfel)!
 * ``mail.send()`` gains a ``render_on_delivery`` argument that may potentially
