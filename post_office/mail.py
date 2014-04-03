@@ -39,7 +39,7 @@ def parse_priority(priority):
 
 
 def create(sender, recipient, subject='', message='', html_message='',
-           context={}, scheduled_time=None, headers=None, template=None,
+           context=None, scheduled_time=None, headers=None, template=None,
            priority=None, render_on_delivery=False, commit=True):
     """
     Creates an email from supplied keyword arguments. If template is
@@ -47,6 +47,9 @@ def create(sender, recipient, subject='', message='', html_message='',
     """
     priority = parse_priority(priority)
     status = None if priority == PRIORITY.now else STATUS.queued
+
+    if context is None:
+        context = {}
 
     if template is None and context:
         _context = Context(context)
@@ -72,7 +75,7 @@ def create(sender, recipient, subject='', message='', html_message='',
     return email
 
 
-def from_template(sender, recipient, template, context={}, scheduled_time=None,
+def from_template(sender, recipient, template, context=None, scheduled_time=None,
                   headers=None, priority=None, render_on_delivery=False,
                   commit=True):
     """Loads an email template and create an email from it."""
@@ -81,6 +84,9 @@ def from_template(sender, recipient, template, context={}, scheduled_time=None,
         template = template
     else:
         template = get_email_template(template)
+
+    if context is None:
+        context = {}
 
     priority = parse_priority(priority)
     return create(
