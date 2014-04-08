@@ -21,6 +21,10 @@ CACHES = {
     }
 }
 
+POST_OFFICE = {
+    # 'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField',
+}
+
 
 INSTALLED_APPS = (
     'django.contrib.admin',

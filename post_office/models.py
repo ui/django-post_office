@@ -17,7 +17,7 @@ from django.template import Context, Template
 from jsonfield import JSONField
 from post_office import cache
 from .compat import text_type
-from .settings import get_email_backend
+from .settings import get_email_backend, context_field_class
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -76,7 +76,7 @@ class Email(models.Model):
     scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
     headers = JSONField(blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
-    context = JSONField(blank=True)
+    context = context_field_class(blank=True)
 
     objects = EmailManager()
 
