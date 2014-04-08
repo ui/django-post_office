@@ -1,10 +1,8 @@
 from django.conf import settings
 from django.core.cache import get_cache
 from django.core.cache.backends.base import InvalidCacheBackendError
-try:
-    from django.utils.module_loading import import_by_path as import_string
-except ImportError:
-    from django.utils.module_loading import import_string
+
+from .compat import import_attribute
 
 
 def get_email_backend():
@@ -53,4 +51,4 @@ def get_default_priority():
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
                                        'jsonfield.JSONField')
-context_field_class = import_string(CONTEXT_FIELD_CLASS)
+context_field_class = import_attribute(CONTEXT_FIELD_CLASS)
