@@ -281,8 +281,8 @@ class MailTest(TestCase):
         self.assertEqual(email.template, template)
 
     def test_send_with_template(self):
-        """If render_on_delivery is True, subject and content
-        won't be rendered, context also won't be saved."""
+        """If render_on_delivery is False, subject and content
+        will be rendered, context won't be saved."""
         
         template = EmailTemplate.objects.create(
             subject='Subject {{ name }}',
