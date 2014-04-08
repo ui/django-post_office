@@ -1,4 +1,4 @@
-import importlib
+from django.utils import importlib
 import sys
 
 
