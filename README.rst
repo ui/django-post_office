@@ -370,6 +370,10 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.8.2
+-------------
+* Added ``CONTEXT_FIELD_CLASS`` setting to allow other kinds of context field serializers.
+
 Version 0.8.1
 -------------
 * Fixed a bug that causes context to be saved when ``render_on_delivery`` is False
