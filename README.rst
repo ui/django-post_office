@@ -270,7 +270,7 @@ number of queued emails fetched in one batch.
         'BATCH_SIZE': 5000
     }
 
-Default priority
+Default Priority
 ----------------
 
 The default priority for emails is ``medium``, but this can be altered by
@@ -283,6 +283,21 @@ setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
         'DEFAULT_PRIORITY': 'now'
     }
 
+Context Field Serializer
+------------------------
+
+If you need to store complex Python objects for deferred rendering
+(i.e. setting ``render_on_delivery=True``), you can specify your own context
+field class to store context variables. For example if you want to use
+`django-picklefield <https://github.com/gintas/django-picklefield/tree/master/src/picklefield>`_:
+
+.. code-block:: python
+
+    POST_OFFICE = {
+        'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField'
+    }
+
+``CONTEXT_FIELD_CLASS`` defaults to ``jsonfield.JSONField``.
 
 Performance
 ===========
