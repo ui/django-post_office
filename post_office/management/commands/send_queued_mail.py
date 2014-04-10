@@ -1,4 +1,3 @@
-import os
 import tempfile
 import sys
 from optparse import make_option
@@ -11,6 +10,7 @@ from ...logutils import setup_loghandlers
 
 
 logger = setup_loghandlers()
+default_lockfile = tempfile.gettempdir() + "/post_office"
 
 
 class Command(BaseCommand):
@@ -19,11 +19,11 @@ class Command(BaseCommand):
         make_option('-p', '--processes', type='int',
                     help='Number of processes used to send emails', default=1),
         make_option('-l', '--lockfile', type='string',
-                    help='Name of lockfile to acquire', default='post_office'),
+                    help='Absolute path of lockfile to acquire', default=default_lockfile),
     )
 
     def handle(self, *args, **options):
-        with FileLock(os.path.join(tempfile.gettempdir(), options['lockfile']), timeout=1):
+        with FileLock(options['lockfile'], timeout=1):
             try:
                 send_queued(options['processes'])
             except Exception as e:
