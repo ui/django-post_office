@@ -1,3 +1,4 @@
+import os
 import tempfile
 import sys
 from optparse import make_option
@@ -17,10 +18,12 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('-p', '--processes', type='int',
                     help='Number of processes used to send emails', default=1),
+        make_option('-l', '--lockfile', type='string',
+                    help='Name of lockfile to acquire', default='post_office'),
     )
 
     def handle(self, *args, **options):
-        with FileLock(tempfile.gettempdir() + "/post_office", timeout=1):
+        with FileLock(os.path.join(tempfile.gettempdir(), options['lockfile']), timeout=1):
             try:
                 send_queued(options['processes'])
             except Exception as e:
