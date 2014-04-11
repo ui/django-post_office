@@ -370,6 +370,10 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.8.3
+-------------
+* ``send_queued_mail`` now accepts an extra ``lockfile`` argument.
+
 Version 0.8.2
 -------------
 * Added ``CONTEXT_FIELD_CLASS`` setting to allow other kinds of context field serializers.
