@@ -28,30 +28,27 @@ class FileLocked(Exception):
 
 class FileLock(object):
 
-    def __init__(self, fname, timeout=None, force=False):
-        self.fname = fname
-        self.lockfname = '%s.lock' % self.fname
+    def __init__(self, lock_filename, timeout=None, force=False):
+        self.lock_filename = lock_filename
+        self.lock_filename = '%s.lock' % self.lock_filename
         self.timeout = timeout
         self.force = force
         self._pid = str(os.getpid())
         # Store pid in a file in the same directory as desired lockname
         self.pid_filename = os.path.join(
-            os.path.dirname(self.lockfname),
+            os.path.dirname(self.lock_filename),
             self._pid,
         ) + '.lock'
 
     def get_lock_pid(self):
         try:
-            return int(open(self.lockfname).read())
+            return int(open(self.lock_filename).read())
         except IOError:
             # If we can't read symbolic link, there are two possibilities:
             # 1. The symbolic link is dead (point to non existing file)
             # 2. Symbolic link is not there
-            try:
-                os.remove(self.lockfname)
-            except OSError:
-                # If symbolic link is not there, we don't care
-                pass
+            # In either case, we can safely release the lock
+            self.release()
 
     def valid_lock(self):
         """
@@ -73,7 +70,7 @@ class FileLock(object):
         try:
             os.kill(lock_pid, 0)
         except OSError:
-            os.unlink(self.lockfname)
+            os.unlink(self.lock_filename)
             os.remove(self.pid_filename)
             return False
 
@@ -126,13 +123,12 @@ class FileLock(object):
         except TypeError:
             os.write(pid_file, bytes(os.getpid()))
         os.close(pid_file)
-        os.symlink(self.pid_filename, self.lockfname)
-        #time.sleep(100)
+        os.symlink(self.pid_filename, self.lock_filename)
 
     def release(self):
         """Try to delete the lock files. Doesn't matter if we fail"""
         try:
-            os.unlink(self.lockfname)
+            os.unlink(self.lock_filename)
         except OSError:
             pass
         try:
