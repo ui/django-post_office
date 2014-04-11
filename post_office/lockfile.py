@@ -118,10 +118,7 @@ class FileLock(object):
         """
 
         pid_file = os.open(self.pid_filename, os.O_CREAT | os.O_EXCL | os.O_RDWR)
-        try:
-            os.write(pid_file, str(os.getpid()))
-        except TypeError:
-            os.write(pid_file, bytes(os.getpid()))
+        os.write(pid_file, str(os.getpid()).encode('utf-8'))
         os.close(pid_file)
         os.symlink(self.pid_filename, self.lock_filename)
 
