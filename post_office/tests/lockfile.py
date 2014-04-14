@@ -10,10 +10,10 @@ def setup_fake_lock(lock_file_name):
     pid = os.getpid()
     lockfile = '%s.lock' % pid
     try:
-        os.remove('test.lock')
+        os.remove(lock_file_name)
     except OSError:
         pass
-    os.symlink(lockfile, 'test.lock')
+    os.symlink(lockfile, lock_file_name)
 
 
 class LockTest(TestCase):
