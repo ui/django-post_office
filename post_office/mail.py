@@ -174,6 +174,11 @@ def send_queued(processes=1):
                 (total_email, processes))
 
     if queued_emails:
+
+        # Don't use more processes than number of emails
+        if total_email < processes:
+            processes = total_email
+
         if processes == 1:
             total_sent, total_failed = _send_bulk(queued_emails, uses_multiprocessing=False)
         else:
