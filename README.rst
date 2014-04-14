@@ -372,7 +372,9 @@ Changelog
 
 Version 0.8.3
 -------------
-* ``send_queued_mail`` now accepts an extra ``lockfile`` argument.
+* ``send_queued_mail`` now accepts an extra ``--lockfile`` argument.
+* Lockfile implementation has been modified to use symlink, which is an atomic operation
+  across platforms.
 
 Version 0.8.2
 -------------
