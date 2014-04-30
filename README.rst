@@ -208,8 +208,16 @@ Management Commands
 -------------------
 
 * ``send_queued_mail`` - send queued emails, those aren't successfully sent
-  will be marked as ``failed``. If you have a lot of emails, you can
-  pass in ``-p`` or ``--processes`` flag to use multiple processes.
+  will be marked as ``failed``. Accepts the following arguments:
+
+========================== ========================= ====================================
+Argument                   Default                   Description
+========================== ========================= ====================================
+``-p`` or ``--processes``  1                         Number of parallel processes to send email
+``-l`` or ``--log-level``  2                         ``0`` logs nothing, ``1`` logs delivery failures
+                                                     and ``2`` logs both successful and failed deliveries
+``-L`` or ``--lockfile``   ``/tmp/post_office.lock`` Full path to file used as lock file
+========================== ========================= ====================================
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
   (defaults to 90).
