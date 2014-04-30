@@ -115,7 +115,7 @@ class Email(models.Model):
 
         return msg
 
-    def dispatch(self, connection=None):
+    def dispatch(self, connection=None, log_level=2):
         """
         Actually send out the email and log the result
         """
@@ -139,7 +139,15 @@ class Email(models.Model):
 
         self.status = status
         self.save()
-        self.logs.create(status=status, message=message)
+
+        # If log level is 0, log nothing, 1 logs only sending failures
+        # and 2 means log both successes and failures
+        if log_level == 1:
+            if status == STATUS.failed:
+                self.logs.create(status=status, message=message)
+        elif log_level == 2:
+            self.logs.create(status=status, message=message)
+        
         return status
 
     def save(self, *args, **kwargs):

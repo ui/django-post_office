@@ -162,7 +162,7 @@ def get_queued():
         .order_by('-priority').prefetch_related('attachments')[:get_batch_size()]
 
 
-def send_queued(processes=1):
+def send_queued(processes=1, log_level=2):
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
@@ -180,7 +180,9 @@ def send_queued(processes=1):
             processes = total_email
 
         if processes == 1:
-            total_sent, total_failed = _send_bulk(queued_emails, uses_multiprocessing=False)
+            total_sent, total_failed = _send_bulk(queued_emails,
+                                                  uses_multiprocessing=False,
+                                                  log_level=log_level)
         else:
             email_lists = split_emails(queued_emails, processes)
             pool = Pool(processes)
@@ -196,7 +198,7 @@ def send_queued(processes=1):
     return (total_sent, total_failed)
 
 
-def _send_bulk(emails, uses_multiprocessing=True):
+def _send_bulk(emails, uses_multiprocessing=True, log_level=2):
     # Multiprocessing does not play well with database connection
     # Fix: Close connections on forking process
     # https://groups.google.com/forum/#!topic/django-users/eCAIY9DAfG0
@@ -215,7 +217,7 @@ def _send_bulk(emails, uses_multiprocessing=True):
 
     try:
         for email in emails:
-            status = email.dispatch(connection)
+            status = email.dispatch(connection, log_level)
             if status == STATUS.sent:
                 sent_count += 1
                 logger.debug('Successfully sent email #%d' % email.id)
