@@ -210,14 +210,14 @@ Management Commands
 * ``send_queued_mail`` - send queued emails, those aren't successfully sent
   will be marked as ``failed``. Accepts the following arguments:
 
-========================== ========================= ====================================
+=============== ========================== ====================================
 Argument                   Default                   Description
-========================== ========================= ====================================
-``-p`` or ``--processes``  1                         Number of parallel processes to send email
-``-l`` or ``--log-level``  2                         ``0`` logs nothing, ``1`` logs delivery failures
-                                                     and ``2`` logs both successful and failed deliveries
-``-L`` or ``--lockfile``   ``/tmp/post_office.lock`` Full path to file used as lock file
-========================== ========================= ====================================
+=============== ========================== ====================================
+``--processes``  1                         Number of parallel processes to send email
+``--log-level``  2                         ``0`` logs nothing, ``1`` logs delivery failures
+                                           and ``2`` logs both successful and failed deliveries
+``--lockfile``   ``/tmp/post_office.lock`` Full path to file used as lock file
+=============== ========================== ====================================
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
   (defaults to 90).
@@ -381,6 +381,7 @@ Changelog
 Version 0.8.3
 -------------
 * ``send_queued_mail`` now accepts an extra ``--lockfile`` argument.
+* ``send_queued_mail`` now accepts an extra ``--log-level`` argument.
 * Lockfile implementation has been modified to use symlink, which is an atomic operation
   across platforms.
 
