@@ -408,10 +408,14 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Version 0.8.4 (Unreleased)
+--------------------------
+* ``send_queued_mail`` now accepts an extra ``--log-level`` argument.
+* ``mail.send()`` now accepts an extra ``log_level`` argument.
+
 Version 0.8.3
 -------------
-* ``send_queued_mail`` now accepts an extra ``--lockfile`` argument.
-* ``send_queued_mail`` now accepts an extra ``--log-level`` argument.
+* ``send_queued_mail`` now accepts ``--lockfile`` argument.
 * Lockfile implementation has been modified to use symlink, which is an atomic operation
   across platforms.
 
