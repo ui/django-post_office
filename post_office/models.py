@@ -1,11 +1,20 @@
+import os
+import random
+import re
+import string
 import sys
 import warnings
 from uuid import uuid4
 
 from collections import namedtuple
 
+from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
+
+from email.mime.image import MIMEImage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 try:
     from django.utils.encoding import smart_text # For Django >= 1.5
@@ -87,6 +96,10 @@ class Email(models.Model):
         """
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object
         from a ``Message`` instance, depending on whether html_message is empty.
+
+        settings.POST_OFFICE_INLINE_IMAGES: Images located in static folder which
+        are used in the email will be attached as inline image. But only if this
+        settings set to True.
         """
         subject = smart_text(self.subject)
 
@@ -112,7 +125,42 @@ class Email(models.Model):
             msg = EmailMultiAlternatives(subject, message, self.from_email,
                                          [self.to], connection=connection,
                                          headers=self.headers)
-            msg.attach_alternative(html_message, "text/html")
+
+            if getattr(settings, 'POST_OFFICE_INLINE_IMAGES', False):
+                image_pattern = """<img\s*.*src=['"](?P<img_src>%s[^'"]*)['"].*\/>""" \
+                    % settings.STATIC_URL
+                image_matches = re.findall(image_pattern, html_message)
+                added_images = {}
+                attach_images = []
+                chars = string.ascii_uppercase + string.digits
+                for image_match in image_matches:
+                    if image_match not in added_images:
+                        img_content_cid = ''.join(random.choice(chars) for x in range(6))
+                        on_disk_path = os.path.join(settings.STATIC_ROOT,
+                            image_match.replace(settings.STATIC_URL, ''))
+                        img_data = open(on_disk_path, 'rb').read()
+                        img = MIMEImage(img_data)
+                        img.add_header('Content-ID', '<%s>' % img_content_cid)
+                        # split image path and keep filename
+                        img.add_header(u'Content-Disposition',
+                            'inline; filename="%s"' % image_match.split('/')[-1])
+                        attach_images.append(img)
+                        added_images[image_match] = img_content_cid
+
+                        html_message = string.replace(html_message,
+                            image_match, 'cid:%s' % img_content_cid)
+
+                related = MIMEMultipart('related')
+                html_part = MIMEText(html_message.encode('utf-8'), 'html', 'utf-8')
+                related.attach(html_part)
+                for image in attach_images:
+                    related.attach(image)
+
+                msg.attach(related)
+                msg.mixed_subtype = 'alternative'
+                msg.content_subtype = 'html'
+            else:
+                msg.attach_alternative(html_message, "text/html")
         else:
             msg = EmailMessage(subject, message, self.from_email,
                                [self.to], connection=connection,
