@@ -98,6 +98,9 @@ priority           No       ``high``, ``medium``, ``low`` or ``now`` (send immed
 attachments        No       Email attachments - A dictionary where the keys are the wanted filenames,
                             and the values are either files or file-like objects, or full path of
                             the file.
+log_level          No       ``0`` logs nothing
+                            ``1`` logs delivery failures
+                            ``2`` logs successful and failed deliveries
 render_on_delivery No       Setting this to ``True`` causes email to be rendered
                             from ``template`` during delivery. Content is never stored
                             in the DB. Usage may result in significant space savings.
@@ -214,8 +217,9 @@ Management Commands
 Argument                   Default                   Description
 =============== ========================== ====================================
 ``--processes``  1                         Number of parallel processes to send email
-``--log-level``  2                         ``0`` logs nothing, ``1`` logs delivery failures
-                                           and ``2`` logs both successful and failed deliveries
+``--log-level``  2                         ``0`` logs nothing
+                                           ``1`` logs delivery failures
+                                           ``2`` logs successful and failed deliveries
 ``--lockfile``   ``/tmp/post_office.lock`` Full path to file used as lock file
 =============== ========================== ====================================
 
