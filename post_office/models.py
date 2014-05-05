@@ -95,6 +95,14 @@ class Email(models.Model):
             subject = Template(self.template.subject).render(_context)
             message = Template(self.template.content).render(_context)
             html_message = Template(self.template.html_content).render(_context)
+            # render email template in base template if base template set
+            if self.template.base_template is not None:
+                _context = Context({
+                    'inner_content': html_message
+                })
+                html_message = Template(self.template.base_template.html_content) \
+                        .render(_context)
+
         else:
             subject = self.subject
             message = self.message
@@ -189,6 +197,8 @@ class EmailTemplate(models.Model):
                                     validators=[validate_template_syntax])
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    base_template = models.ForeignKey('post_office.BaseEmailTemplate',
+                                      blank=True, null=True)
 
     def __unicode__(self):
         return self.name
@@ -197,6 +207,22 @@ class EmailTemplate(models.Model):
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
+
+
+class BaseEmailTemplate(models.Model):
+    """
+    A model to add base `skeleton` template for email templates. When sending emails in
+    different languages or for different purposes you can add a base template which
+    is the same for all emails. This means less content in EmailTemplate. The
+    child template (EmailTemplate) will be rendered in template
+    variable {{ inner_content }}.
+    """
+    name = models.CharField(max_length=255)
+    html_content = models.TextField(validators=[validate_template_syntax],
+                                    help_text=("EmailTemplate will be rendered in template variable {{ inner_content }}"))
+
+    def __unicode__(self):
+        return unicode(self.name)
 
 
 class Attachment(models.Model):
