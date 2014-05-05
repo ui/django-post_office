@@ -37,7 +37,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
             'fields': ('name', 'description'),
         }),
         ('Email', {
-            'fields': ('subject', 'content', 'html_content'),
+            'fields': ('base_template', 'subject', 'content', 'html_content'),
         }),
     ]
 
