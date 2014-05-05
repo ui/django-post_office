@@ -82,29 +82,50 @@ mail.send()
 ``mail.send`` is the most important function in this library, it takes these
 arguments:
 
-================== ======== =========================
-Argument           Required Description
-================== ======== =========================
-recipients         Yes      list of recipient email addresses
-sender             No       Defaults to ``settings.DEFAULT_FROM_EMAIL``, display name is allowed (``John <john@example.com>``)
-template           No       ``EmailTemplate`` instance or name
-context            No       A dictionary used when email is being rendered
-subject            No       Email subject (if ``template`` is not specified)
-message            No       Email content (if ``template`` is not specified)
-html_message       No       Email's HTML content (if ``template`` is not specified)
-headers            No       A dictionary of extra headers to put on the message
-scheduled_time     No       A date/datetime object indicating when the email should be sent
-priority           No       ``high``, ``medium``, ``low`` or ``now`` (send immediately)
-attachments        No       Email attachments - A dictionary where the keys are the wanted filenames,
-                            and the values are either files or file-like objects, or full path of
-                            the file.
-log_level          No       ``0`` logs nothing
-                            ``1`` logs delivery failures
-                            ``2`` logs successful and failed deliveries
-render_on_delivery No       Setting this to ``True`` causes email to be rendered
-                            from ``template`` during delivery. Content is never stored
-                            in the DB. Usage may result in significant space savings.
-================== ======== =========================
++-------------------+----------+-------------------------------------------------+
+| Argument          | Required | Description                                     |
++-------------------+----------+-------------------------------------------------+
+| recipients        | Yes      | list of recipient email addresses               |
++-------------------+----------+-------------------------------------------------+
+| sender            | No       | Defaults to ``settings.DEFAULT_FROM_EMAIL``,    |
+|                   |          | display name is allowed (``John <john@a.com>``) |
++-------------------+----------+-------------------------------------------------+
+| template          | No       | ``EmailTemplate`` instance or name              |
++-------------------+----------+-------------------------------------------------+
+| context           | No       | A dictionary, used to render templated email    |
++-------------------+----------+-------------------------------------------------+
+| subject           | No       | Email subject (if ``template`` is not specified)|
++-------------------+----------+-------------------------------------------------+
+| message           | No       | Email content (if ``template`` is not specified)|
++-------------------+----------+-------------------------------------------------+
+| html_message      | No       | HTML content (if ``template`` is not specified) |
++-------------------+----------+-------------------------------------------------+
+| headers           | No       | A dictionary of extra headers on the message    |
++-------------------+----------+-------------------------------------------------+
+| scheduled_time    | No       | A date/datetime object indicating when the email|
+|                   |          | should be sent                                  |
++-------------------+----------+-------------------------------------------------+
+| priority          | No       | ``high``, ``medium``, ``low`` or ``now``        |
+|                   |          | (send_immediately)                              |
++-------------------+----------+-------------------------------------------------+
+| attachments       | No       | Email attachments - A dictionary where the keys |
+|                   |          | are the filenames and the values are either:    |
+|                   |          |                                                 |
+|                   |          | * files                                         |
+|                   |          | * file-like objects                             |
+|                   |          | * full path of the file                         |
++-------------------+----------+-------------------------------------------------+
+| log_level         | No       | * ``0`` logs nothing                            |
+|                   |          | * ``1`` logs delivery failures                  |
+|                   |          | * ``2`` logs successful and failed deliveries   |
++-------------------+----------+-------------------------------------------------+
+| render_on_delivery| No       | Setting this to ``True`` causes email to be     |
+|                   |          | lazily rendered during delivery. ``template``   |
+|                   |          | is required when ``render_on_delivery`` is True.|
+|                   |          | This way content is never stored in the DB.     |
+|                   |          | May result in significat space savings.         |
++-------------------+----------+-------------------------------------------------+
+
 
 Here are a few examples.
 
@@ -213,15 +234,20 @@ Management Commands
 * ``send_queued_mail`` - send queued emails, those aren't successfully sent
   will be marked as ``failed``. Accepts the following arguments:
 
-=============== ========================== ====================================
-Argument                   Default                   Description
-=============== ========================== ====================================
-``--processes``  1                         Number of parallel processes to send email
-``--log-level``  2                         ``0`` logs nothing
-                                           ``1`` logs delivery failures
-                                           ``2`` logs successful and failed deliveries
-``--lockfile``   ``/tmp/post_office.lock`` Full path to file used as lock file
-=============== ========================== ====================================
++---------------------------+-------------------------------------------------+
+| Argument                  | Description                                     |
++---------------------------+-------------------------------------------------+
+| ``--processes`` or ``-p`` | Number of parallel processes to send email.     |
+|                           | Defaults to 1                                   |
++-------------------+-------+---------+---------------------------------------+
+| ``--log-level`` or ``-l`` | * ``0`` logs nothing                            |
+|                           | * ``1`` logs delivery failures                  |
+|                           | * ``2`` logs successful and failed deliveries   |
++---------------------------+---------+---------------------------------------+
+| ``--lockfile`` or ``-L``  | Full path to file used as lock file. Defaults to|
+|                           | ``/tmp/post_office.lock``                       |
++---------------------------+-------------------------------------------------+
+
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
   (defaults to 90).
