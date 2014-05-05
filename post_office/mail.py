@@ -92,7 +92,7 @@ def create(sender, recipient, subject='', message='', html_message='',
 def send(recipients, sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         commit=True):
+         log_level=2, commit=True):
 
     if not isinstance(recipients, (tuple, list)):
         raise ValueError('Recipient emails must be in list/tuple format')
@@ -133,7 +133,7 @@ def send(recipients, sender=None, template=None, context={}, subject='',
 
     if priority == PRIORITY.now:
         for email in emails:
-            email.dispatch()
+            email.dispatch(log_level=log_level)
 
     return emails
 
