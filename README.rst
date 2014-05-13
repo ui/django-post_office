@@ -408,10 +408,11 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
-Version 0.8.4 (Unreleased)
---------------------------
+Version 0.8.4
+-------------
 * ``send_queued_mail`` now accepts an extra ``--log-level`` argument.
 * ``mail.send()`` now accepts an extra ``log_level`` argument.
+* Drop unused/low cardinality indexes to free up RAM on large tables.
 
 Version 0.8.3
 -------------
