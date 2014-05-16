@@ -6,6 +6,7 @@ from collections import namedtuple
 
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
+from post_office.fields import CommaSeparatedEmailField
 
 try:
     from django.utils.encoding import smart_text # For Django >= 1.5
@@ -58,7 +59,9 @@ class Email(models.Model):
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'), (STATUS.queued, 'queued')]
 
     from_email = models.CharField(max_length=254, validators=[validate_email_with_name])
-    to = models.EmailField(max_length=254)
+    to = CommaSeparatedEmailField(blank=True)
+    cc = CommaSeparatedEmailField(blank=True)
+    bcc = CommaSeparatedEmailField(blank=True)
     subject = models.CharField(max_length=255, blank=True)
     message = models.TextField(blank=True)
     html_message = models.TextField(blank=True)
