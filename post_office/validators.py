@@ -1,33 +1,43 @@
-import re
-
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.template import Template, TemplateSyntaxError
+from django.utils.encoding import force_text
 
 from .compat import text_type
 
 
-email_re = re.compile(r'\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b', re.IGNORECASE)
-
-
 def validate_email_with_name(value):
     """
-    In addition to validating valid email address, it also accepts email address
-    in the format of "Recipient Name <email@example.com>"
-    """
-    # Try matching straight email address "alice@example.com"
-    if email_re.match(value):
-        return
+    Validate email address.
 
-    # Now try to match "Alice <alice@example.com>"
+    Both "Recipient Name <email@example.com>" and "email@example.com" are valid.
+    """
+    value = force_text(value)
+
     if '<' and '>' in value:
         start = value.find('<') + 1
         end = value.find('>')
         if start < end:
-            email = value[start:end]
-            if email_re.match(email):
-                return
+            recipient = value[start:end]
+    else:
+        recipient = value
 
-    raise ValidationError('Enter a valid e-mail address.', code='invalid')
+    validate_email(recipient)
+
+
+def validate_comma_separated_email_list(value):
+    """
+    Validate every email address in a comma separated list of emails.
+    """
+    value = force_text(value)
+
+    emails = [email.strip() for email in value.split(',')]
+
+    for email in emails:
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise ValidationError('Invalid email: %s' % email, code='invalid')
 
 
 def validate_template_syntax(source):
@@ -39,4 +49,3 @@ def validate_template_syntax(source):
         t = Template(source)
     except TemplateSyntaxError as err:
         raise ValidationError(text_type(err))
-

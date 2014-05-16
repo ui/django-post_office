@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from django.core import mail
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
@@ -10,7 +8,7 @@ from django.test.utils import override_settings
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
 from ..utils import (send_mail, send_queued_mail, get_email_template, send_templated_mail,
                      split_emails, create_attachments)
-from ..validators import validate_email_with_name
+from ..validators import validate_email_with_name, validate_comma_separated_email_list
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
@@ -44,6 +42,22 @@ class UtilsTest(TestCase):
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_email_with_name, 'invalid_mail')
         self.assertRaises(ValidationError, validate_email_with_name, 'Alice <invalid_mail>')
+
+    def test_comma_separated_email_list_validator(self):
+        # These should validate
+        validate_comma_separated_email_list('email@example.com')
+        validate_comma_separated_email_list(
+            '  email@example.com  ,  email2@example.com, email3@example.com'
+        )
+
+        # Should also support international domains
+        validate_comma_separated_email_list('email@example.co.id')
+
+        # These should raise ValidationError
+        self.assertRaises(ValidationError, validate_comma_separated_email_list,
+                          'Alice Bob <email@example.com>')
+        self.assertRaises(ValidationError, validate_comma_separated_email_list,
+                          'email@example.com, invalid_mail, email@example.com')
 
     def test_get_template_email(self):
         # Sanity Check
