@@ -133,20 +133,18 @@ def send(to=[], sender=None, template=None, context={}, subject='',
         else:
             template = get_email_template(template)
 
-    emails = [create(sender, to, cc, bcc, subject, message, html_message,
-                     context, scheduled_time, headers, template, priority,
-                     render_on_delivery, commit=commit)]
+    email = create(sender, to, cc, bcc, subject, message, html_message,
+                   context, scheduled_time, headers, template, priority,
+                   render_on_delivery, commit=commit)
 
     if attachments:
         attachments = create_attachments(attachments)
-        for email in emails:
-            email.attachments.add(*attachments)
+        email.attachments.add(*attachments)
 
     if priority == PRIORITY.now:
-        for email in emails:
-            email.dispatch(log_level=log_level)
+        email.dispatch(log_level=log_level)
 
-    return emails
+    return email
 
 
 def send_many(kwargs_list):
@@ -157,7 +155,7 @@ def send_many(kwargs_list):
     """
     emails = []
     for kwargs in kwargs_list:
-        emails.extend(send(commit=False, **kwargs))
+        emails.append(send(commit=False, **kwargs))
     Email.objects.bulk_create(emails)
 
 

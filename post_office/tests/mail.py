@@ -211,13 +211,10 @@ class MailTest(TestCase):
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         }
-        emails = send(to=['a@example.com', 'b@example.com'],
-                      sender='from@example.com', message='message',
-                      subject='subject', attachments=attachments)
+        email = send(to=['a@example.com', 'b@example.com'],
+                     sender='from@example.com', message='message',
+                     subject='subject', attachments=attachments)
 
-        self.assertEquals(len(emails), 1)
-
-        email = emails[0]
         self.assertTrue(email.pk)
         self.assertEquals(email.attachments.count(), 2)
 
@@ -234,7 +231,7 @@ class MailTest(TestCase):
         context = {'name': 'test'}
         email = send(to=['a@example.com', 'b@example.com'],
                      template=template, context=context,
-                     render_on_delivery=True)[0]
+                     render_on_delivery=True)
         self.assertEqual(email.subject, '')
         self.assertEqual(email.message, '')
         self.assertEqual(email.html_message, '')
@@ -243,7 +240,7 @@ class MailTest(TestCase):
         # context shouldn't be persisted when render_on_delivery = False
         email = send(to=['a@example.com'],
                      template=template, context=context,
-                     render_on_delivery=False)[0]
+                     render_on_delivery=False)
         self.assertEqual(email.context, '')
 
     def test_send_with_attachments_multiple_recipients(self):
@@ -252,11 +249,11 @@ class MailTest(TestCase):
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         }
-        emails = send(to=['a@example.com', 'b@example.com'],
-                      sender='from@example.com', message='message',
-                      subject='subject', attachments=attachments)
+        email = send(to=['a@example.com', 'b@example.com'],
+                     sender='from@example.com', message='message',
+                     subject='subject', attachments=attachments)
 
-        self.assertEquals(emails[0].attachments.count(), 2)
+        self.assertEquals(email.attachments.count(), 2)
         self.assertEquals(Attachment.objects.count(), 2)
 
     def test_create_with_template(self):
@@ -290,7 +287,7 @@ class MailTest(TestCase):
         )
         context = {'name': 'test'}
         email = send(to=['to@example.com'], sender='from@example.com',
-                     template=template, context=context)[0]
+                     template=template, context=context)
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'Subject test')
         self.assertEqual(email.message, 'Content test')
