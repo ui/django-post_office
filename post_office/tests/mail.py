@@ -146,26 +146,26 @@ class MailTest(TestCase):
         Test basic email creation
         """
 
-        # Test that email is persisted only when commi=True
+        # Test that email is persisted only when commit=True
         email = create(
-            sender='from@example.com', recipient='to@example.com',
+            sender='from@example.com', to=['to@example.com'],
             commit=False
         )
         self.assertEqual(email.id, None)
         email = create(
-            sender='from@example.com', recipient='to@example.com',
+            sender='from@example.com', to=['to@example.com'],
             commit=True
         )
         self.assertNotEqual(email.id, None)
 
         # Test that email is created with the right status
         email = create(
-            sender='from@example.com', recipient='to@example.com',
+            sender='from@example.com', to=['to@example.com'],
             priority=PRIORITY.now
         )
         self.assertEqual(email.status, None)
         email = create(
-            sender='from@example.com', recipient='to@example.com',
+            sender='from@example.com', to=['to@example.com'],
             priority=PRIORITY.high
         )
         self.assertEqual(email.status, STATUS.queued)
@@ -178,7 +178,7 @@ class MailTest(TestCase):
         }
         now = datetime.now()
         email = create(
-            sender='from@example.com', recipient='to@example.com',
+            sender='from@example.com', to=['to@example.com'],
             subject='Test {{ subject }}', message='Test {{ message }}',
             html_message='Test {{ html }}', context=context,
             scheduled_time=now, headers={'header': 'Test header'},
@@ -200,8 +200,8 @@ class MailTest(TestCase):
     def test_send_many(self):
         """Test send_many creates the right emails """
         kwargs_list = [
-            {'sender': 'from@example.com', 'recipients': ['a@example.com']},
-            {'sender': 'from@example.com', 'recipients': ['b@example.com']},
+            {'sender': 'from@example.com', 'to': ['a@example.com']},
+            {'sender': 'from@example.com', 'to': ['b@example.com']},
         ]
         send_many(kwargs_list)
         self.assertEqual(Email.objects.filter(to='a@example.com').count(), 1)
@@ -211,11 +211,11 @@ class MailTest(TestCase):
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         }
-        emails = send(recipients=['a@example.com', 'b@example.com'],
+        emails = send(to=['a@example.com', 'b@example.com'],
                       sender='from@example.com', message='message',
                       subject='subject', attachments=attachments)
 
-        self.assertEquals(len(emails), 2)
+        self.assertEquals(len(emails), 1)
 
         email = emails[0]
         self.assertTrue(email.pk)
@@ -232,7 +232,7 @@ class MailTest(TestCase):
             html_content='HTML {{ name }}'
         )
         context = {'name': 'test'}
-        email = send(recipients=['a@example.com', 'b@example.com'],
+        email = send(to=['a@example.com', 'b@example.com'],
                      template=template, context=context,
                      render_on_delivery=True)[0]
         self.assertEqual(email.subject, '')
@@ -241,23 +241,22 @@ class MailTest(TestCase):
         self.assertEqual(email.template, template)
 
         # context shouldn't be persisted when render_on_delivery = False
-        email = send(recipients=['a@example.com'],
+        email = send(to=['a@example.com'],
                      template=template, context=context,
                      render_on_delivery=False)[0]
         self.assertEqual(email.context, '')
 
-    def test_send_with_attachments_multiple_emails(self):
+    def test_send_with_attachments_multiple_recipients(self):
         """Test reusing the same attachment objects for several email objects"""
         attachments = {
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         }
-        emails = send(recipients=['a@example.com', 'b@example.com'],
+        emails = send(to=['a@example.com', 'b@example.com'],
                       sender='from@example.com', message='message',
                       subject='subject', attachments=attachments)
 
         self.assertEquals(emails[0].attachments.count(), 2)
-        self.assertEquals(emails[1].attachments.count(), 2)
         self.assertEquals(Attachment.objects.count(), 2)
 
     def test_create_with_template(self):
@@ -271,7 +270,7 @@ class MailTest(TestCase):
         )
         context = {'name': 'test'}
         email = create(
-            sender='from@example.com', recipient='to@example.com',
+            sender='from@example.com', to=['to@example.com'],
             template=template, context=context, render_on_delivery=True
         )
         self.assertEqual(email.subject, '')
@@ -290,7 +289,7 @@ class MailTest(TestCase):
             html_content='HTML {{ name }}'
         )
         context = {'name': 'test'}
-        email = send(['to@example.com'], 'from@example.com',
+        email = send(to=['to@example.com'], sender='from@example.com',
                      template=template, context=context)[0]
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'Subject test')

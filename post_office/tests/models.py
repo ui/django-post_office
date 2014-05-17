@@ -151,6 +151,10 @@ class ModelTest(TestCase):
                           template='foo', html_message='bar')
         self.assertRaises(ValueError, send, 'to@example.com', 'from@a.com',
                           template='foo', html_message='bar')
+        self.assertRaises(ValueError, send, cc='cc@example.com', sender='from@a.com',
+                          template='foo', html_message='bar')
+        self.assertRaises(ValueError, send, bcc='bcc@example.com', sender='from@a.com',
+                          template='foo', html_message='bar')
 
     def test_send_with_template(self):
         """
@@ -161,45 +165,43 @@ class ModelTest(TestCase):
         email_template = EmailTemplate.objects.create(name='foo', subject='bar',
                                                       content='baz')
         scheduled_time = datetime.now() + timedelta(days=1)
-        emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
+        emails = send(to=['to1@example.com', 'to2@example.com'], sender='from@a.com',
                       headers=headers, template=email_template,
                       scheduled_time=scheduled_time)
-        self.assertEqual(len(emails), 2)
-        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0].to, 'to1@example.com, to2@example.com')
         self.assertEqual(emails[0].headers, headers)
         self.assertEqual(emails[0].scheduled_time, scheduled_time)
 
-        self.assertEqual(emails[1].to, 'to2@example.com')
-        self.assertEqual(emails[1].headers, headers)
-
         # Test without header
         Email.objects.all().delete()
-        emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
+        emails = send(to=['to1@example.com', 'to2@example.com'], sender='from@a.com',
                       template=email_template)
-        self.assertEqual(len(emails), 2)
-        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0].to, 'to1@example.com, to2@example.com')
         self.assertEqual(emails[0].headers, None)
-
-        self.assertEqual(emails[1].to, 'to2@example.com')
-        self.assertEqual(emails[1].headers, None)
 
     def test_send_without_template(self):
         headers = {'Reply-to': 'reply@email.com'}
         scheduled_time = datetime.now() + timedelta(days=1)
-        emails = send(['to1@example.com', 'to2@example.com'], 'from@a.com',
+        emails = send(sender='from@a.com',
+                      to=['to1@example.com', 'to2@example.com'],
+                      cc=['cc1@example.com', 'cc2@example.com'],
+                      bcc=['bcc1@example.com', 'bcc2@example.com'],
                       subject='foo', message='bar', html_message='baz',
                       context={'name': 'Alice'}, headers=headers,
                       scheduled_time=scheduled_time, priority=PRIORITY.low)
 
-        self.assertEqual(len(emails), 2)
-        self.assertEqual(emails[0].to, 'to1@example.com')
+        self.assertEqual(len(emails), 1)
+        self.assertEqual(emails[0].to, 'to1@example.com, to2@example.com')
+        self.assertEqual(emails[0].cc, 'cc1@example.com, cc2@example.com')
+        self.assertEqual(emails[0].bcc, 'bcc1@example.com, bcc2@example.com')
         self.assertEqual(emails[0].subject, 'foo')
         self.assertEqual(emails[0].message, 'bar')
         self.assertEqual(emails[0].html_message, 'baz')
         self.assertEqual(emails[0].headers, headers)
         self.assertEqual(emails[0].priority, PRIORITY.low)
         self.assertEqual(emails[0].scheduled_time, scheduled_time)
-        self.assertEqual(emails[1].to, 'to2@example.com')
 
         # Same thing, but now with context
         emails = send(['to1@example.com'], 'from@a.com',
@@ -244,7 +246,7 @@ class ModelTest(TestCase):
         self.assertEqual(emails[0].priority, PRIORITY.low)
 
     def test_default_priority(self):
-        emails = send(['to1@example.com'], 'from@a.com')
+        emails = send(to=['to1@example.com'], sender='from@a.com')
         self.assertEqual(emails[0].priority, PRIORITY.medium)
 
     def test_string_priority_exception(self):

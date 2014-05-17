@@ -104,14 +104,16 @@ class Email(models.Model):
             html_message = self.html_message
         
         if html_message:
-            msg = EmailMultiAlternatives(subject, message, self.from_email,
-                                         [self.to], connection=connection,
-                                         headers=self.headers)
+            msg = EmailMultiAlternatives(
+                subject=subject, body=message, from_email=self.from_email,
+                to=self.to.split(','), bcc=self.bcc.split(','), cc=self.cc.split(','),
+                connection=connection, headers=self.headers)
             msg.attach_alternative(html_message, "text/html")
         else:
-            msg = EmailMessage(subject, message, self.from_email,
-                               [self.to], connection=connection,
-                               headers=self.headers)
+            msg = EmailMessage(
+                subject=subject, body=message, from_email=self.from_email,
+                to=self.to.split(','), bcc=self.bcc.split(','), cc=self.cc.split(','),
+                connection=connection, headers=self.headers)
 
         for attachment in self.attachments.all():
             msg.attach(attachment.name, attachment.file.read())

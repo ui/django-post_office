@@ -38,7 +38,7 @@ def parse_priority(priority):
     return priority
 
 
-def create(sender, recipient, subject='', message='', html_message='',
+def create(sender, to=[], cc=[], bcc=[], subject='', message='', html_message='',
            context=None, scheduled_time=None, headers=None, template=None,
            priority=None, render_on_delivery=False, commit=True):
     """
@@ -55,7 +55,10 @@ def create(sender, recipient, subject='', message='', html_message='',
     # information
     if render_on_delivery:
         email = Email(
-            from_email=sender, to=recipient,
+            from_email=sender,
+            to=_recipients_list_to_str(to),
+            cc=_recipients_list_to_str(cc),
+            bcc=_recipients_list_to_str(bcc),
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
             context=context, template=template
@@ -75,7 +78,10 @@ def create(sender, recipient, subject='', message='', html_message='',
             html_message = Template(html_message).render(_context)
 
         email = Email(
-            from_email=sender, to=recipient,
+            from_email=sender,
+            to=_recipients_list_to_str(to),
+            cc=_recipients_list_to_str(cc),
+            bcc=_recipients_list_to_str(bcc),
             subject=subject,
             message=message,
             html_message=html_message,
@@ -89,12 +95,18 @@ def create(sender, recipient, subject='', message='', html_message='',
     return email
 
 
-def send(recipients, sender=None, template=None, context={}, subject='',
+def _recipients_list_to_str(l):
+    # ['  rcpt1@example.com  ', 'rcpt2@example.com'] => 'rcpt1@example.com, rcpt2@example.com'
+    return ', '.join(map(lambda s: s.strip(), l))
+
+
+def send(to=[], sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=2, commit=True):
+         log_level=2, commit=True, cc=[], bcc=[]):
 
-    if not isinstance(recipients, (tuple, list)):
+    if (not isinstance(to, (tuple, list)) or not isinstance(cc, (tuple, list)) or
+            not isinstance(bcc, (tuple, list))):
         raise ValueError('Recipient emails must be in list/tuple format')
 
     if sender is None:
@@ -121,10 +133,9 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         else:
             template = get_email_template(template)
 
-    emails = [create(sender, recipient, subject, message, html_message,
+    emails = [create(sender, to, cc, bcc, subject, message, html_message,
                      context, scheduled_time, headers, template, priority,
-                     render_on_delivery, commit=commit)
-              for recipient in recipients]
+                     render_on_delivery, commit=commit)]
 
     if attachments:
         attachments = create_attachments(attachments)

@@ -22,14 +22,14 @@ class EmailBackend(BaseEmailBackend):
         if not email_messages:
             return
 
-        for email in email_messages:
-            subject = email.subject
-            from_email = email.from_email
-            message = email.body
-            headers = email.extra_headers
+        for email_message in email_messages:
+            subject = email_message.subject
+            from_email = email_message.from_email
+            message = email_message.body
+            headers = email_message.extra_headers
 
             # Check whether email has 'text/html' alternative
-            alternatives = getattr(email, 'alternatives', ())
+            alternatives = getattr(email_message, 'alternatives', ())
             for alternative in alternatives:
                 if alternative[1] == 'text/html':
                     html_message = alternative[0]
@@ -38,11 +38,12 @@ class EmailBackend(BaseEmailBackend):
                 html_message = ''
 
             attachment_files = dict([(name, ContentFile(content))
-                                    for name, content, _ in email.attachments])
+                                    for name, content, _ in email_message.attachments])
 
-            emails = [create(sender=from_email, recipient=recipient, subject=subject,
-                             message=message, html_message=html_message, headers=headers)
-                      for recipient in email.to]
+            emails = [create(sender=from_email,
+                             to=email_message.to, cc=email_message.cc, bcc=email_message.bcc,
+                             subject=subject, message=message, html_message=html_message,
+                             headers=headers)]
 
             if attachment_files:
                 attachments = create_attachments(attachment_files)
