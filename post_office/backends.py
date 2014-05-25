@@ -41,7 +41,7 @@ class EmailBackend(BaseEmailBackend):
                                     for name, content, _ in email_message.attachments])
 
             emails = [create(sender=from_email,
-                             to=email_message.to, cc=email_message.cc, bcc=email_message.bcc,
+                             recipients=email_message.to, cc=email_message.cc, bcc=email_message.bcc,
                              subject=subject, message=message, html_message=html_message,
                              headers=headers)]
 

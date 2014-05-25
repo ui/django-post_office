@@ -38,7 +38,7 @@ def parse_priority(priority):
     return priority
 
 
-def create(sender, to=[], cc=[], bcc=[], subject='', message='', html_message='',
+def create(sender, recipients=[], cc=[], bcc=[], subject='', message='', html_message='',
            context=None, scheduled_time=None, headers=None, template=None,
            priority=None, render_on_delivery=False, commit=True):
     """
@@ -56,7 +56,7 @@ def create(sender, to=[], cc=[], bcc=[], subject='', message='', html_message=''
     if render_on_delivery:
         email = Email(
             from_email=sender,
-            to=_recipients_list_to_str(to),
+            to=_recipients_list_to_str(recipients),
             cc=_recipients_list_to_str(cc),
             bcc=_recipients_list_to_str(bcc),
             scheduled_time=scheduled_time,
@@ -79,7 +79,7 @@ def create(sender, to=[], cc=[], bcc=[], subject='', message='', html_message=''
 
         email = Email(
             from_email=sender,
-            to=_recipients_list_to_str(to),
+            to=_recipients_list_to_str(recipients),
             cc=_recipients_list_to_str(cc),
             bcc=_recipients_list_to_str(bcc),
             subject=subject,
@@ -100,12 +100,12 @@ def _recipients_list_to_str(l):
     return ', '.join(map(lambda s: s.strip(), l))
 
 
-def send(to=[], sender=None, template=None, context={}, subject='',
+def send(recipients=[], sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
          log_level=2, commit=True, cc=[], bcc=[]):
 
-    if (not isinstance(to, (tuple, list)) or not isinstance(cc, (tuple, list)) or
+    if (not isinstance(recipients, (tuple, list)) or not isinstance(cc, (tuple, list)) or
             not isinstance(bcc, (tuple, list))):
         raise ValueError('Recipient emails must be in list/tuple format')
 
@@ -133,7 +133,7 @@ def send(to=[], sender=None, template=None, context={}, subject='',
         else:
             template = get_email_template(template)
 
-    email = create(sender, to, cc, bcc, subject, message, html_message,
+    email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, headers, template, priority,
                    render_on_delivery, commit=commit)
 

@@ -165,7 +165,7 @@ class ModelTest(TestCase):
         email_template = EmailTemplate.objects.create(name='foo', subject='bar',
                                                       content='baz')
         scheduled_time = datetime.now() + timedelta(days=1)
-        email = send(to=['to1@example.com', 'to2@example.com'], sender='from@a.com',
+        email = send(recipients=['to1@example.com', 'to2@example.com'], sender='from@a.com',
                      headers=headers, template=email_template,
                      scheduled_time=scheduled_time)
         self.assertEqual(email.to, 'to1@example.com, to2@example.com')
@@ -174,7 +174,7 @@ class ModelTest(TestCase):
 
         # Test without header
         Email.objects.all().delete()
-        email = send(to=['to1@example.com', 'to2@example.com'], sender='from@a.com',
+        email = send(recipients=['to1@example.com', 'to2@example.com'], sender='from@a.com',
                      template=email_template)
         self.assertEqual(email.to, 'to1@example.com, to2@example.com')
         self.assertEqual(email.headers, None)
@@ -183,7 +183,7 @@ class ModelTest(TestCase):
         headers = {'Reply-to': 'reply@email.com'}
         scheduled_time = datetime.now() + timedelta(days=1)
         email = send(sender='from@a.com',
-                     to=['to1@example.com', 'to2@example.com'],
+                     recipients=['to1@example.com', 'to2@example.com'],
                      cc=['cc1@example.com', 'cc2@example.com'],
                      bcc=['bcc1@example.com', 'bcc2@example.com'],
                      subject='foo', message='bar', html_message='baz',
@@ -242,7 +242,7 @@ class ModelTest(TestCase):
         self.assertEqual(email.priority, PRIORITY.low)
 
     def test_default_priority(self):
-        email = send(to=['to1@example.com'], sender='from@a.com')
+        email = send(recipients=['to1@example.com'], sender='from@a.com')
         self.assertEqual(email.priority, PRIORITY.medium)
 
     def test_string_priority_exception(self):
