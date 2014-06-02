@@ -56,9 +56,9 @@ def create(sender, recipients=[], cc=[], bcc=[], subject='', message='', html_me
     if render_on_delivery:
         email = Email(
             from_email=sender,
-            to=_recipients_list_to_str(recipients),
-            cc=_recipients_list_to_str(cc),
-            bcc=_recipients_list_to_str(bcc),
+            to=recipients,
+            cc=cc,
+            bcc=bcc,
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
             context=context, template=template
@@ -79,9 +79,9 @@ def create(sender, recipients=[], cc=[], bcc=[], subject='', message='', html_me
 
         email = Email(
             from_email=sender,
-            to=_recipients_list_to_str(recipients),
-            cc=_recipients_list_to_str(cc),
-            bcc=_recipients_list_to_str(bcc),
+            to=recipients,
+            cc=cc,
+            bcc=bcc,
             subject=subject,
             message=message,
             html_message=html_message,
@@ -93,11 +93,6 @@ def create(sender, recipients=[], cc=[], bcc=[], subject='', message='', html_me
         email.save()
 
     return email
-
-
-def _recipients_list_to_str(l):
-    # ['  rcpt1@example.com  ', 'rcpt2@example.com'] => 'rcpt1@example.com, rcpt2@example.com'
-    return ', '.join(map(lambda s: s.strip(), l))
 
 
 def send(recipients=[], sender=None, template=None, context={}, subject='',

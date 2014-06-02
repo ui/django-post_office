@@ -37,7 +37,7 @@ class MailTest(TestCase):
         Check that only queued messages are sent.
         """
         kwargs = {
-            'to': 'to@example.com',
+            'to': ['to@example.com'],
             'from_email': 'bob@example.com',
             'subject': 'Test',
             'message': 'Message',
@@ -58,7 +58,7 @@ class MailTest(TestCase):
         Check that send_queued works well with multiple processes
         """
         kwargs = {
-            'to': 'to@example.com',
+            'to': ['to@example.com'],
             'from_email': 'bob@example.com',
             'subject': 'Test',
             'message': 'Message',
@@ -78,7 +78,7 @@ class MailTest(TestCase):
         Ensure _send_bulk() properly sends out emails.
         """
         email = Email.objects.create(
-            to='to@example.com', from_email='bob@example.com',
+            to=['to@example.com'], from_email='bob@example.com',
             subject='send bulk', message='Message', status=STATUS.queued)
         _send_bulk([email])
         self.assertEqual(len(mail.outbox), 1)
@@ -91,10 +91,10 @@ class MailTest(TestCase):
         """
         global connection_counter
         self.assertEqual(connection_counter, 0)
-        email = Email.objects.create(to='to@example.com',
+        email = Email.objects.create(to=['to@example.com'],
                                      from_email='bob@example.com', subject='',
                                      message='', status=STATUS.queued)
-        email_2 = Email.objects.create(to='to@example.com',
+        email_2 = Email.objects.create(to=['to@example.com'],
                                        from_email='bob@example.com', subject='',
                                        message='', status=STATUS.queued)
         _send_bulk([email, email_2])
@@ -184,7 +184,7 @@ class MailTest(TestCase):
             scheduled_time=now, headers={'header': 'Test header'},
         )
         self.assertEqual(email.from_email, 'from@example.com')
-        self.assertEqual(email.to, 'to@example.com')
+        self.assertEqual(email.to, ['to@example.com'])
         self.assertEqual(email.subject, 'Test My subject')
         self.assertEqual(email.message, 'Test My message')
         self.assertEqual(email.html_message, 'Test My html')
@@ -204,7 +204,7 @@ class MailTest(TestCase):
             {'sender': 'from@example.com', 'recipients': ['b@example.com']},
         ]
         send_many(kwargs_list)
-        self.assertEqual(Email.objects.filter(to='a@example.com').count(), 1)
+        self.assertEqual(Email.objects.filter(to=['a@example.com']).count(), 1)
 
     def test_send_with_attachments(self):
         attachments = {

@@ -23,7 +23,7 @@ class CommandTest(TestCase):
         self.assertEqual(Email.objects.count(), 0)
 
         # The command shouldn't delete today's email
-        email = Email.objects.create(from_email='from@example.com', to='to@example.com')
+        email = Email.objects.create(from_email='from@example.com', to=['to@example.com'])
         call_command('cleanup_mail', days=30)
         self.assertEqual(Email.objects.count(), 1)
 
@@ -40,7 +40,7 @@ class CommandTest(TestCase):
         # Make sure that send_queued_mail with empty queue does not raise error
         call_command('send_queued_mail', processes=1)
 
-        Email.objects.create(from_email='from@example.com', to='to@example.com',
+        Email.objects.create(from_email='from@example.com', to=['to@example.com'],
                              status=STATUS.queued)
         call_command('send_queued_mail', processes=1)
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 1)
@@ -50,17 +50,17 @@ class CommandTest(TestCase):
         Successful deliveries are only logged when log_level is 2.
         """
         email = Email.objects.create(from_email='from@example.com',
-                                     to='to@example.com', status=STATUS.queued)
+                                     to=['to@example.com'], status=STATUS.queued)
         call_command('send_queued_mail', log_level=0)
         self.assertEqual(email.logs.count(), 0)
 
         email = Email.objects.create(from_email='from@example.com',
-                                     to='to@example.com', status=STATUS.queued)
+                                     to=['to@example.com'], status=STATUS.queued)
         call_command('send_queued_mail', log_level=1)
         self.assertEqual(email.logs.count(), 0)
 
         email = Email.objects.create(from_email='from@example.com',
-                                     to='to@example.com', status=STATUS.queued)
+                                     to=['to@example.com'], status=STATUS.queued)
         call_command('send_queued_mail', log_level=2)
         self.assertEqual(email.logs.count(), 1)
 
@@ -70,16 +70,16 @@ class CommandTest(TestCase):
         Failed deliveries are logged when log_level is 1 and 2.
         """
         email = Email.objects.create(from_email='from@example.com',
-                                     to='to@example.com', status=STATUS.queued)
+                                     to=['to@example.com'], status=STATUS.queued)
         call_command('send_queued_mail', log_level=0)
         self.assertEqual(email.logs.count(), 0)
 
         email = Email.objects.create(from_email='from@example.com',
-                                     to='to@example.com', status=STATUS.queued)
+                                     to=['to@example.com'], status=STATUS.queued)
         call_command('send_queued_mail', log_level=1)
         self.assertEqual(email.logs.count(), 1)
 
         email = Email.objects.create(from_email='from@example.com',
-                                     to='to@example.com', status=STATUS.queued)
+                                     to=['to@example.com'], status=STATUS.queued)
         call_command('send_queued_mail', log_level=2)
         self.assertEqual(email.logs.count(), 1)

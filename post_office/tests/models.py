@@ -21,9 +21,9 @@ class ModelTest(TestCase):
         """
 
         # If ``html_message`` is set, ``EmailMultiAlternatives`` is expected
-        email = Email.objects.create(to='to@example.com',
-            from_email='from@example.com', subject='Subject',
-            message='Message', html_message='<p>HTML</p>')
+        email = Email.objects.create(to=['to@example.com'],
+                                     from_email='from@example.com', subject='Subject',
+                                     message='Message', html_message='<p>HTML</p>')
         message = email.email_message()
         self.assertEqual(type(message), EmailMultiAlternatives)
         self.assertEqual(message.from_email, 'from@example.com')
@@ -33,9 +33,9 @@ class ModelTest(TestCase):
         self.assertEqual(message.alternatives, [('<p>HTML</p>', 'text/html')])
 
         # Without ``html_message``, ``EmailMessage`` class is expected
-        email = Email.objects.create(to='to@example.com',
-            from_email='from@example.com', subject='Subject',
-            message='Message')
+        email = Email.objects.create(to=['to@example.com'],
+                                     from_email='from@example.com', subject='Subject',
+                                     message='Message')
         message = email.email_message()
         self.assertEqual(type(message), EmailMessage)
         self.assertEqual(message.from_email, 'from@example.com')
@@ -53,7 +53,7 @@ class ModelTest(TestCase):
             html_content='HTML {{ name }}'
         )
         context = {'name': 'test'}
-        email = Email.objects.create(to='to@example.com', template=template,
+        email = Email.objects.create(to=['to@example.com'], template=template,
                                      from_email='from@e.com', context=context)
         message = email.email_message()
         self.assertEqual(message.subject, 'Subject test')
@@ -65,7 +65,7 @@ class ModelTest(TestCase):
         """
         Ensure that email.dispatch() actually sends out the email
         """
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
+        email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test dispatch', message='Message')
         email.dispatch()
         self.assertEqual(mail.outbox[0].subject, 'Test dispatch')
@@ -75,7 +75,7 @@ class ModelTest(TestCase):
         """
         Ensure that status and log are set properly on successful sending
         """
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
+        email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test', message='Message')
         # Ensure that after dispatch status and logs are correctly set
         email.dispatch()
@@ -88,7 +88,7 @@ class ModelTest(TestCase):
         """
         Ensure that status and log are set properly on sending failure
         """
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
+        email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test', message='Message')
         # Ensure that after dispatch status and logs are correctly set
         email.dispatch()
@@ -104,7 +104,7 @@ class ModelTest(TestCase):
         We test this by overriding the email backend with a dummy backend,
         but passing in a previously opened connection from locmem backend.
         """
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
+        email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test', message='Message')
         django_settings.EMAIL_BACKEND = \
             'django.core.mail.backends.dummy.EmailBackend'
@@ -122,7 +122,7 @@ class ModelTest(TestCase):
         """
         Ensure that status and log are set properly on sending failure
         """
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
+        email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test', message='Message')
         # Ensure that after dispatch status and logs are correctly set
         email.dispatch()
@@ -168,7 +168,7 @@ class ModelTest(TestCase):
         email = send(recipients=['to1@example.com', 'to2@example.com'], sender='from@a.com',
                      headers=headers, template=email_template,
                      scheduled_time=scheduled_time)
-        self.assertEqual(email.to, 'to1@example.com, to2@example.com')
+        self.assertEqual(email.to, ['to1@example.com', 'to2@example.com'])
         self.assertEqual(email.headers, headers)
         self.assertEqual(email.scheduled_time, scheduled_time)
 
@@ -176,7 +176,7 @@ class ModelTest(TestCase):
         Email.objects.all().delete()
         email = send(recipients=['to1@example.com', 'to2@example.com'], sender='from@a.com',
                      template=email_template)
-        self.assertEqual(email.to, 'to1@example.com, to2@example.com')
+        self.assertEqual(email.to, ['to1@example.com', 'to2@example.com'])
         self.assertEqual(email.headers, None)
 
     def test_send_without_template(self):
@@ -190,9 +190,9 @@ class ModelTest(TestCase):
                      context={'name': 'Alice'}, headers=headers,
                      scheduled_time=scheduled_time, priority=PRIORITY.low)
 
-        self.assertEqual(email.to, 'to1@example.com, to2@example.com')
-        self.assertEqual(email.cc, 'cc1@example.com, cc2@example.com')
-        self.assertEqual(email.bcc, 'bcc1@example.com, bcc2@example.com')
+        self.assertEqual(email.to, ['to1@example.com', 'to2@example.com'])
+        self.assertEqual(email.cc, ['cc1@example.com', 'cc2@example.com'])
+        self.assertEqual(email.bcc, ['bcc1@example.com', 'bcc2@example.com'])
         self.assertEqual(email.subject, 'foo')
         self.assertEqual(email.message, 'bar')
         self.assertEqual(email.html_message, 'baz')
@@ -205,7 +205,7 @@ class ModelTest(TestCase):
                      subject='Hi {{ name }}', message='Message {{ name }}',
                      html_message='<b>{{ name }}</b>',
                      context={'name': 'Bob'}, headers=headers)
-        self.assertEqual(email.to, 'to1@example.com')
+        self.assertEqual(email.to, ['to1@example.com'])
         self.assertEqual(email.subject, 'Hi Bob')
         self.assertEqual(email.message, 'Message Bob')
         self.assertEqual(email.html_message, '<b>Bob</b>')
@@ -267,7 +267,7 @@ class ModelTest(TestCase):
         self.assertEquals(attachment.name, 'test.txt')
 
     def test_attachments_email_message(self):
-        email = Email.objects.create(to='to@example.com',
+        email = Email.objects.create(to=['to@example.com'],
                                      from_email='from@example.com',
                                      subject='Subject')
 
@@ -283,7 +283,7 @@ class ModelTest(TestCase):
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_dispatch_with_attachments(self):
-        email = Email.objects.create(to='to@example.com',
+        email = Email.objects.create(to=['to@example.com'],
                                      from_email='from@example.com',
                                      subject='Subject', message='message')
 

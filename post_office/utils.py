@@ -86,11 +86,11 @@ def send_templated_mail(template_name, from_address, to_addresses,
         "in a future relase. Please use `post_office.mail.send` instead.",
         DeprecationWarning)
     email_template = get_email_template(template_name)
-    for address in to_addresses:
-        email = Email.objects.from_template(from_address, address, email_template,
-                                            context, priority)
-        if priority == PRIORITY.now:
-            email.dispatch()
+    email = Email.objects.from_template(from_address, to_addresses, email_template,
+                                        context, priority)
+
+    if priority == PRIORITY.now:
+        email.dispatch()
 
 
 def get_email_template(name):

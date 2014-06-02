@@ -29,11 +29,10 @@ def validate_comma_separated_email_list(value):
     """
     Validate every email address in a comma separated list of emails.
     """
-    value = force_text(value)
+    if not isinstance(value, (tuple, list)):
+        raise ValidationError('Email list must be a list/tuple.')
 
-    emails = [email.strip() for email in value.split(',')]
-
-    for email in emails:
+    for email in value:
         try:
             validate_email(email)
         except ValidationError:

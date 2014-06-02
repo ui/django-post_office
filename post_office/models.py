@@ -59,9 +59,9 @@ class Email(models.Model):
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'), (STATUS.queued, 'queued')]
 
     from_email = models.CharField(max_length=254, validators=[validate_email_with_name])
-    to = CommaSeparatedEmailField(blank=True)
-    cc = CommaSeparatedEmailField(blank=True)
-    bcc = CommaSeparatedEmailField(blank=True)
+    to = CommaSeparatedEmailField()
+    cc = CommaSeparatedEmailField()
+    bcc = CommaSeparatedEmailField()
     subject = models.CharField(max_length=255, blank=True)
     message = models.TextField(blank=True)
     html_message = models.TextField(blank=True)
@@ -84,7 +84,7 @@ class Email(models.Model):
     objects = EmailManager()
 
     def __unicode__(self):
-        return self.to
+        return u'%s' % self.to
 
     def email_message(self, connection=None):
         """
@@ -106,13 +106,13 @@ class Email(models.Model):
         if html_message:
             msg = EmailMultiAlternatives(
                 subject=subject, body=message, from_email=self.from_email,
-                to=self.to.split(','), bcc=self.bcc.split(','), cc=self.cc.split(','),
+                to=self.to, bcc=self.bcc, cc=self.cc,
                 connection=connection, headers=self.headers)
             msg.attach_alternative(html_message, "text/html")
         else:
             msg = EmailMessage(
                 subject=subject, body=message, from_email=self.from_email,
-                to=self.to.split(','), bcc=self.bcc.split(','), cc=self.cc.split(','),
+                to=self.to, bcc=self.bcc, cc=self.cc,
                 connection=connection, headers=self.headers)
 
         for attachment in self.attachments.all():
