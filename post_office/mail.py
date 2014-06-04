@@ -38,7 +38,7 @@ def parse_priority(priority):
     return priority
 
 
-def create(sender, recipients=[], cc=[], bcc=[], subject='', message='', html_message='',
+def create(sender, recipients=None, cc=None, bcc=None, subject='', message='', html_message='',
            context=None, scheduled_time=None, headers=None, template=None,
            priority=None, render_on_delivery=False, commit=True):
     """
@@ -48,6 +48,12 @@ def create(sender, recipients=[], cc=[], bcc=[], subject='', message='', html_me
     priority = parse_priority(priority)
     status = None if priority == PRIORITY.now else STATUS.queued
 
+    if recipients is None:
+        recipients = []
+    if cc is None:
+        cc = []
+    if bcc is None:
+        bcc = []
     if context is None:
         context = ''
 
@@ -95,14 +101,25 @@ def create(sender, recipients=[], cc=[], bcc=[], subject='', message='', html_me
     return email
 
 
-def send(recipients=[], sender=None, template=None, context={}, subject='',
+def send(recipients=None, sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=2, commit=True, cc=[], bcc=[]):
+         log_level=2, commit=True, cc=None, bcc=None):
 
-    if (not isinstance(recipients, (tuple, list)) or not isinstance(cc, (tuple, list)) or
-            not isinstance(bcc, (tuple, list))):
-        raise ValueError('Recipient emails must be in list/tuple format')
+    if recipients is None:
+        recipients = []
+    elif not isinstance(recipients, (tuple, list)):
+        raise ValueError('"recipients" emails must be in list/tuple format')
+
+    if cc is None:
+        cc = []
+    elif not isinstance(cc, (tuple, list)):
+        raise ValueError('"cc" emails must be in list/tuple format')
+
+    if bcc is None:
+        bcc = []
+    elif not isinstance(bcc, (tuple, list)):
+        raise ValueError('"bcc" emails must be in list/tuple format')
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
