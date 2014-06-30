@@ -17,8 +17,11 @@ class LogInline(admin.StackedInline):
 
 
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ('to', 'subject', get_message_preview, 'status', 'last_updated')
+    list_display = ('to', 'subject', 'template', 'status', 'last_updated')
     inlines = [LogInline]
+
+    def queryset(self, request):
+        return super(EmailAdmin, self).queryset(request).select_related('template')
 
 
 def to(instance):
