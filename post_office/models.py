@@ -1,5 +1,4 @@
 import sys
-import warnings
 from uuid import uuid4
 
 from collections import namedtuple
@@ -24,29 +23,6 @@ from .validators import validate_email_with_name, validate_template_syntax
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
-
-
-# TODO: This will be deprecated, replaced by mail.from_template
-class EmailManager(models.Manager):
-    def from_template(self, from_email, to_email, template,
-                      context={}, priority=PRIORITY.medium):
-        warnings.warn(
-            "`Email.objects.from_template()` is deprecated and will be removed "
-            "in a future relase. Use `post_office.mail.from_template` instead.",
-            DeprecationWarning)
-
-        status = None if priority == PRIORITY.now else STATUS.queued
-        context = Context(context)
-        template_content = Template(template.content)
-        template_content_html = Template(template.html_content)
-        template_subject = Template(template.subject)
-        return Email.objects.create(
-            from_email=from_email, to=to_email,
-            subject=template_subject.render(context),
-            message=template_content.render(context),
-            html_message=template_content_html.render(context),
-            priority=priority, status=status
-        )
 
 
 class Email(models.Model):
@@ -81,8 +57,6 @@ class Email(models.Model):
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
     context = context_field_class(blank=True)
 
-    objects = EmailManager()
-
     def __unicode__(self):
         return u'%s' % self.to
 
@@ -102,7 +76,7 @@ class Email(models.Model):
             subject = self.subject
             message = self.message
             html_message = self.html_message
-        
+
         if html_message:
             msg = EmailMultiAlternatives(
                 subject=subject, body=message, from_email=self.from_email,
@@ -152,7 +126,7 @@ class Email(models.Model):
                 self.logs.create(status=status, message=message)
         elif log_level == 2:
             self.logs.create(status=status, message=message)
-        
+
         return status
 
     def save(self, *args, **kwargs):
@@ -183,7 +157,7 @@ class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
-    name = models.CharField(max_length=255, help_text=("Example: 'emails/customers/id/welcome.html'"))
+    name = models.CharField(max_length=255, help_text=("e.g: 'welcome_email'"))
     description = models.TextField(blank=True,
                                    help_text='Description of this email template.')
     subject = models.CharField(max_length=255, blank=True,
