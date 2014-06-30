@@ -1,4 +1,3 @@
-from django.core import mail
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 
@@ -6,7 +5,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
-from ..utils import (send_mail, send_queued_mail, get_email_template, send_templated_mail,
+from ..utils import (send_mail, get_email_template,
                      split_emails, create_attachments)
 from ..validators import validate_email_with_name, validate_comma_separated_email_list
 
@@ -72,29 +71,6 @@ class UtilsTest(TestCase):
 
         # It should return the correct template
         self.assertEqual(email_template, get_email_template(template_name))
-
-    def test_send_templated_email(self):
-        template_name = 'customer/en/happy-holidays'
-        to_addresses = ['to@example1.com', 'to@example2.com']
-
-        # Create email template
-        EmailTemplate.objects.create(name=template_name, content='Hi {{name}}',
-                                     html_content='<p>Hi {{name}}</p>',
-                                     subject='Happy Holidays!')
-
-        # Send templated mail
-        send_templated_mail(template_name, 'from@example.com', to_addresses,
-                            context={'name': 'AwesomeBoy'}, priority=PRIORITY.medium)
-
-        send_queued_mail()
-
-        # Check for the message integrity
-        self.assertEqual(len(mail.outbox), 1)
-        email = mail.outbox[0]
-        self.assertEqual(email.subject, 'Happy Holidays!')
-        self.assertEqual(email.body, 'Hi AwesomeBoy')
-        self.assertEqual(email.alternatives, [('<p>Hi AwesomeBoy</p>', 'text/html')])
-        self.assertEqual(email.to, to_addresses)
 
     def test_split_emails(self):
         """
