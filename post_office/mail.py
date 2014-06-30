@@ -101,7 +101,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='', h
     return email
 
 
-def send(recipients=None, sender=None, template=None, context={}, subject='',
+def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
          log_level=2, commit=True, cc=None, bcc=None):
@@ -123,6 +123,9 @@ def send(recipients=None, sender=None, template=None, context={}, subject='',
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
+
+    if context is None:
+        context = {}
 
     priority = parse_priority(priority)
     if not commit:
