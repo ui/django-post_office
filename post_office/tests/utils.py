@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from django.core import mail
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
@@ -10,7 +8,7 @@ from django.test.utils import override_settings
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
 from ..utils import (send_mail, send_queued_mail, get_email_template, send_templated_mail,
                      split_emails, create_attachments)
-from ..validators import validate_email_with_name
+from ..validators import validate_email_with_name, validate_comma_separated_email_list
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
@@ -35,7 +33,7 @@ class UtilsTest(TestCase):
         # These should validate
         validate_email_with_name('email@example.com')
         validate_email_with_name('Alice Bob <email@example.com>')
-        Email.objects.create(to='to@example.com', from_email='Alice <from@example.com>',
+        Email.objects.create(to=['to@example.com'], from_email='Alice <from@example.com>',
                              subject='Test', message='Message', status=STATUS.sent)
 
         # Should also support international domains
@@ -44,6 +42,22 @@ class UtilsTest(TestCase):
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_email_with_name, 'invalid_mail')
         self.assertRaises(ValidationError, validate_email_with_name, 'Alice <invalid_mail>')
+
+    def test_comma_separated_email_list_validator(self):
+        # These should validate
+        validate_comma_separated_email_list(['email@example.com'])
+        validate_comma_separated_email_list(
+            ['email@example.com', 'email2@example.com', 'email3@example.com']
+        )
+
+        # Should also support international domains
+        validate_comma_separated_email_list(['email@example.co.id'])
+
+        # These should raise ValidationError
+        self.assertRaises(ValidationError, validate_comma_separated_email_list,
+                          ['Alice Bob <email@example.com>'])
+        self.assertRaises(ValidationError, validate_comma_separated_email_list,
+                          ['email@example.com', 'invalid_mail', 'email@example.com'])
 
     def test_get_template_email(self):
         # Sanity Check
@@ -75,19 +89,19 @@ class UtilsTest(TestCase):
         send_queued_mail()
 
         # Check for the message integrity
-        self.assertEqual(len(mail.outbox), 2)
-        for email, to_address in zip(mail.outbox, to_addresses):
-            self.assertEqual(email.subject, 'Happy Holidays!')
-            self.assertEqual(email.body, 'Hi AwesomeBoy')
-            self.assertEqual(email.alternatives, [('<p>Hi AwesomeBoy</p>', 'text/html')])
-            self.assertEqual(email.to, [to_address])
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, 'Happy Holidays!')
+        self.assertEqual(email.body, 'Hi AwesomeBoy')
+        self.assertEqual(email.alternatives, [('<p>Hi AwesomeBoy</p>', 'text/html')])
+        self.assertEqual(email.to, to_addresses)
 
     def test_split_emails(self):
         """
         Check that split emails correctly divide email lists for multiprocessing
         """
         for i in range(225):
-            Email.objects.create(from_email='from@example.com', to='to@example.com')
+            Email.objects.create(from_email='from@example.com', to=['to@example.com'])
         expected_size = [57, 56, 56, 56]
         email_list = split_emails(Email.objects.all(), 4)
         self.assertEqual(expected_size, [len(emails) for emails in email_list])

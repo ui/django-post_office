@@ -6,6 +6,7 @@ from collections import namedtuple
 
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
+from post_office.fields import CommaSeparatedEmailField
 
 try:
     from django.utils.encoding import smart_text # For Django >= 1.5
@@ -58,7 +59,9 @@ class Email(models.Model):
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'), (STATUS.queued, 'queued')]
 
     from_email = models.CharField(max_length=254, validators=[validate_email_with_name])
-    to = models.EmailField(max_length=254)
+    to = CommaSeparatedEmailField()
+    cc = CommaSeparatedEmailField()
+    bcc = CommaSeparatedEmailField()
     subject = models.CharField(max_length=255, blank=True)
     message = models.TextField(blank=True)
     html_message = models.TextField(blank=True)
@@ -81,7 +84,7 @@ class Email(models.Model):
     objects = EmailManager()
 
     def __unicode__(self):
-        return self.to
+        return u'%s' % self.to
 
     def email_message(self, connection=None):
         """
@@ -101,14 +104,16 @@ class Email(models.Model):
             html_message = self.html_message
         
         if html_message:
-            msg = EmailMultiAlternatives(subject, message, self.from_email,
-                                         [self.to], connection=connection,
-                                         headers=self.headers)
+            msg = EmailMultiAlternatives(
+                subject=subject, body=message, from_email=self.from_email,
+                to=self.to, bcc=self.bcc, cc=self.cc,
+                connection=connection, headers=self.headers)
             msg.attach_alternative(html_message, "text/html")
         else:
-            msg = EmailMessage(subject, message, self.from_email,
-                               [self.to], connection=connection,
-                               headers=self.headers)
+            msg = EmailMessage(
+                subject=subject, body=message, from_email=self.from_email,
+                to=self.to, bcc=self.bcc, cc=self.cc,
+                connection=connection, headers=self.headers)
 
         for attachment in self.attachments.all():
             msg.attach(attachment.name, attachment.file.read())

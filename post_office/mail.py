@@ -38,7 +38,7 @@ def parse_priority(priority):
     return priority
 
 
-def create(sender, recipient, subject='', message='', html_message='',
+def create(sender, recipients=None, cc=None, bcc=None, subject='', message='', html_message='',
            context=None, scheduled_time=None, headers=None, template=None,
            priority=None, render_on_delivery=False, commit=True):
     """
@@ -48,6 +48,12 @@ def create(sender, recipient, subject='', message='', html_message='',
     priority = parse_priority(priority)
     status = None if priority == PRIORITY.now else STATUS.queued
 
+    if recipients is None:
+        recipients = []
+    if cc is None:
+        cc = []
+    if bcc is None:
+        bcc = []
     if context is None:
         context = ''
 
@@ -55,7 +61,10 @@ def create(sender, recipient, subject='', message='', html_message='',
     # information
     if render_on_delivery:
         email = Email(
-            from_email=sender, to=recipient,
+            from_email=sender,
+            to=recipients,
+            cc=cc,
+            bcc=bcc,
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
             context=context, template=template
@@ -75,7 +84,10 @@ def create(sender, recipient, subject='', message='', html_message='',
             html_message = Template(html_message).render(_context)
 
         email = Email(
-            from_email=sender, to=recipient,
+            from_email=sender,
+            to=recipients,
+            cc=cc,
+            bcc=bcc,
             subject=subject,
             message=message,
             html_message=html_message,
@@ -89,13 +101,25 @@ def create(sender, recipient, subject='', message='', html_message='',
     return email
 
 
-def send(recipients, sender=None, template=None, context={}, subject='',
+def send(recipients=None, sender=None, template=None, context={}, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=2, commit=True):
+         log_level=2, commit=True, cc=None, bcc=None):
 
-    if not isinstance(recipients, (tuple, list)):
-        raise ValueError('Recipient emails must be in list/tuple format')
+    if recipients is None:
+        recipients = []
+    elif not isinstance(recipients, (tuple, list)):
+        raise ValueError('"recipients" emails must be in list/tuple format')
+
+    if cc is None:
+        cc = []
+    elif not isinstance(cc, (tuple, list)):
+        raise ValueError('"cc" emails must be in list/tuple format')
+
+    if bcc is None:
+        bcc = []
+    elif not isinstance(bcc, (tuple, list)):
+        raise ValueError('"bcc" emails must be in list/tuple format')
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
@@ -121,21 +145,18 @@ def send(recipients, sender=None, template=None, context={}, subject='',
         else:
             template = get_email_template(template)
 
-    emails = [create(sender, recipient, subject, message, html_message,
-                     context, scheduled_time, headers, template, priority,
-                     render_on_delivery, commit=commit)
-              for recipient in recipients]
+    email = create(sender, recipients, cc, bcc, subject, message, html_message,
+                   context, scheduled_time, headers, template, priority,
+                   render_on_delivery, commit=commit)
 
     if attachments:
         attachments = create_attachments(attachments)
-        for email in emails:
-            email.attachments.add(*attachments)
+        email.attachments.add(*attachments)
 
     if priority == PRIORITY.now:
-        for email in emails:
-            email.dispatch(log_level=log_level)
+        email.dispatch(log_level=log_level)
 
-    return emails
+    return email
 
 
 def send_many(kwargs_list):
@@ -146,7 +167,7 @@ def send_many(kwargs_list):
     """
     emails = []
     for kwargs in kwargs_list:
-        emails.extend(send(commit=False, **kwargs))
+        emails.append(send(commit=False, **kwargs))
     Email.objects.bulk_create(emails)
 
 
