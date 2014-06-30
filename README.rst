@@ -408,6 +408,10 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
+Unreleased
+----------
+* ``send_templated_mail`` command is now deprecated.
+
 Version 0.8.4
 -------------
 * ``send_queued_mail`` now accepts an extra ``--log-level`` argument.

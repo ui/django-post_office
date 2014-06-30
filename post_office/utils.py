@@ -1,5 +1,3 @@
-import warnings
-
 from django.conf import settings
 from django.core.files import File
 from django.core.mail import get_connection
@@ -77,20 +75,6 @@ def send_queued_mail():
     print('%s emails attempted, %s sent, %s failed' % (
         len(queued_emails), sent_count, failed_count)
     )
-
-
-def send_templated_mail(template_name, from_address, to_addresses,
-                        context={}, priority=PRIORITY.medium):
-    warnings.warn(
-        "The `send_templated_mail` command is deprecated and will be removed "
-        "in a future relase. Please use `post_office.mail.send` instead.",
-        DeprecationWarning)
-    email_template = get_email_template(template_name)
-    email = Email.objects.from_template(from_address, to_addresses, email_template,
-                                        context, priority)
-
-    if priority == PRIORITY.now:
-        email.dispatch()
 
 
 def get_email_template(name):
