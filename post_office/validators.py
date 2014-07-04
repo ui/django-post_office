@@ -25,7 +25,7 @@ def validate_email_with_name(value):
     validate_email(recipient)
 
 
-def validate_comma_separated_email_list(value):
+def validate_comma_separated_emails(value):
     """
     Validate every email address in a comma separated list of emails.
     """
@@ -45,6 +45,6 @@ def validate_template_syntax(source):
     authoring.
     """
     try:
-        t = Template(source)
+        Template(source)
     except TemplateSyntaxError as err:
         raise ValidationError(text_type(err))

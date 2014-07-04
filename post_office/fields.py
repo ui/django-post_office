@@ -1,13 +1,13 @@
-from django.db.models import TextField, SubfieldBase, Field
+from django.db.models import TextField, SubfieldBase
 from django.utils import six
 from django.utils.six import with_metaclass
 from django.utils.translation import ugettext_lazy as _
 
-from .validators import validate_comma_separated_email_list
+from .validators import validate_comma_separated_emails
 
 
 class CommaSeparatedEmailField(with_metaclass(SubfieldBase, TextField)):
-    default_validators = [validate_comma_separated_email_list]
+    default_validators = [validate_comma_separated_emails]
     description = _("Comma-separated emails")
 
     def __init__(self, *args, **kwargs):
@@ -17,7 +17,7 @@ class CommaSeparatedEmailField(with_metaclass(SubfieldBase, TextField)):
     def formfield(self, **kwargs):
         defaults = {
             'error_messages': {
-                'invalid': _('Enter only email addresses separated by commas.'),
+                'invalid': _('Only comma separated emails are allowed.'),
             }
         }
         defaults.update(kwargs)

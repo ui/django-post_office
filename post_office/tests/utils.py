@@ -7,7 +7,7 @@ from django.test.utils import override_settings
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
 from ..utils import (send_mail, get_email_template,
                      split_emails, create_attachments)
-from ..validators import validate_email_with_name, validate_comma_separated_email_list
+from ..validators import validate_email_with_name, validate_comma_separated_emails
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
@@ -44,18 +44,18 @@ class UtilsTest(TestCase):
 
     def test_comma_separated_email_list_validator(self):
         # These should validate
-        validate_comma_separated_email_list(['email@example.com'])
-        validate_comma_separated_email_list(
+        validate_comma_separated_emails(['email@example.com'])
+        validate_comma_separated_emails(
             ['email@example.com', 'email2@example.com', 'email3@example.com']
         )
 
         # Should also support international domains
-        validate_comma_separated_email_list(['email@example.co.id'])
+        validate_comma_separated_emails(['email@example.co.id'])
 
         # These should raise ValidationError
-        self.assertRaises(ValidationError, validate_comma_separated_email_list,
+        self.assertRaises(ValidationError, validate_comma_separated_emails,
                           ['Alice Bob <email@example.com>'])
-        self.assertRaises(ValidationError, validate_comma_separated_email_list,
+        self.assertRaises(ValidationError, validate_comma_separated_emails,
                           ['email@example.com', 'invalid_mail', 'email@example.com'])
 
     def test_get_template_email(self):
