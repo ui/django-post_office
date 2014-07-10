@@ -3,7 +3,7 @@ from django.forms.widgets import TextInput
 from django.utils.text import Truncator
 
 from .fields import CommaSeparatedEmailField
-from .models import Email, Log, EmailTemplate
+from .models import Email, Log, EmailTemplate, STATUS
 
 
 def get_message_preview(instance):
@@ -28,6 +28,14 @@ class CommaSeparatedEmailWidget(TextInput):
         return ','.join([item for item in value])
 
 
+def requeue(modeladmin, request, queryset):
+    """An admin action to requeue emails."""
+    queryset.update(status=STATUS.queued)
+
+
+requeue.short_description = 'Requeue selected emails'
+
+
 class EmailAdmin(admin.ModelAdmin):
     list_display = ('id', 'to_display', 'subject', 'template',
                     'status', 'last_updated')
@@ -36,6 +44,7 @@ class EmailAdmin(admin.ModelAdmin):
     formfield_overrides = {
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
     }
+    actions = [requeue]
 
     def queryset(self, request):
         return super(EmailAdmin, self).queryset(request).select_related('template')
