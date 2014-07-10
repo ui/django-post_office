@@ -17,7 +17,7 @@ from django.template import Context, Template
 from jsonfield import JSONField
 from post_office import cache
 from .compat import text_type
-from .settings import get_email_backend, context_field_class
+from .settings import get_email_backend, context_field_class, get_default_log_level
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -95,11 +95,15 @@ class Email(models.Model):
 
         return msg
 
-    def dispatch(self, connection=None, log_level=2):
+    def dispatch(self, connection=None, log_level=None):
         """
         Actually send out the email and log the result
         """
         connection_opened = False
+
+        if log_level is None:
+            log_level = get_default_log_level()
+
         try:
             if connection is None:
                 connection = get_connection(get_email_backend())
