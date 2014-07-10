@@ -29,20 +29,21 @@ class CommaSeparatedEmailWidget(TextInput):
 
 
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ('to', 'subject', 'template', 'status', 'last_updated')
+    list_display = ('id', 'to_display', 'subject', 'template', 'status')
     inlines = [LogInline]
     list_filter = ['status']
-
-    def queryset(self, request):
-        return super(EmailAdmin, self).queryset(request).select_related('template')
-
     formfield_overrides = {
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
     }
 
+    def queryset(self, request):
+        return super(EmailAdmin, self).queryset(request).select_related('template')
 
-def to(instance):
-    return instance.email.to
+    def to_display(self, instance):
+        return ', '.join(instance.to)
+
+    to_display.short_description = 'to'
+    to_display.admin_order_field = 'to'
 
 
 class LogAdmin(admin.ModelAdmin):
