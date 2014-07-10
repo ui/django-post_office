@@ -148,6 +148,8 @@ class MailTest(TestCase):
         self.assertEqual(get_default_log_level(), 2)
         setattr(settings, 'POST_OFFICE', {'DEFAULT_LOG_LEVEL': 1})
         self.assertEqual(get_default_log_level(), 1)
+        # Restore ``DEFAULT_LOG_LEVEL``
+        setattr(settings, 'POST_OFFICE', {'DEFAULT_LOG_LEVEL': 2})
 
     def test_create(self):
         """
