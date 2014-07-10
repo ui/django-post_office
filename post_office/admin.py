@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.forms.widgets import TextInput
 from django.utils.text import Truncator
 
+from .fields import CommaSeparatedEmailField
 from .models import Email, Log, EmailTemplate
 
 
@@ -16,6 +18,16 @@ class LogInline(admin.StackedInline):
     extra = 0
 
 
+class CommaSeparatedEmailWidget(TextInput):
+
+    def __init__(self, *args, **kwargs):
+        super(CommaSeparatedEmailWidget, self).__init__(*args, **kwargs)
+        self.attrs.update({'class': 'vTextField'})
+
+    def _format_value(self, value):
+        return ','.join([item for item in value])
+
+
 class EmailAdmin(admin.ModelAdmin):
     list_display = ('to', 'subject', 'template', 'status', 'last_updated')
     inlines = [LogInline]
@@ -23,6 +35,10 @@ class EmailAdmin(admin.ModelAdmin):
 
     def queryset(self, request):
         return super(EmailAdmin, self).queryset(request).select_related('template')
+
+    formfield_overrides = {
+        CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
+    }
 
 
 def to(instance):
