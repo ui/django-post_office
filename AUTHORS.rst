@@ -8,3 +8,4 @@ Contributors:
 * Steven -only- (@SeiryuZ)
 * Wouter de Vries (@wadevries)
 * Yuri Prezument (@yprez)
+* Ștefan Daniel Mihăilă (@stefan-mihaila)

@@ -429,6 +429,7 @@ Version 1.0.0
 * ``send_templated_mail`` command is now deprecated.
 * Added ``DEFAULT_LOG_LEVEL`` setting.
 * ``mail.send()`` now supports ``cc`` and ``bcc``.
+  Thanks Ștefan Daniel Mihăilă (@stefan-mihaila)!
 * **IMPORTANT**: in previous versions, specifying multiple ``recipients in
   ``mail.send()`` will send multiple emails, each addressed to one recipient.
   Starting from ``1.0.0``, only one email with multiple recipients will be sent.
