@@ -7,7 +7,7 @@ from django.conf import settings
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..settings import get_batch_size
+from ..settings import get_batch_size, get_default_log_level
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
 from ..mail import (create, get_queued, parse_priority,
                     send, send_many, send_queued, _send_bulk)
@@ -140,6 +140,14 @@ class MailTest(TestCase):
         self.assertEqual(get_batch_size(), 5000)
         setattr(settings, 'POST_OFFICE', {'BATCH_SIZE': 100})
         self.assertEqual(get_batch_size(), 100)
+
+    def test_get_default_log_level(self):
+        """
+        Ensure DEFAULT_LOG_LEVEL setting is read correctly.
+        """
+        self.assertEqual(get_default_log_level(), 2)
+        setattr(settings, 'POST_OFFICE', {'DEFAULT_LOG_LEVEL': 1})
+        self.assertEqual(get_default_log_level(), 1)
 
     def test_create(self):
         """

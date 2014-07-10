@@ -20,8 +20,8 @@ class Command(BaseCommand):
                     help='Number of processes used to send emails', default=1),
         make_option('-L', '--lockfile', type='string', default=default_lockfile,
                     help='Absolute path of lockfile to acquire'),
-        make_option('-l', '--log-level', type='int', default=2,
-                    help='"0" to log nothing, "1" to log errors'),
+        make_option('-l', '--log-level', type='int',
+                    help='"0" to log nothing, "1" to only log errors'),
     )
 
     def handle(self, *args, **options):
@@ -30,7 +30,7 @@ class Command(BaseCommand):
         try:
             with FileLock(options['lockfile']):
                 try:
-                    send_queued(options['processes'], options['log_level'])
+                    send_queued(options['processes'], options.get('log_level'))
                 except Exception as e:
                     logger.error(e, exc_info=sys.exc_info(), extra={'status_code': 500})
                     raise

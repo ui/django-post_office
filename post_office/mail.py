@@ -10,7 +10,8 @@ from django.template import Context, Template
 
 from .compat import string_types
 from .models import Email, EmailTemplate, PRIORITY, STATUS
-from .settings import get_batch_size, get_email_backend, get_default_priority
+from .settings import (get_batch_size, get_email_backend,
+                       get_default_priority, get_default_log_level)
 from .utils import get_email_template, split_emails, create_attachments
 from .logutils import setup_loghandlers
 
@@ -104,7 +105,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='', h
 def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=2, commit=True, cc=None, bcc=None):
+         log_level=None, commit=True, cc=None, bcc=None):
 
     if recipients is None:
         recipients = []
@@ -128,6 +129,10 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         context = {}
 
     priority = parse_priority(priority)
+
+    if log_level is None:
+        log_level = get_default_log_level()
+
     if not commit:
         if priority == PRIORITY.now:
             raise ValueError("send_many() can't be used to send emails with priority = 'now'")
@@ -186,7 +191,7 @@ def get_queued():
         .order_by('-priority').prefetch_related('attachments')[:get_batch_size()]
 
 
-def send_queued(processes=1, log_level=2):
+def send_queued(processes=1, log_level=None):
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
@@ -196,6 +201,9 @@ def send_queued(processes=1, log_level=2):
 
     logger.info('Started sending %s emails with %s processes.' %
                 (total_email, processes))
+
+    if log_level is None:
+        log_level = get_default_log_level()
 
     if queued_emails:
 
@@ -222,12 +230,16 @@ def send_queued(processes=1, log_level=2):
     return (total_sent, total_failed)
 
 
-def _send_bulk(emails, uses_multiprocessing=True, log_level=2):
+def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     # Multiprocessing does not play well with database connection
     # Fix: Close connections on forking process
     # https://groups.google.com/forum/#!topic/django-users/eCAIY9DAfG0
     if uses_multiprocessing:
         db_connection.close()
+
+    if log_level is None:
+        log_level = get_default_log_level()
+
     sent_count, failed_count = 0, 0
     email_count = len(emails)
     logger.info('Process started, sending %s emails' % email_count)
