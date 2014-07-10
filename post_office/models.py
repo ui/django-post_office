@@ -32,7 +32,8 @@ class Email(models.Model):
 
     PRIORITY_CHOICES = [(PRIORITY.low, 'low'), (PRIORITY.medium, 'medium'),
                         (PRIORITY.high, 'high'), (PRIORITY.now, 'now')]
-    STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'), (STATUS.queued, 'queued')]
+    STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'),
+                      (STATUS.queued, 'queued')]
 
     from_email = models.CharField(max_length=254, validators=[validate_email_with_name])
     to = CommaSeparatedEmailField()
@@ -112,7 +113,7 @@ class Email(models.Model):
             if connection_opened:
                 connection.close()
 
-        except Exception as err:
+        except Exception:
             status = STATUS.failed
             message = sys.exc_info()[1]
 
@@ -145,9 +146,6 @@ class Log(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES)
     message = models.TextField()
-
-    class Meta:
-        ordering = ('-date',)
 
     def __unicode__(self):
         return text_type(self.date)
