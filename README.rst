@@ -87,6 +87,10 @@ arguments:
 +-------------------+----------+-------------------------------------------------+
 | recipients        | Yes      | list of recipient email addresses               |
 +-------------------+----------+-------------------------------------------------+
+| cc                | No       | list emails, will appear in ``cc`` field        |
++-------------------+----------+-------------------------------------------------+
+| bcc               | No       | list of emails, will appear in `bcc` field      |
++-------------------+----------+-------------------------------------------------+
 | sender            | No       | Defaults to ``settings.DEFAULT_FROM_EMAIL``,    |
 |                   |          | display name is allowed (``John <john@a.com>``) |
 +-------------------+----------+-------------------------------------------------+
@@ -321,6 +325,18 @@ setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
         'DEFAULT_PRIORITY': 'now'
     }
 
+Default Log Level
+-----------------
+
+The default log level is 2 (logs both successful and failed deliveries)
+This behavior can be changed by setting ``DEFAULT_LOG_LEVEL``.
+
+.. code-block:: python
+
+    POST_OFFICE = {
+        'DEFAULT_LOG_LEVEL': 1 # Log only failed deliveries
+    }
+
 Context Field Serializer
 ------------------------
 
@@ -408,9 +424,14 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
-Unreleased
-----------
+Version 1.0.0
+-------------
 * ``send_templated_mail`` command is now deprecated.
+* Added ``DEFAULT_LOG_LEVEL`` setting.
+* ``mail.send()`` now supports ``cc`` and ``bcc``.
+* **IMPORTANT**: in previous versions, specifying multiple ``recipients in
+  ``mail.send()`` will send multiple emails, each addressed to one recipient.
+  Starting from ``1.0.0``, only one email with multiple recipients will be sent.
 
 Version 0.8.4
 -------------
