@@ -29,7 +29,8 @@ class CommaSeparatedEmailWidget(TextInput):
 
 
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ('id', 'to_display', 'subject', 'template', 'status')
+    list_display = ('id', 'to_display', 'subject', 'template',
+                    'status', 'last_updated')
     inlines = [LogInline]
     list_filter = ['status']
     formfield_overrides = {
