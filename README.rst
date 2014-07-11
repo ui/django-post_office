@@ -45,7 +45,9 @@ Installation
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
-    EMAIL_BACKEND = 'post_office.EmailBackend'
+    POST_OFFICE = {
+        'EMAIL_BACKEND': 'post_office.EmailBackend'
+    }
 
 
 Quickstart
@@ -229,8 +231,10 @@ use a different backend, you can do so by changing ``POST_OFFICE_BACKEND``.
 
 For example if you want to use `django-ses <https://github.com/hmarr/django-ses>`_::
 
-    POST_OFFICE_BACKEND = 'django_ses.SESBackend'
-    
+    POST_OFFICE = {
+        'POST_OFFICE_BACKEND': 'django_ses.SESBackend'
+    }
+
 
 Management Commands
 -------------------
@@ -269,7 +273,7 @@ You can configure ``post-office``'s logging from Django's ``settings.py``. For
 example:
 
 .. code-block:: python
-    
+
     LOGGING = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -393,7 +397,7 @@ usually pass into ``mail.send()``:
 .. code-block:: python
 
     from post_office import mail
-    
+
     first_email = {
         'sender': 'from@example.com',
         'recipients': ['alice@example.com'],
@@ -433,6 +437,7 @@ Version 1.0.0
 * **IMPORTANT**: in previous versions, specifying multiple ``recipients in
   ``mail.send()`` will send multiple emails, each addressed to one recipient.
   Starting from ``1.0.0``, only one email with multiple recipients will be sent.
+* Added ``EMAIL_BACKEND`` setting to the new dictionary-styled settings.
 
 Version 0.8.4
 -------------

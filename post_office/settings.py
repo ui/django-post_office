@@ -1,3 +1,5 @@
+import warnings
+
 from django.conf import settings
 from django.core.cache import get_cache
 from django.core.cache.backends.base import InvalidCacheBackendError
@@ -5,7 +7,9 @@ from django.core.cache.backends.base import InvalidCacheBackendError
 from .compat import import_attribute
 
 
-def get_email_backend():
+def _get_email_backend():
+    warnings.warn("Please use the new dictionary styled settings for "
+                  "POST_OFFICE_BACKEND", DeprecationWarning)
     if hasattr(settings, 'POST_OFFICE_BACKEND'):
         backend = getattr(settings, 'POST_OFFICE_BACKEND')
     else:
@@ -51,6 +55,16 @@ def get_default_priority():
 
 def get_default_log_level():
     return get_config().get('DEFAULT_LOG_LEVEL', 2)
+
+
+def get_email_backend():
+    email_backend = get_config().get('POST_OFFICE_BACKEND') or\
+        get_config().get('EMAIL_BACKEND')
+
+    if not email_backend:
+        email_backend = _get_email_backend()
+
+    return email_backend
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
