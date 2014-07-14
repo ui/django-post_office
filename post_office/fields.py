@@ -24,7 +24,17 @@ class CommaSeparatedEmailField(with_metaclass(SubfieldBase, TextField)):
         return super(CommaSeparatedEmailField, self).formfield(**defaults)
 
     def get_prep_value(self, value):
-        return ', '.join(map(lambda s: s.strip(), value))
+        """
+        We need to accomodate queries where a single email,
+        or list of email addresses is supplied as arguments. For example:
+
+        - Email.objects.filter(to='mail@example.com')
+        - Email.objects.filter(to=['one@example.com', 'two@example.com'])
+        """
+        if isinstance(value, six.string_types):
+            return value
+        else:
+            return ', '.join(map(lambda s: s.strip(), value))
 
     def to_python(self, value):
         if isinstance(value, six.string_types):
