@@ -8,7 +8,7 @@ Some awesome features are:
 * Allows you to send email asynchronously
 * Supports HTML email
 * Supports database based email templates
-* Built in scheduling support 
+* Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
 * Uses multiprocessing to send a large number of emails in parallel
 
@@ -45,9 +45,7 @@ Installation
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
-    POST_OFFICE = {
-        'EMAIL_BACKEND': 'post_office.EmailBackend'
-    }
+    'EMAIL_BACKEND': 'post_office.EmailBackend'
 
 
 Quickstart
@@ -227,12 +225,12 @@ Custom Email Backends
 ---------------------
 
 By default, ``post_office`` uses django's SMTP ``EmailBackend``. If you want to
-use a different backend, you can do so by changing ``POST_OFFICE_BACKEND``.
+use a different backend, you can do so by changing ``EMAIL_BACKEND``.
 
 For example if you want to use `django-ses <https://github.com/hmarr/django-ses>`_::
 
     POST_OFFICE = {
-        'POST_OFFICE_BACKEND': 'django_ses.SESBackend'
+        'EMAIL_BACKEND': 'django_ses.SESBackend'
     }
 
 
@@ -308,7 +306,7 @@ Batch Size
 
 If you may want to limit the number of emails sent in a batch (sometimes useful
 in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
-number of queued emails fetched in one batch. 
+number of queued emails fetched in one batch.
 
 .. code-block:: python
 

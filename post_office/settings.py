@@ -58,8 +58,7 @@ def get_default_log_level():
 
 
 def get_email_backend():
-    email_backend = get_config().get('POST_OFFICE_BACKEND') or\
-        get_config().get('EMAIL_BACKEND')
+    email_backend = get_config().get('EMAIL_BACKEND')
 
     if not email_backend:
         email_backend = _get_email_backend()
