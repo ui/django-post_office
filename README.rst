@@ -45,7 +45,7 @@ Installation
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
-    'EMAIL_BACKEND': 'post_office.EmailBackend'
+    EMAIL_BACKEND = 'post_office.EmailBackend'
 
 
 Quickstart
