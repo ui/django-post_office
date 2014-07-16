@@ -10,17 +10,17 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         # Adding field 'Email.cc'
         db.add_column(u'post_office_email', 'cc',
-                      self.gf('post_office.fields.CommaSeparatedEmailField')(default='', blank=True),
+                      self.gf('django.db.models.fields.TextField')(default='', blank=True),
                       keep_default=False)
 
         # Adding field 'Email.bcc'
         db.add_column(u'post_office_email', 'bcc',
-                      self.gf('post_office.fields.CommaSeparatedEmailField')(default='', blank=True),
+                      self.gf('django.db.models.fields.TextField')(default='', blank=True),
                       keep_default=False)
 
 
         # Changing field 'Email.to'
-        db.alter_column(u'post_office_email', 'to', self.gf('post_office.fields.CommaSeparatedEmailField')())
+        db.alter_column(u'post_office_email', 'to', self.gf('django.db.models.fields.TextField')())
 
     def backwards(self, orm):
         # Deleting field 'Email.cc'
@@ -43,8 +43,8 @@ class Migration(SchemaMigration):
         },
         u'post_office.email': {
             'Meta': {'object_name': 'Email'},
-            'bcc': ('post_office.fields.CommaSeparatedEmailField', [], {'blank': 'True'}),
-            'cc': ('post_office.fields.CommaSeparatedEmailField', [], {'blank': 'True'}),
+            'bcc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'cc': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'context': ('jsonfield.fields.JSONField', [], {'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
             'from_email': ('django.db.models.fields.CharField', [], {'max_length': '254'}),
@@ -58,7 +58,7 @@ class Migration(SchemaMigration):
             'status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'subject': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'template': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['post_office.EmailTemplate']", 'null': 'True', 'blank': 'True'}),
-            'to': ('post_office.fields.CommaSeparatedEmailField', [], {'blank': 'True'})
+            'to': ('django.db.models.fields.TextField', [], {'blank': 'True'})
         },
         u'post_office.emailtemplate': {
             'Meta': {'object_name': 'EmailTemplate'},
@@ -72,7 +72,7 @@ class Migration(SchemaMigration):
             'subject': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'})
         },
         u'post_office.log': {
-            'Meta': {'ordering': "('-date',)", 'object_name': 'Log'},
+            'Meta': {'object_name': 'Log'},
             'date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'email': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'logs'", 'to': u"orm['post_office.Email']"}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),

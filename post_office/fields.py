@@ -44,3 +44,13 @@ class CommaSeparatedEmailField(with_metaclass(SubfieldBase, TextField)):
                 return [s.strip() for s in value.split(',')]
         else:
             return value
+
+    def south_field_triple(self):
+        """
+        Return a suitable description of this field for South.
+        Taken from smiley chris' easy_thumbnails
+        """
+        from south.modelsinspector import introspector
+        field_class = 'django.db.models.fields.TextField'
+        args, kwargs = introspector(self)
+        return (field_class, args, kwargs)
