@@ -112,14 +112,16 @@ class Email(models.Model):
 
             self.email_message(connection=connection).send()
             status = STATUS.sent
-            message = 'Sent'
+            message = ''
+            exception_type = ''
 
             if connection_opened:
                 connection.close()
 
         except Exception:
             status = STATUS.failed
-            message = sys.exc_info()[1]
+            exception, message, _ = sys.exc_info()
+            exception_type = exception.__name__
 
         self.status = status
         self.save()
@@ -128,9 +130,11 @@ class Email(models.Model):
         # and 2 means log both successes and failures
         if log_level == 1:
             if status == STATUS.failed:
-                self.logs.create(status=status, message=message)
+                self.logs.create(status=status, message=message,
+                                 exception_type=exception_type)
         elif log_level == 2:
-            self.logs.create(status=status, message=message)
+            self.logs.create(status=status, message=message,
+                             exception_type=exception_type)
 
         return status
 
@@ -149,6 +153,7 @@ class Log(models.Model):
     email = models.ForeignKey(Email, editable=False, related_name='logs')
     date = models.DateTimeField(auto_now_add=True)
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES)
+    exception_type = models.CharField(max_length=255, blank=True)
     message = models.TextField()
 
     def __unicode__(self):

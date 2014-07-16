@@ -97,6 +97,7 @@ class ModelTest(TestCase):
         self.assertEqual(log.email, email)
         self.assertEqual(log.status, STATUS.failed)
         self.assertEqual(log.message, 'Fake Error')
+        self.assertEqual(log.exception_type, 'Exception')
 
     def test_dispatch_uses_opened_connection(self):
         """
