@@ -426,15 +426,17 @@ To run ``post_office``'s test suite::
 Changelog
 =========
 
-Version 1.0.0
--------------
-* ``send_templated_mail`` command is now deprecated.
+Version 1.0.0 (Not yet released)
+--------------------------------
+* **IMPORTANT**: in older versions, passing multiple ``recipients into
+  ``mail.send()`` will create multiple emails, each addressed to one recipient.
+  Starting from ``1.0.0``, only one email with multiple recipients will be created.
 * Added ``DEFAULT_LOG_LEVEL`` setting.
 * ``mail.send()`` now supports ``cc`` and ``bcc``.
   Thanks Ștefan Daniel Mihăilă (@stefan-mihaila)!
-* **IMPORTANT**: in previous versions, specifying multiple ``recipients in
-  ``mail.send()`` will send multiple emails, each addressed to one recipient.
-  Starting from ``1.0.0``, only one email with multiple recipients will be sent.
+* Improvements to ``admin`` interface; you can now easily requeue multiple emails. 
+* ``Log`` model now stores the type of exception caught during sending.
+* ``send_templated_mail`` command is now deprecated.
 * Added ``EMAIL_BACKEND`` setting to the new dictionary-styled settings.
 
 Version 0.8.4
