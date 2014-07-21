@@ -50,6 +50,11 @@ class BackendTest(TestCase):
         setattr(settings, 'POST_OFFICE_BACKEND', 'whatever.Whatever')
         self.assertEqual(get_email_backend(), 'whatever.Whatever')
 
+        # If EMAIL_BACKEND is set on new dictionary-styled settings, use that
+        setattr(settings, 'POST_OFFICE', {'EMAIL_BACKEND': 'test'})
+        self.assertEqual(get_email_backend(), 'test')
+        delattr(settings, 'POST_OFFICE')
+
         if old_email_backend:
             setattr(settings, 'EMAIL_BACKEND', old_email_backend)
         else:

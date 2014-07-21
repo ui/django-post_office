@@ -8,7 +8,7 @@ Some awesome features are:
 * Allows you to send email asynchronously
 * Supports HTML email
 * Supports database based email templates
-* Built in scheduling support 
+* Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
 * Uses multiprocessing to send a large number of emails in parallel
 
@@ -225,12 +225,14 @@ Custom Email Backends
 ---------------------
 
 By default, ``post_office`` uses django's SMTP ``EmailBackend``. If you want to
-use a different backend, you can do so by changing ``POST_OFFICE_BACKEND``.
+use a different backend, you can do so by changing ``EMAIL_BACKEND``.
 
 For example if you want to use `django-ses <https://github.com/hmarr/django-ses>`_::
 
-    POST_OFFICE_BACKEND = 'django_ses.SESBackend'
-    
+    POST_OFFICE = {
+        'EMAIL_BACKEND': 'django_ses.SESBackend'
+    }
+
 
 Management Commands
 -------------------
@@ -269,7 +271,7 @@ You can configure ``post-office``'s logging from Django's ``settings.py``. For
 example:
 
 .. code-block:: python
-    
+
     LOGGING = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -304,7 +306,7 @@ Batch Size
 
 If you may want to limit the number of emails sent in a batch (sometimes useful
 in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
-number of queued emails fetched in one batch. 
+number of queued emails fetched in one batch.
 
 .. code-block:: python
 
@@ -393,7 +395,7 @@ usually pass into ``mail.send()``:
 .. code-block:: python
 
     from post_office import mail
-    
+
     first_email = {
         'sender': 'from@example.com',
         'recipients': ['alice@example.com'],
@@ -432,9 +434,10 @@ Version 1.0.0 (Not yet released)
 * Added ``DEFAULT_LOG_LEVEL`` setting.
 * ``mail.send()`` now supports ``cc`` and ``bcc``.
   Thanks Ștefan Daniel Mihăilă (@stefan-mihaila)!
-* Improvements to ``admin`` interface; you can now easily requeue multiple emails. 
+* Improvements to ``admin`` interface; you can now easily requeue multiple emails.
 * ``Log`` model now stores the type of exception caught during sending.
 * ``send_templated_mail`` command is now deprecated.
+* Added ``EMAIL_BACKEND`` setting to the new dictionary-styled settings.
 
 Version 0.8.4
 -------------
