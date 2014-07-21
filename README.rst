@@ -434,7 +434,7 @@ Version 1.0.0 (Not yet released)
 * Added ``DEFAULT_LOG_LEVEL`` setting.
 * ``mail.send()`` now supports ``cc`` and ``bcc``.
   Thanks Ștefan Daniel Mihăilă (@stefan-mihaila)!
-* Improvements to ``admin`` interface; you can now easily requeue multiple emails. 
+* Improvements to ``admin`` interface; you can now easily requeue multiple emails.
 * ``Log`` model now stores the type of exception caught during sending.
 * ``send_templated_mail`` command is now deprecated.
 * Added ``EMAIL_BACKEND`` setting to the new dictionary-styled settings.
