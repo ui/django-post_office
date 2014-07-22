@@ -51,8 +51,23 @@ Installation
 Quickstart
 ==========
 
-To get started, make sure you have Django's admin interface enabled. Create an
-``EmailTemplate`` instance via ``/admin`` and you can start sending emails.
+Send a simple email is really easy:
+
+.. code-block:: python
+
+    from post_office import mail
+
+    mail.send(
+        ['recipient1@example.com'],
+        'from@example.com',
+        subject='My email',
+        message='Hi there!',
+        html_message='Hi <strong>there</strong>!',
+    )    
+
+
+If you want to use templates, ensure that Django's admin interface is enabled. Create an
+``EmailTemplate`` instance via ``admin`` and do the following:
 
 .. code-block:: python
 
@@ -192,7 +207,7 @@ If you want to send an email with attachments:
 Template Tags and Variables
 ---------------------------
 
-``post-office`` supports Django's template tags and variables when.
+``post-office`` supports Django's template tags and variables.
 For example, if you put "Hello, {{ name }}" in the subject line and pass in
 ``{'name': 'Alice'}`` as context, you will get "Hello, Alice" as subject:
 
@@ -418,7 +433,7 @@ Attachments are not supported with ``mail.send_many()``.
 Running Tests
 =============
 
-To run ``post_office``'s test suite::
+To run the test suite::
 
     `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
 
@@ -428,7 +443,7 @@ Changelog
 
 Version 1.0.0 (Not yet released)
 --------------------------------
-* **IMPORTANT**: in older versions, passing multiple ``recipients into
+* **IMPORTANT**: in older versions, passing multiple ``recipients`` into
   ``mail.send()`` will create multiple emails, each addressed to one recipient.
   Starting from ``1.0.0``, only one email with multiple recipients will be created.
 * Added ``DEFAULT_LOG_LEVEL`` setting.
