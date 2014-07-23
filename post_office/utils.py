@@ -1,6 +1,8 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.mail import get_connection
+from django.core.validators import validate_email
 from django.db.models import Q
 
 try:
@@ -142,3 +144,25 @@ def parse_priority(priority):
             raise ValueError('Invalid priority, must be one of: %s' %
                              ', '.join(PRIORITY._fields))
     return priority
+
+
+def parse_emails(emails):
+    """
+    A function that returns a list of valid email addresses.
+    This function will also convert a single email address into
+    a list of email addresses.
+    None value is also converted into an empty list.
+    """
+
+    if isinstance(emails, string_types):
+        emails = [emails]
+    elif emails is None:
+        emails = []
+
+    for email in emails:
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise ValidationError('%s is not a valid email address' % email)
+
+    return emails

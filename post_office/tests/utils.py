@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
-from ..utils import (create_attachments, get_email_template, parse_priority,
-                     send_mail, split_emails)
+from ..utils import (create_attachments, get_email_template, parse_emails,
+                     parse_priority, send_mail, split_emails)
 from ..validators import validate_email_with_name, validate_comma_separated_emails
 
 
@@ -110,3 +110,23 @@ class UtilsTest(TestCase):
         self.assertEqual(parse_priority('high'), PRIORITY.high)
         self.assertEqual(parse_priority('medium'), PRIORITY.medium)
         self.assertEqual(parse_priority('low'), PRIORITY.low)
+
+    def test_parse_emails(self):
+        # Converts a single email to list of email
+        self.assertEqual(
+            parse_emails('test@example.com'),
+            ['test@example.com']
+        )
+
+        # None is converted into an empty list
+        self.assertEqual(parse_emails(None), [])
+
+        # Raises ValidationError if email is invalid
+        self.assertRaises(
+            ValidationError,
+            parse_emails, 'invalid_email'
+        )
+        self.assertRaises(
+            ValidationError,
+            parse_emails, ['invalid_email', 'test@example.com']
+        )

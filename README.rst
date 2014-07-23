@@ -58,7 +58,7 @@ Send a simple email is really easy:
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com'],
+        'recipient@example.com', # List of email addresses also accepted
         'from@example.com',
         subject='My email',
         message='Hi there!',
@@ -74,7 +74,7 @@ If you want to use templates, ensure that Django's admin interface is enabled. C
     from post_office import mail
 
     mail.send(
-        ['recipient1@example.com'],
+        'recipient@example.com', # List of email addresses also accepted
         'from@example.com',
         template='welcome_email', # Could be an EmailTemplate instance or name
         context={'foo': 'bar'},

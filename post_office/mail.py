@@ -3,6 +3,7 @@ import sys
 from multiprocessing import Pool
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
 from django.db import connection as db_connection
 from django.db.models import Q
@@ -10,7 +11,8 @@ from django.template import Context, Template
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend, get_default_log_level
-from .utils import get_email_template, parse_priority, split_emails, create_attachments
+from .utils import (get_email_template, parse_emails, parse_priority,
+                    split_emails, create_attachments)
 from .logutils import setup_loghandlers
 
 try:
@@ -92,20 +94,20 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
          priority=None, attachments=None, render_on_delivery=False,
          log_level=None, commit=True, cc=None, bcc=None):
 
-    if recipients is None:
-        recipients = []
-    elif not isinstance(recipients, (tuple, list)):
-        raise ValueError('"recipients" emails must be in list/tuple format')
+    try:
+        recipients = parse_emails(recipients)
+    except ValidationError as e:
+        raise ValidationError('recipients: %s' % e.message)
 
-    if cc is None:
-        cc = []
-    elif not isinstance(cc, (tuple, list)):
-        raise ValueError('"cc" emails must be in list/tuple format')
+    try:
+        cc = parse_emails(cc)
+    except ValidationError as e:
+        raise ValidationError('c: %s' % e.message)
 
-    if bcc is None:
-        bcc = []
-    elif not isinstance(bcc, (tuple, list)):
-        raise ValueError('"bcc" emails must be in list/tuple format')
+    try:
+        bcc = parse_emails(bcc)
+    except ValidationError as e:
+        raise ValidationError('bcc: %s' % e.message)
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
