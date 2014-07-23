@@ -9,7 +9,7 @@ from django.test.utils import override_settings
 
 from ..settings import get_batch_size, get_default_log_level
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
-from ..mail import (create, get_queued, parse_priority,
+from ..mail import (create, get_queued,
                     send, send_many, send_queued, _send_bulk)
 
 
@@ -200,12 +200,6 @@ class MailTest(TestCase):
         self.assertEqual(email.html_message, 'Test My html')
         self.assertEqual(email.scheduled_time, now)
         self.assertEqual(email.headers, {'header': 'Test header'})
-
-    def test_parse_priority(self):
-        self.assertEqual(parse_priority('now'), PRIORITY.now)
-        self.assertEqual(parse_priority('high'), PRIORITY.high)
-        self.assertEqual(parse_priority('medium'), PRIORITY.medium)
-        self.assertEqual(parse_priority('low'), PRIORITY.low)
 
     def test_send_many(self):
         """Test send_many creates the right emails """

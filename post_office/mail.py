@@ -8,11 +8,9 @@ from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 
-from .compat import string_types
 from .models import Email, EmailTemplate, PRIORITY, STATUS
-from .settings import (get_batch_size, get_email_backend,
-                       get_default_priority, get_default_log_level)
-from .utils import get_email_template, split_emails, create_attachments
+from .settings import get_batch_size, get_email_backend, get_default_log_level
+from .utils import get_email_template, parse_priority, split_emails, create_attachments
 from .logutils import setup_loghandlers
 
 try:
@@ -24,19 +22,6 @@ except ImportError:
 
 
 logger = setup_loghandlers("INFO")
-
-
-def parse_priority(priority):
-    if priority is None:
-        priority = get_default_priority()
-    # If priority is given as a string, returns the enum representation
-    if isinstance(priority, string_types):
-        priority = getattr(PRIORITY, priority, None)
-
-        if priority is None:
-            raise ValueError('Invalid priority, must be one of: %s' %
-                             ', '.join(PRIORITY._fields))
-    return priority
 
 
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='', html_message='',

@@ -11,7 +11,7 @@ except ImportError:
 from post_office import cache
 from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
-from .settings import get_email_backend
+from .settings import get_default_priority, get_email_backend
 
 try:
     from django.utils import timezone
@@ -79,7 +79,7 @@ def send_queued_mail():
 
 def get_email_template(name):
     """
-    Function to get email template object that checks from cache first if caching is enabled
+    Function that returns an email template instance, from cache or DB.
     """
     if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
         return EmailTemplate.objects.get(name=name)
@@ -129,3 +129,16 @@ def create_attachments(attachment_files):
             opened_file.close()
 
     return attachments
+
+
+def parse_priority(priority):
+    if priority is None:
+        priority = get_default_priority()
+    # If priority is given as a string, returns the enum representation
+    if isinstance(priority, string_types):
+        priority = getattr(PRIORITY, priority, None)
+
+        if priority is None:
+            raise ValueError('Invalid priority, must be one of: %s' %
+                             ', '.join(PRIORITY._fields))
+    return priority

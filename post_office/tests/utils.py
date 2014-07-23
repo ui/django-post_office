@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
-from ..utils import (send_mail, get_email_template,
-                     split_emails, create_attachments)
+from ..utils import (create_attachments, get_email_template, parse_priority,
+                     send_mail, split_emails)
 from ..validators import validate_email_with_name, validate_comma_separated_emails
 
 
@@ -39,8 +39,8 @@ class UtilsTest(TestCase):
         validate_email_with_name('Alice Bob <email@example.co.id>')
 
         # These should raise ValidationError
-        self.assertRaises(ValidationError, validate_email_with_name, 'invalid_mail')
-        self.assertRaises(ValidationError, validate_email_with_name, 'Alice <invalid_mail>')
+        self.assertRaises(ValidationError, validate_email_with_name, 'invalid')
+        self.assertRaises(ValidationError, validate_email_with_name, 'Al <ab>')
 
     def test_comma_separated_email_list_validator(self):
         # These should validate
@@ -104,3 +104,9 @@ class UtilsTest(TestCase):
         self.assertTrue(attachments[0].pk)
         self.assertTrue(attachments[0].file.read())
         self.assertEquals(attachments[0].name, 'attachment_file.py')
+
+    def test_parse_priority(self):
+        self.assertEqual(parse_priority('now'), PRIORITY.now)
+        self.assertEqual(parse_priority('high'), PRIORITY.high)
+        self.assertEqual(parse_priority('medium'), PRIORITY.medium)
+        self.assertEqual(parse_priority('low'), PRIORITY.low)
