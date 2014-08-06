@@ -134,10 +134,6 @@ arguments:
 |                   |          | * file-like objects                             |
 |                   |          | * full path of the file                         |
 +-------------------+----------+-------------------------------------------------+
-| log_level         | No       | * ``0`` logs nothing                            |
-|                   |          | * ``1`` logs delivery failures                  |
-|                   |          | * ``2`` logs successful and failed deliveries   |
-+-------------------+----------+-------------------------------------------------+
 | render_on_delivery| No       | Setting this to ``True`` causes email to be     |
 |                   |          | lazily rendered during delivery. ``template``   |
 |                   |          | is required when ``render_on_delivery`` is True.|
@@ -260,10 +256,6 @@ Management Commands
 +---------------------------+-------------------------------------------------+
 | ``--processes`` or ``-p`` | Number of parallel processes to send email.     |
 |                           | Defaults to 1                                   |
-+-------------------+-------+---------+---------------------------------------+
-| ``--log-level`` or ``-l`` | * ``0`` logs nothing                            |
-|                           | * ``1`` logs delivery failures                  |
-|                           | * ``2`` logs successful and failed deliveries   |
 +---------------------------+---------+---------------------------------------+
 | ``--lockfile`` or ``-L``  | Full path to file used as lock file. Defaults to|
 |                           | ``/tmp/post_office.lock``                       |
@@ -278,6 +270,73 @@ You may want to set these up via cron to run regularly::
     * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
 
+Settings
+========
+This section outlines all the settings and configurations that you can put
+in Django's ``settings.py`` to fine tune ``post-office``'s behavior.
+
+Batch Size
+----------
+
+If you may want to limit the number of emails sent in a batch (sometimes useful
+in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
+number of queued emails fetched in one batch.
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'BATCH_SIZE': 5000
+    }
+
+Default Priority
+----------------
+
+The default priority for emails is ``medium``, but this can be altered by
+setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
+(e.g. based on Celery) becomes trivial when set to ``now``.
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'DEFAULT_PRIORITY': 'now'
+    }
+
+Log Level
+---------
+
+The default log level is 2 (logs both successful and failed deliveries)
+This behavior can be changed by setting ``DEFAULT_LOG_LEVEL``.
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'DEFAULT_LOG_LEVEL': 1 # Log only failed deliveries
+    }
+
+The different options are:
+* ``0`` logs nothing
+* ``1`` logs only failed deliveries
+* ``2`` logs everything (both successful and failed delivery attempts)
+
+Context Field Serializer
+------------------------
+
+If you need to store complex Python objects for deferred rendering
+(i.e. setting ``render_on_delivery=True``), you can specify your own context
+field class to store context variables. For example if you want to use
+`django-picklefield <https://github.com/gintas/django-picklefield/tree/master/src/picklefield>`_:
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField'
+    }
+
+``CONTEXT_FIELD_CLASS`` defaults to ``jsonfield.JSONField``.
 
 Logging
 -------
@@ -315,60 +374,6 @@ example:
             },
         },
     }
-
-Batch Size
-----------
-
-If you may want to limit the number of emails sent in a batch (sometimes useful
-in a low memory environment), use the ``BATCH_SIZE`` argument to limit the
-number of queued emails fetched in one batch.
-
-.. code-block:: python
-
-    POST_OFFICE = {
-        'BATCH_SIZE': 5000
-    }
-
-Default Priority
-----------------
-
-The default priority for emails is ``medium``, but this can be altered by
-setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
-(e.g. based on Celery) becomes trivial when set to ``now``.
-
-.. code-block:: python
-
-    POST_OFFICE = {
-        'DEFAULT_PRIORITY': 'now'
-    }
-
-Default Log Level
------------------
-
-The default log level is 2 (logs both successful and failed deliveries)
-This behavior can be changed by setting ``DEFAULT_LOG_LEVEL``.
-
-.. code-block:: python
-
-    POST_OFFICE = {
-        'DEFAULT_LOG_LEVEL': 1 # Log only failed deliveries
-    }
-
-Context Field Serializer
-------------------------
-
-If you need to store complex Python objects for deferred rendering
-(i.e. setting ``render_on_delivery=True``), you can specify your own context
-field class to store context variables. For example if you want to use
-`django-picklefield <https://github.com/gintas/django-picklefield/tree/master/src/picklefield>`_:
-
-.. code-block:: python
-
-    POST_OFFICE = {
-        'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField'
-    }
-
-``CONTEXT_FIELD_CLASS`` defaults to ``jsonfield.JSONField``.
 
 Performance
 ===========
