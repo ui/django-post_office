@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.template import Context, Template
 
 from .models import Email, EmailTemplate, PRIORITY, STATUS
-from .settings import get_batch_size, get_email_backend, get_default_log_level
+from .settings import get_batch_size, get_email_backend, get_log_level
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
@@ -118,7 +118,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
     priority = parse_priority(priority)
 
     if log_level is None:
-        log_level = get_default_log_level()
+        log_level = get_log_level()
 
     if not commit:
         if priority == PRIORITY.now:
@@ -190,7 +190,7 @@ def send_queued(processes=1, log_level=None):
                 (total_email, processes))
 
     if log_level is None:
-        log_level = get_default_log_level()
+        log_level = get_log_level()
 
     if queued_emails:
 
@@ -225,7 +225,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
         db_connection.close()
 
     if log_level is None:
-        log_level = get_default_log_level()
+        log_level = get_log_level()
 
     sent_count, failed_count = 0, 0
     email_count = len(emails)

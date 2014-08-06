@@ -56,8 +56,8 @@ def get_default_priority():
     return get_config().get('DEFAULT_PRIORITY', 'medium')
 
 
-def get_default_log_level():
-    return get_config().get('DEFAULT_LOG_LEVEL', 2)
+def get_log_level():
+    return get_config().get('LOG_LEVEL', 2)
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',

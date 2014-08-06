@@ -307,13 +307,13 @@ Log Level
 ---------
 
 The default log level is 2 (logs both successful and failed deliveries)
-This behavior can be changed by setting ``DEFAULT_LOG_LEVEL``.
+This behavior can be changed by setting ``LOG_LEVEL``.
 
 .. code-block:: python
 
     # Put this in settings.py
     POST_OFFICE = {
-        'DEFAULT_LOG_LEVEL': 1 # Log only failed deliveries
+        'LOG_LEVEL': 1 # Log only failed deliveries
     }
 
 The different options are:
@@ -451,7 +451,7 @@ Version 1.0.0 (Not yet released)
 * **IMPORTANT**: in older versions, passing multiple ``recipients`` into
   ``mail.send()`` will create multiple emails, each addressed to one recipient.
   Starting from ``1.0.0``, only one email with multiple recipients will be created.
-* Added ``DEFAULT_LOG_LEVEL`` setting.
+* Added ``LOG_LEVEL`` setting.
 * ``mail.send()`` now supports ``cc`` and ``bcc``.
   Thanks Ștefan Daniel Mihăilă (@stefan-mihaila)!
 * Improvements to ``admin`` interface; you can now easily requeue multiple emails.

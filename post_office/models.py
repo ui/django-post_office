@@ -17,7 +17,7 @@ from django.template import Context, Template
 from jsonfield import JSONField
 from post_office import cache
 from .compat import text_type
-from .settings import get_email_backend, context_field_class, get_default_log_level
+from .settings import get_email_backend, context_field_class, get_log_level
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -102,7 +102,7 @@ class Email(models.Model):
         connection_opened = False
 
         if log_level is None:
-            log_level = get_default_log_level()
+            log_level = get_log_level()
 
         try:
             if connection is None:
