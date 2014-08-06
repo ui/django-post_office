@@ -57,7 +57,7 @@ class Email(models.Model):
     scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
     headers = JSONField(blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
-    context = context_field_class(blank=True)
+    context = context_field_class(blank=True, null=True)
 
     def __unicode__(self):
         return u'%s' % self.to
