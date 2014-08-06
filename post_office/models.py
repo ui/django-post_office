@@ -35,7 +35,8 @@ class Email(models.Model):
     STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'),
                       (STATUS.queued, 'queued')]
 
-    from_email = models.CharField(max_length=254, validators=[validate_email_with_name])
+    from_email = models.CharField(max_length=254,
+                                  validators=[validate_email_with_name])
     to = CommaSeparatedEmailField()
     cc = CommaSeparatedEmailField()
     bcc = CommaSeparatedEmailField()
@@ -166,7 +167,7 @@ class EmailTemplate(models.Model):
     """
     name = models.CharField(max_length=255, help_text=("e.g: 'welcome_email'"))
     description = models.TextField(blank=True,
-                                   help_text='Description of this email template.')
+                                   help_text='Description of this template.')
     subject = models.CharField(max_length=255, blank=True,
                                validators=[validate_template_syntax])
     content = models.TextField(blank=True,
@@ -194,7 +195,8 @@ class Attachment(models.Model):
         if not self.name:
             self.name = filename  # set original filename
 
-        filename = '{name}.{ext}'.format(name=uuid4().hex, ext=filename.split('.')[-1])
+        filename = '{name}.{ext}'.format(name=uuid4().hex,
+                                         ext=filename.split('.')[-1])
 
         return 'post_office_attachments/' + filename
 

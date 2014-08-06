@@ -26,9 +26,10 @@ except ImportError:
 logger = setup_loghandlers("INFO")
 
 
-def create(sender, recipients=None, cc=None, bcc=None, subject='', message='', html_message='',
-           context=None, scheduled_time=None, headers=None, template=None,
-           priority=None, render_on_delivery=False, commit=True):
+def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
+           html_message='', context=None, scheduled_time=None, headers=None,
+           template=None, priority=None, render_on_delivery=False,
+           commit=True):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -122,7 +123,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
     if not commit:
         if priority == PRIORITY.now:
-            raise ValueError("send_many() can't be used to send emails with priority = 'now'")
+            raise ValueError("send_many() can't be used with priority = 'now'")
         if attachments:
             raise ValueError("Can't add attachments with send_many()")
 

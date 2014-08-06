@@ -40,17 +40,16 @@ class EmailBackend(BaseEmailBackend):
             attachment_files = dict([(name, ContentFile(content))
                                     for name, content, _ in email_message.attachments])
 
-            emails = [create(sender=from_email,
-                             recipients=email_message.to, cc=email_message.cc, bcc=email_message.bcc,
-                             subject=subject, message=message, html_message=html_message,
-                             headers=headers)]
+            email = create(sender=from_email,
+                           recipients=email_message.to, cc=email_message.cc,
+                           bcc=email_message.bcc, subject=subject,
+                           message=message, html_message=html_message,
+                           headers=headers)
 
             if attachment_files:
                 attachments = create_attachments(attachment_files)
 
-                for email in emails:
-                    email.attachments.add(*attachments)
+                email.attachments.add(*attachments)
 
             if get_default_priority() == 'now':
-                for email in emails:
-                    email.dispatch()
+                email.dispatch()
