@@ -113,9 +113,6 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
 
-    if context is None:
-        context = {}
-
     priority = parse_priority(priority)
 
     if log_level is None:

@@ -44,8 +44,8 @@ class Email(models.Model):
     message = models.TextField(blank=True)
     html_message = models.TextField(blank=True)
     """
-    Emails having 'queued' status will get processed by ``send_all`` command.
-    This status field will then be set to ``failed`` or ``sent`` depending on
+    Emails with 'queued' status will get processed by ``send_queued`` command.
+    Status field will then be set to ``failed`` or ``sent`` depending on
     whether it's successfully delivered.
     """
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, db_index=True,
@@ -57,7 +57,7 @@ class Email(models.Model):
     scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
     headers = JSONField(blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
-    context = context_field_class(blank=True)
+    context = context_field_class(blank=True, null=True)
 
     def __unicode__(self):
         return u'%s' % self.to

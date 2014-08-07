@@ -245,7 +245,7 @@ class MailTest(TestCase):
         email = send(recipients=['a@example.com'],
                      template=template, context=context,
                      render_on_delivery=False)
-        self.assertEqual(email.context, '')
+        self.assertEqual(email.context, None)
 
     def test_send_with_attachments_multiple_recipients(self):
         """Test reusing the same attachment objects for several email objects"""
@@ -263,7 +263,7 @@ class MailTest(TestCase):
     def test_create_with_template(self):
         """If render_on_delivery is True, subject and content
         won't be rendered, context also won't be saved."""
-        
+
         template = EmailTemplate.objects.create(
             subject='Subject {{ name }}',
             content='Content {{ name }}',
@@ -283,7 +283,7 @@ class MailTest(TestCase):
     def test_send_with_template(self):
         """If render_on_delivery is False, subject and content
         will be rendered, context won't be saved."""
-        
+
         template = EmailTemplate.objects.create(
             subject='Subject {{ name }}',
             content='Content {{ name }}',
@@ -296,5 +296,5 @@ class MailTest(TestCase):
         self.assertEqual(email.subject, 'Subject test')
         self.assertEqual(email.message, 'Content test')
         self.assertEqual(email.html_message, 'HTML test')
-        self.assertEqual(email.context, '')
+        self.assertEqual(email.context, None)
         self.assertEqual(email.template, None)
