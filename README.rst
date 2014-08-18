@@ -102,22 +102,29 @@ arguments:
 +-------------------+----------+-------------------------------------------------+
 | recipients        | Yes      | list of recipient email addresses               |
 +-------------------+----------+-------------------------------------------------+
-| cc                | No       | list emails, will appear in ``cc`` field        |
-+-------------------+----------+-------------------------------------------------+
-| bcc               | No       | list of emails, will appear in `bcc` field      |
-+-------------------+----------+-------------------------------------------------+
 | sender            | No       | Defaults to ``settings.DEFAULT_FROM_EMAIL``,    |
 |                   |          | display name is allowed (``John <john@a.com>``) |
-+-------------------+----------+-------------------------------------------------+
-| template          | No       | ``EmailTemplate`` instance or name              |
-+-------------------+----------+-------------------------------------------------+
-| context           | No       | A dictionary, used to render templated email    |
 +-------------------+----------+-------------------------------------------------+
 | subject           | No       | Email subject (if ``template`` is not specified)|
 +-------------------+----------+-------------------------------------------------+
 | message           | No       | Email content (if ``template`` is not specified)|
 +-------------------+----------+-------------------------------------------------+
 | html_message      | No       | HTML content (if ``template`` is not specified) |
++-------------------+----------+-------------------------------------------------+
+| template          | No       | ``EmailTemplate`` instance or name              |
++-------------------+----------+-------------------------------------------------+
+| cc                | No       | list emails, will appear in ``cc`` field        |
++-------------------+----------+-------------------------------------------------+
+| bcc               | No       | list of emails, will appear in `bcc` field      |
++-------------------+----------+-------------------------------------------------+
+| attachments       | No       | Email attachments - A dictionary where the keys |
+|                   |          | are the filenames and the values are either:    |
+|                   |          |                                                 |
+|                   |          | * files                                         |
+|                   |          | * file-like objects                             |
+|                   |          | * full path of the file                         |
++-------------------+----------+-------------------------------------------------+
+| context           | No       | A dictionary, used to render templated email    |
 +-------------------+----------+-------------------------------------------------+
 | headers           | No       | A dictionary of extra headers on the message    |
 +-------------------+----------+-------------------------------------------------+
@@ -126,13 +133,6 @@ arguments:
 +-------------------+----------+-------------------------------------------------+
 | priority          | No       | ``high``, ``medium``, ``low`` or ``now``        |
 |                   |          | (send_immediately)                              |
-+-------------------+----------+-------------------------------------------------+
-| attachments       | No       | Email attachments - A dictionary where the keys |
-|                   |          | are the filenames and the values are either:    |
-|                   |          |                                                 |
-|                   |          | * files                                         |
-|                   |          | * file-like objects                             |
-|                   |          | * full path of the file                         |
 +-------------------+----------+-------------------------------------------------+
 | render_on_delivery| No       | Setting this to ``True`` causes email to be     |
 |                   |          | lazily rendered during delivery. ``template``   |
@@ -403,12 +403,8 @@ set ``POST_OFFICE_CACHE`` to ``False`` in ``settings.py``:
 send_many()
 -----------
 
-Starting from version 0.6.0, ``post-office`` includes ``mail.send_many()``
-that's much more performant (generates less database queries) when
-sending a large number of emails. Since this function uses Django's
-`bulk_create <https://docs.djangoproject.com/en/1.5/ref/models/querysets/#bulk-create>`_ command, it's only usable on Django >= 1.4.
-
-Behavior wise, ``mail.send_many()`` is almost identical to ``mail.send()``,
+``send_many()`` is much more performant (generates less database queries) when
+sending a large number of emails. ``send_many()`` is almost identical to ``mail.send()``,
 with the exception that it accepts a list of keyword arguments that you'd
 usually pass into ``mail.send()``:
 
