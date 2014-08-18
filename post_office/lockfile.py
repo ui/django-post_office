@@ -69,8 +69,7 @@ class FileLock(object):
         try:
             os.kill(lock_pid, 0)
         except OSError:
-            os.unlink(self.lock_filename)
-            os.remove(self.pid_filename)
+            self.release()
             return False
 
         # it is running
@@ -119,14 +118,22 @@ class FileLock(object):
         pid_file = os.open(self.pid_filename, os.O_CREAT | os.O_EXCL | os.O_RDWR)
         os.write(pid_file, str(os.getpid()).encode('utf-8'))
         os.close(pid_file)
-        os.symlink(self.pid_filename, self.lock_filename)
+
+        if hasattr(os, 'symlink'):
+            os.symlink(self.pid_filename, self.lock_filename)
+        else:
+            # Windows platforms doesn't support symlinks, at least not through the os API
+            self.lock_filename = self.pid_filename
+
 
     def release(self):
         """Try to delete the lock files. Doesn't matter if we fail"""
-        try:
-            os.unlink(self.lock_filename)
-        except OSError:
-            pass
+        if self.lock_filename != self.pid_filename:
+            try:
+                os.unlink(self.lock_filename)
+            except OSError:
+                pass
+
         try:
             os.remove(self.pid_filename)
         except OSError:
