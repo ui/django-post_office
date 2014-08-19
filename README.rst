@@ -442,8 +442,8 @@ To run the test suite::
 Changelog
 =========
 
-Version 1.0.0 (Not yet released)
---------------------------------
+Version 1.0.0
+-------------
 * **IMPORTANT**: in older versions, passing multiple ``recipients`` into
   ``mail.send()`` will create multiple emails, each addressed to one recipient.
   Starting from ``1.0.0``, only one email with multiple recipients will be created.
