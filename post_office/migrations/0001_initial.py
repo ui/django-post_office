@@ -1,94 +1,93 @@
 # -*- coding: utf-8 -*-
-import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+import jsonfield.fields
+import post_office.fields
+import post_office.validators
+import post_office.models
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Email'
-        db.create_table('post_office_email', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('from_email', self.gf('django.db.models.fields.CharField')(max_length=254)),
-            ('to', self.gf('django.db.models.fields.EmailField')(max_length=254)),
-            ('subject', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('message', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('html_message', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('status', self.gf('django.db.models.fields.PositiveSmallIntegerField')(db_index=True, null=True, blank=True)),
-            ('priority', self.gf('django.db.models.fields.PositiveSmallIntegerField')(db_index=True, null=True, blank=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 2, 17, 0, 0), db_index=True)),
-            ('last_updated', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-        ))
-        db.send_create_signal('post_office', ['Email'])
+    dependencies = [
+    ]
 
-        # Adding model 'Log'
-        db.create_table('post_office_log', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('email', self.gf('django.db.models.fields.related.ForeignKey')(related_name='logs', to=orm['post_office.Email'])),
-            ('date', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 2, 17, 0, 0), db_index=True)),
-            ('status', self.gf('django.db.models.fields.PositiveSmallIntegerField')(db_index=True)),
-            ('message', self.gf('django.db.models.fields.TextField')()),
-        ))
-        db.send_create_signal('post_office', ['Log'])
-
-        # Adding model 'EmailTemplate'
-        db.create_table('post_office_emailtemplate', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('subject', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('content', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('html_content', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 2, 17, 0, 0))),
-            ('last_updated', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 2, 17, 0, 0))),
-        ))
-        db.send_create_signal('post_office', ['EmailTemplate'])
-
-
-    def backwards(self, orm):
-        # Deleting model 'Email'
-        db.delete_table('post_office_email')
-
-        # Deleting model 'Log'
-        db.delete_table('post_office_log')
-
-        # Deleting model 'EmailTemplate'
-        db.delete_table('post_office_emailtemplate')
-
-
-    models = {
-        'post_office.email': {
-            'Meta': {'ordering': "('-created',)", 'object_name': 'Email'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 2, 17, 0, 0)', 'db_index': 'True'}),
-            'from_email': ('django.db.models.fields.CharField', [], {'max_length': '254'}),
-            'html_message': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'last_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'message': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'priority': ('django.db.models.fields.PositiveSmallIntegerField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'subject': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'to': ('django.db.models.fields.EmailField', [], {'max_length': '254'})
-        },
-        'post_office.emailtemplate': {
-            'Meta': {'ordering': "('name',)", 'object_name': 'EmailTemplate'},
-            'content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 2, 17, 0, 0)'}),
-            'html_content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'last_updated': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 2, 17, 0, 0)'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'subject': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'})
-        },
-        'post_office.log': {
-            'Meta': {'ordering': "('-date',)", 'object_name': 'Log'},
-            'date': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 2, 17, 0, 0)', 'db_index': 'True'}),
-            'email': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'logs'", 'to': "orm['post_office.Email']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'message': ('django.db.models.fields.TextField', [], {}),
-            'status': ('django.db.models.fields.PositiveSmallIntegerField', [], {'db_index': 'True'})
-        }
-    }
-
-    complete_apps = ['post_office']
+    operations = [
+        migrations.CreateModel(
+            name='Attachment',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('file', models.FileField(upload_to=post_office.models.get_upload_path)),
+                ('name', models.CharField(help_text=b'The original filename', max_length=255)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Email',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('from_email', models.CharField(max_length=254, validators=[post_office.validators.validate_email_with_name])),
+                ('to', post_office.fields.CommaSeparatedEmailField(blank=True)),
+                ('cc', post_office.fields.CommaSeparatedEmailField(blank=True)),
+                ('bcc', post_office.fields.CommaSeparatedEmailField(blank=True)),
+                ('subject', models.CharField(max_length=255, blank=True)),
+                ('message', models.TextField(blank=True)),
+                ('html_message', models.TextField(blank=True)),
+                ('status', models.PositiveSmallIntegerField(blank=True, null=True, db_index=True, choices=[(0, b'sent'), (1, b'failed'), (2, b'queued')])),
+                ('priority', models.PositiveSmallIntegerField(blank=True, null=True, choices=[(0, b'low'), (1, b'medium'), (2, b'high'), (3, b'now')])),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('last_updated', models.DateTimeField(auto_now=True, db_index=True)),
+                ('scheduled_time', models.DateTimeField(db_index=True, null=True, blank=True)),
+                ('headers', jsonfield.fields.JSONField(null=True, blank=True)),
+                ('context', jsonfield.fields.JSONField(null=True, blank=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='EmailTemplate',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(help_text=b"e.g: 'welcome_email'", max_length=255)),
+                ('description', models.TextField(help_text=b'Description of this template.', blank=True)),
+                ('subject', models.CharField(blank=True, max_length=255, validators=[post_office.validators.validate_template_syntax])),
+                ('content', models.TextField(blank=True, validators=[post_office.validators.validate_template_syntax])),
+                ('html_content', models.TextField(blank=True, validators=[post_office.validators.validate_template_syntax])),
+                ('created', models.DateTimeField(auto_now_add=True)),
+                ('last_updated', models.DateTimeField(auto_now=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Log',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('date', models.DateTimeField(auto_now_add=True)),
+                ('status', models.PositiveSmallIntegerField(choices=[(0, b'sent'), (1, b'failed')])),
+                ('exception_type', models.CharField(max_length=255, blank=True)),
+                ('message', models.TextField()),
+                ('email', models.ForeignKey(related_name=b'logs', editable=False, to='post_office.Email')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='email',
+            name='template',
+            field=models.ForeignKey(blank=True, to='post_office.EmailTemplate', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='attachment',
+            name='emails',
+            field=models.ManyToManyField(related_name=b'attachments', to='post_office.Email'),
+            preserve_default=True,
+        ),
+    ]
