@@ -46,8 +46,8 @@ class EmailAdmin(admin.ModelAdmin):
     }
     actions = [requeue]
 
-    def queryset(self, request):
-        return super(EmailAdmin, self).queryset(request).select_related('template')
+    def get_queryset(self, request):
+        return super(EmailAdmin, self).get_queryset(request).select_related('template')
 
     def to_display(self, instance):
         return ', '.join(instance.to)
