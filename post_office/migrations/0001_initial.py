@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('file', models.FileField(upload_to=post_office.models.get_upload_path)),
-                ('name', models.CharField(help_text=b'The original filename', max_length=255)),
+                ('name', models.CharField(help_text='The original filename', max_length=255)),
             ],
             options={
             },
@@ -36,8 +36,8 @@ class Migration(migrations.Migration):
                 ('subject', models.CharField(max_length=255, blank=True)),
                 ('message', models.TextField(blank=True)),
                 ('html_message', models.TextField(blank=True)),
-                ('status', models.PositiveSmallIntegerField(blank=True, null=True, db_index=True, choices=[(0, b'sent'), (1, b'failed'), (2, b'queued')])),
-                ('priority', models.PositiveSmallIntegerField(blank=True, null=True, choices=[(0, b'low'), (1, b'medium'), (2, b'high'), (3, b'now')])),
+                ('status', models.PositiveSmallIntegerField(blank=True, null=True, db_index=True, choices=[(0, 'sent'), (1, 'failed'), (2, 'queued')])),
+                ('priority', models.PositiveSmallIntegerField(blank=True, null=True, choices=[(0, 'low'), (1, 'medium'), (2, 'high'), (3, 'now')])),
                 ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('last_updated', models.DateTimeField(auto_now=True, db_index=True)),
                 ('scheduled_time', models.DateTimeField(db_index=True, null=True, blank=True)),
@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(help_text=b"e.g: 'welcome_email'", max_length=255)),
-                ('description', models.TextField(help_text=b'Description of this template.', blank=True)),
+                ('description', models.TextField(help_text='Description of this template.', blank=True)),
                 ('subject', models.CharField(blank=True, max_length=255, validators=[post_office.validators.validate_template_syntax])),
                 ('content', models.TextField(blank=True, validators=[post_office.validators.validate_template_syntax])),
                 ('html_content', models.TextField(blank=True, validators=[post_office.validators.validate_template_syntax])),
@@ -69,10 +69,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date', models.DateTimeField(auto_now_add=True)),
-                ('status', models.PositiveSmallIntegerField(choices=[(0, b'sent'), (1, b'failed')])),
+                ('status', models.PositiveSmallIntegerField(choices=[(0, 'sent'), (1, 'failed')])),
                 ('exception_type', models.CharField(max_length=255, blank=True)),
                 ('message', models.TextField()),
-                ('email', models.ForeignKey(related_name=b'logs', editable=False, to='post_office.Email')),
+                ('email', models.ForeignKey(related_name='logs', editable=False, to='post_office.Email')),
             ],
             options={
             },
@@ -87,7 +87,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='attachment',
             name='emails',
-            field=models.ManyToManyField(related_name=b'attachments', to='post_office.Email'),
+            field=models.ManyToManyField(related_name='attachments', to='post_office.Email'),
             preserve_default=True,
         ),
     ]
