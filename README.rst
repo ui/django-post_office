@@ -47,6 +47,15 @@ Installation
 
     EMAIL_BACKEND = 'post_office.EmailBackend'
 
+If you're still on Django <= 1.6 and use South to manage your migrations,
+you'll need to put the following in ``settings.py``:
+
+.. code-block:: python
+
+    SOUTH_MIGRATION_MODULES = {
+        "post_office": "post_office.south_migrations",
+    }
+
 
 Quickstart
 ==========
@@ -441,6 +450,11 @@ To run the test suite::
 
 Changelog
 =========
+
+Version 1.1.0
+-------------
+* Support for Django 1.7 migrations. If you're still on Django < 1.7,
+  South migration files are stored in ``south_migrations`` directory.
 
 Version 1.0.0
 -------------
