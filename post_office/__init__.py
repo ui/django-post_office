@@ -1,4 +1,4 @@
-VERSION = (1, 1, 0)
+VERSION = (1, 1, 1)
 
 from .backends import EmailBackend
 from .models import PRIORITY
