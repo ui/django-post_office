@@ -46,6 +46,10 @@ Installation
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
     EMAIL_BACKEND = 'post_office.EmailBackend'
+    
+    or
+    
+    EMAIL_BACKEND = 'post_office.SSLEmailBackend'  # if your email provider uses SSL connection
 
 If you're still on Django <= 1.6 and use South to manage your migrations,
 you'll need to put the following in ``settings.py``:
