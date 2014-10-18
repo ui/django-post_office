@@ -280,6 +280,29 @@ class MailTest(TestCase):
         self.assertEqual(email.context, context)
         self.assertEqual(email.template, template)
 
+    def test_create_with_template_and_empty_context(self):
+        """If render_on_delivery is False, subject and content
+        will be rendered, context won't be saved."""
+
+        template = EmailTemplate.objects.create(
+            subject='Subject {% now "Y" %}',
+            content='Content {% now "Y" %}',
+            html_content='HTML {% now "Y" %}'
+        )
+        context = None
+        email = create(
+            sender='from@example.com', recipients=['to@example.com'],
+            template=template, context=context
+        )
+        from datetime import date
+        today = date.today()
+        current_year = today.year
+        self.assertEqual(email.subject, 'Subject %d' % current_year)
+        self.assertEqual(email.message, 'Content %d' % current_year)
+        self.assertEqual(email.html_message, 'HTML %d' % current_year)
+        self.assertEqual(email.context, None)
+        self.assertEqual(email.template, None)
+
     def test_send_with_template(self):
         """If render_on_delivery is False, subject and content
         will be rendered, context won't be saved."""
