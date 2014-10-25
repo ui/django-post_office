@@ -1,5 +1,8 @@
+import smtplib
+
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
+from django.core.mail.backends.smtp import EmailBackend as DjangoDefaultEmailBackend
 
 from .mail import create
 from .settings import get_default_priority
@@ -53,3 +56,34 @@ class EmailBackend(BaseEmailBackend):
 
             if get_default_priority() == 'now':
                 email.dispatch()
+
+
+class SSLEmailBackend(DjangoDefaultEmailBackend):
+    def open(self):
+        if self.connection:
+            return False
+
+        try:
+            self.connection = smtplib.SMTP_SSL(
+                self.host,
+                self.port)
+
+            if self.username and self.password:
+                self.connection.login(self.username, self.password)
+
+            return True
+        except smtplib.SMTPException as e:
+            if not self.fail_silently:
+                raise e
+
+    def close(self):
+        if self.connection is None:
+            return
+        try:
+            try:
+                self.connection.quit()
+            except smtplib.SMTPException:
+                if not self.fail_silently:
+                    raise
+        finally:
+            self.connection = None
