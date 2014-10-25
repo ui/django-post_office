@@ -66,11 +66,10 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             message = template.content
             html_message = template.html_content
 
-        if context:
-            _context = Context(context)
-            subject = Template(subject).render(_context)
-            message = Template(message).render(_context)
-            html_message = Template(html_message).render(_context)
+        _context = Context(context or {})
+        subject = Template(subject).render(_context)
+        message = Template(message).render(_context)
+        html_message = Template(html_message).render(_context)
 
         email = Email(
             from_email=sender,
