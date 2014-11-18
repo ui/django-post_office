@@ -60,6 +60,10 @@ def get_log_level():
     return get_config().get('LOG_LEVEL', 2)
 
 
+def get_sending_order():
+    return get_config().get('SENDING_ORDER', ['-priority'])
+
+
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
                                        'jsonfield.JSONField')
 context_field_class = import_attribute(CONTEXT_FIELD_CLASS)
