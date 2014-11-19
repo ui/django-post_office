@@ -335,7 +335,7 @@ Sending Order
 ----------------
 
 The default sending order for emails is ``-priority``, but this can be altered by
-setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIFO order _::
+setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIFO order ::
 
 .. code-block:: python
 
