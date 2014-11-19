@@ -10,7 +10,7 @@ Some awesome features are:
 * Supports database based email templates
 * Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
-* Uses multiprocessing to send a large number of emails in parallel
+* Uses multiprocessing to sfend a large number of emails in parallel
 
 
 Dependencies
@@ -335,7 +335,7 @@ Sending Order
 ----------------
 
 The default sending order for emails is ``-priority``, but this can be altered by
-setting ``SENDING_ORDER``. For example to send queued emails in FIFO order one would use the following:
+setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIFO order _::
 
 .. code-block:: python
 
