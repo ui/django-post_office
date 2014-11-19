@@ -10,7 +10,7 @@ Some awesome features are:
 * Supports database based email templates
 * Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
-* Uses multiprocessing to sfend a large number of emails in parallel
+* Uses multiprocessing to send a large number of emails in parallel
 
 
 Dependencies
