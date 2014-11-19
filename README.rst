@@ -344,7 +344,6 @@ setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIF
         'SENDING_ORDER': ['created']
     }
     
-    
 Context Field Serializer
 ------------------------
 
