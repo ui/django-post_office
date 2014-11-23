@@ -330,6 +330,20 @@ The different options are:
 * ``1`` logs only failed deliveries
 * ``2`` logs everything (both successful and failed delivery attempts)
 
+
+Sending Order
+----------------
+
+The default sending order for emails is ``-priority``, but this can be altered by
+setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIFO order :
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'SENDING_ORDER': ['created']
+    }
+    
 Context Field Serializer
 ------------------------
 
