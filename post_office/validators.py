@@ -34,7 +34,7 @@ def validate_comma_separated_emails(value):
 
     for email in value:
         try:
-            validate_email(email)
+            validate_email_with_name(email)
         except ValidationError:
             raise ValidationError('Invalid email: %s' % email, code='invalid')
 
