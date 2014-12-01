@@ -1,8 +1,10 @@
+import re
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.mail import get_connection
-from django.core.validators import validate_email
+from django.core.validators import EmailValidator
 from django.db.models import Q
 
 try:
@@ -21,6 +23,24 @@ try:
 except ImportError:
     import datetime
     now = datetime.datetime.now
+
+
+class FullEmailValidator(EmailValidator):
+    """ Simple validator that passes for email addresses bearing a display name
+    i.e. John Smith <john.smith@acme.gov>
+    """
+    def __call__(self, value):
+        try:
+            res = super(FullEmailValidator, self).__call__(value)
+        except ValidationError:
+            try:
+                split_address = re.match(r'(.+) \<(.+@.+)\>', value)
+                display_name, email = split_address.groups()
+                super(FullEmailValidator, self).__call__(email)
+            except AttributeError:
+                raise ValidationError
+
+validate_email = FullEmailValidator()
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
