@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.mail import get_connection
-from django.core.validators import EmailValidator
+from django.core.validators import EmailValidator, validate_email
 from django.db.models import Q
 
 try:
@@ -38,9 +38,9 @@ class FullEmailValidator(EmailValidator):
                 display_name, email = split_address.groups()
                 super(FullEmailValidator, self).__call__(email)
             except AttributeError:
-                raise ValidationError
+                raise ValidationError(self.message, code=self.code)
 
-validate_email = FullEmailValidator()
+validate_email = FullEmailValidator(**dict(validate_email.__dict__))
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
