@@ -25,6 +25,9 @@ class CommaSeparatedEmailWidget(TextInput):
         self.attrs.update({'class': 'vTextField'})
 
     def _format_value(self, value):
+        # If the value is a string wrap it in a list so it does not get sliced.
+        if isinstance(value, basestring):
+            value = [value, ]
         return ','.join([item for item in value])
 
 
