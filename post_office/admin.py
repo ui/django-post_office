@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.forms.widgets import TextInput
+from django.utils import six
 from django.utils.text import Truncator
 
 from .fields import CommaSeparatedEmailField
@@ -25,6 +26,9 @@ class CommaSeparatedEmailWidget(TextInput):
         self.attrs.update({'class': 'vTextField'})
 
     def _format_value(self, value):
+        # If the value is a string wrap it in a list so it does not get sliced.
+        if isinstance(value, six.string_types):
+            value = [value, ]
         return ','.join([item for item in value])
 
 
