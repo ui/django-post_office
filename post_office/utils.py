@@ -2,8 +2,9 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.mail import get_connection
-from django.core.validators import validate_email
 from django.db.models import Q
+
+from .validators import validate_email_with_name
 
 try:
     from django.utils.encoding import force_text
@@ -161,7 +162,7 @@ def parse_emails(emails):
 
     for email in emails:
         try:
-            validate_email(email)
+            validate_email_with_name(email)
         except ValidationError:
             raise ValidationError('%s is not a valid email address' % email)
 
