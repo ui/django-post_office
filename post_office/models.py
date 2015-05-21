@@ -59,6 +59,9 @@ class Email(models.Model):
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
     context = context_field_class(blank=True, null=True)
 
+    class Meta:
+        app_label = 'post_office'
+
     def __unicode__(self):
         return u'%s' % self.to
 
@@ -157,6 +160,9 @@ class Log(models.Model):
     exception_type = models.CharField(max_length=255, blank=True)
     message = models.TextField()
 
+    class Meta:
+        app_label = 'post_office'
+
     def __unicode__(self):
         return text_type(self.date)
 
@@ -176,6 +182,9 @@ class EmailTemplate(models.Model):
                                     validators=[validate_template_syntax])
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = 'post_office'
 
     def __unicode__(self):
         return self.name
