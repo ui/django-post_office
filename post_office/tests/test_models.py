@@ -282,22 +282,3 @@ class ModelTest(TestCase):
 
         self.assertEqual(message.attachments,
                          [('test.txt', b'test file content', None)])
-
-    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
-    def test_dispatch_with_attachments(self):
-        email = Email.objects.create(to=['to@example.com'],
-                                     from_email='from@example.com', status=STATUS.queued,
-                                     subject='Subject', message='message')
-
-        attachment = Attachment()
-        attachment.file.save(
-            'test.txt', content=ContentFile('test file content'), save=True
-        )
-        email.attachments.add(attachment)
-
-        _send_bulk([email])
-
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(mail.outbox[0].subject, 'Subject')
-        self.assertEqual(mail.outbox[0].attachments,
-                         [('test.txt', b'test file content', None)])
