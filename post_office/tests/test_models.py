@@ -83,7 +83,7 @@ class ModelTest(TestCase):
         self.assertEqual(email.status, STATUS.sent)
         self.assertEqual(log.email, email)
 
-    @override_settings(EMAIL_BACKEND='post_office.tests.backends.ErrorRaisingBackend')
+    @override_settings(EMAIL_BACKEND='post_office.tests.test_backends.ErrorRaisingBackend')
     def test_status_and_log_on_error(self):
         """
         Ensure that status and log are set properly on sending failure
@@ -224,7 +224,8 @@ class ModelTest(TestCase):
             html_content='{% block content %}<h1>Welcome to the site</h1>'
         )
 
-        EmailTemplateForm = modelform_factory(EmailTemplate)
+        EmailTemplateForm = modelform_factory(EmailTemplate,
+                                              exclude=['template'])
         form = EmailTemplateForm(data)
 
         self.assertFalse(form.is_valid())

@@ -84,7 +84,7 @@ class MailTest(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'send bulk')
 
-    @override_settings(EMAIL_BACKEND='post_office.tests.mail.ConnectionTestingBackend')
+    @override_settings(EMAIL_BACKEND='post_office.tests.test_mail.ConnectionTestingBackend')
     def test_send_bulk_reuses_open_connection(self):
         """
         Ensure _send_bulk() only opens connection once to send multiple emails.

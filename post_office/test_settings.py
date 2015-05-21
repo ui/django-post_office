@@ -40,4 +40,10 @@ ROOT_URLCONF = 'post_office.test_urls'
 
 DEFAULT_FROM_EMAIL = 'webmaster@example.com'
 
-TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
+MIDDLEWARE_CLASSES = (
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+)
+
+#TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
