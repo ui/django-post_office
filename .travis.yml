@@ -31,4 +31,4 @@ install:
   - pip install Django==$DJANGO jsonfield
 
 script:
-  - "python post_office/tests/runtests.py"
+  - "`which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=."
