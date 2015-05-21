@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
-from ..mail import send
+from ..mail import send, _send_bulk
 
 
 class ModelTest(TestCase):
@@ -286,7 +286,7 @@ class ModelTest(TestCase):
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_dispatch_with_attachments(self):
         email = Email.objects.create(to=['to@example.com'],
-                                     from_email='from@example.com',
+                                     from_email='from@example.com', status=STATUS.queued,
                                      subject='Subject', message='message')
 
         attachment = Attachment()
@@ -294,7 +294,8 @@ class ModelTest(TestCase):
             'test.txt', content=ContentFile('test file content'), save=True
         )
         email.attachments.add(attachment)
-        email.dispatch()
+
+        _send_bulk([email])
 
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'Subject')
