@@ -1,4 +1,3 @@
-from django.core.cache import get_cache
 from django.template.defaultfilters import slugify
 
 from .settings import get_cache_backend
