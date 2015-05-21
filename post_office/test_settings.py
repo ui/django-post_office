@@ -43,7 +43,4 @@ DEFAULT_FROM_EMAIL = 'webmaster@example.com'
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
 )
-
-#TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
