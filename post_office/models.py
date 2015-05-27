@@ -1,3 +1,6 @@
+from email.mime.image import MIMEImage
+from django.conf import settings
+import os
 import sys
 from uuid import uuid4
 
@@ -58,6 +61,7 @@ class Email(models.Model):
     headers = JSONField(blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
     context = context_field_class(blank=True, null=True)
+    embedded_image = models.CharField(max_length=255, blank=True)
 
     class Meta:
         app_label = 'post_office'
@@ -96,6 +100,14 @@ class Email(models.Model):
 
         for attachment in self.attachments.all():
             msg.attach(attachment.name, attachment.file.read())
+
+        if self.embedded_image:
+            fp = open(os.path.join(settings.BASE_DIR, self.embedded_image), 'rb')
+            msg_img = MIMEImage(fp.read())
+            fp.close()
+            msg_img.add_header('Content-ID', 'logo_email.png')
+            msg.attach(msg_img)
+
 
         return msg
 

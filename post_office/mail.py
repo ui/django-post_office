@@ -29,7 +29,7 @@ logger = setup_loghandlers("INFO")
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, headers=None,
            template=None, priority=None, render_on_delivery=False,
-           commit=True):
+           commit=True, embedded_image=None):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -81,6 +81,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             html_message=html_message,
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
+            embedded_image = embedded_image
         )
 
     if commit:
@@ -92,7 +93,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
 def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=None, commit=True, cc=None, bcc=None):
+         log_level=None, commit=True, cc=None, bcc=None, embedded_image=None):
 
     try:
         recipients = parse_emails(recipients)
@@ -139,7 +140,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, headers, template, priority,
-                   render_on_delivery, commit=commit)
+                   render_on_delivery, commit=commit, embedded_image=embedded_image)
 
     if attachments:
         attachments = create_attachments(attachments)
