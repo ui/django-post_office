@@ -210,7 +210,7 @@ class TranslatedEmailTemplate(models.Model):
     content = models.TextField(blank=True,
         verbose_name=_("Content"), validators=[validate_template_syntax])
     html_content = models.TextField(blank=True,
-        verbose_name=_("HTML Content"), validators=[validate_template_syntax])
+        verbose_name=_("HTML content"), validators=[validate_template_syntax])
 
     class Meta:
         unique_together = ('language', 'default_template')
