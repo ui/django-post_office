@@ -5,6 +5,7 @@ from collections import namedtuple
 
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 from post_office.fields import CommaSeparatedEmailField
 
 try:
@@ -30,19 +31,19 @@ class Email(models.Model):
     A model to hold email information.
     """
 
-    PRIORITY_CHOICES = [(PRIORITY.low, 'low'), (PRIORITY.medium, 'medium'),
-                        (PRIORITY.high, 'high'), (PRIORITY.now, 'now')]
-    STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'),
-                      (STATUS.queued, 'queued')]
+    PRIORITY_CHOICES = [(PRIORITY.low, _("low")), (PRIORITY.medium, _("medium")),
+                        (PRIORITY.high, _("high")), (PRIORITY.now, _("now"))]
+    STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
+                      (STATUS.queued, _("queued"))]
 
     from_email = models.CharField(max_length=254,
                                   validators=[validate_email_with_name])
     to = CommaSeparatedEmailField()
     cc = CommaSeparatedEmailField()
     bcc = CommaSeparatedEmailField()
-    subject = models.CharField(max_length=255, blank=True)
-    message = models.TextField(blank=True)
-    html_message = models.TextField(blank=True)
+    subject = models.CharField(max_length=255, blank=True, verbose_name=_("Subject"),)
+    message = models.TextField(blank=True, verbose_name=_("Message"))
+    html_message = models.TextField(blank=True, verbose_name=_("HTML Message"))
     """
     Emails with 'queued' status will get processed by ``send_queued`` command.
     Status field will then be set to ``failed`` or ``sent`` depending on
@@ -152,7 +153,7 @@ class Log(models.Model):
     A model to record sending email sending activities.
     """
 
-    STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed')]
+    STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
 
     email = models.ForeignKey(Email, editable=False, related_name='logs')
     date = models.DateTimeField(auto_now_add=True)
@@ -171,15 +172,15 @@ class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
-    name = models.CharField(max_length=255, help_text=("e.g: 'welcome_email'"))
+    name = models.CharField(max_length=255, help_text=_("e.g: 'welcome_email'"))
     description = models.TextField(blank=True,
-                                   help_text='Description of this template.')
+        help_text=_("Description of this template."))
     subject = models.CharField(max_length=255, blank=True,
-                               validators=[validate_template_syntax])
+        verbose_name=_("Subject"), validators=[validate_template_syntax])
     content = models.TextField(blank=True,
-                               validators=[validate_template_syntax])
+        verbose_name=_("Content"), validators=[validate_template_syntax])
     html_content = models.TextField(blank=True,
-                                    validators=[validate_template_syntax])
+        verbose_name=_("HTML content"), validators=[validate_template_syntax])
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -211,5 +212,5 @@ class Attachment(models.Model):
     A model describing an email attachment.
     """
     file = models.FileField(upload_to=get_upload_path)
-    name = models.CharField(max_length=255, help_text='The original filename')
+    name = models.CharField(max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments')
