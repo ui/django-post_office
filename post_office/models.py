@@ -39,10 +39,10 @@ class Email(models.Model):
                       (STATUS.queued, _("queued"))]
 
     from_email = models.CharField(max_length=254,
-                                  validators=[validate_email_with_name])
-    to = CommaSeparatedEmailField()
-    cc = CommaSeparatedEmailField()
-    bcc = CommaSeparatedEmailField()
+        verbose_name=_("Email From"), validators=[validate_email_with_name])
+    to = CommaSeparatedEmailField(verbose_name=_("Email To"))
+    cc = CommaSeparatedEmailField(verbose_name=_("Cc"))
+    bcc = CommaSeparatedEmailField(verbose_name=_("Bcc"))
     subject = models.CharField(max_length=255, blank=True, verbose_name=_("Subject"),)
     message = models.TextField(blank=True, verbose_name=_("Message"))
     html_message = models.TextField(blank=True, verbose_name=_("HTML Message"))
