@@ -8,8 +8,9 @@ from django.core.mail import get_connection
 from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
+from django.utils.translation import get_language
 
-from .models import Email, EmailTemplate, PRIORITY, STATUS
+from .models import Email, EmailTemplate, TranslatedEmailTemplate, PRIORITY, STATUS
 from .settings import get_batch_size, get_email_backend, get_log_level, get_sending_order
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
@@ -62,9 +63,16 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
     else:
 
         if template:
-            subject = template.subject
-            message = template.content
-            html_message = template.html_content
+            # override template entries with translated instances, if they exists for the current language
+            try:
+                translated_template = template.translated_template.get(language=get_language())
+                subject = translated_template.subject
+                message = translated_template.content
+                html_message = translated_template.html_content
+            except TranslatedEmailTemplate.DoesNotExist:
+                subject = template.subject
+                message = template.content
+                html_message = template.html_content
 
         _context = Context(context or {})
         subject = Template(subject).render(_context)

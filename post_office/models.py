@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from collections import namedtuple
 
+from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -196,6 +197,28 @@ class EmailTemplate(models.Model):
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
+
+
+class TranslatedEmailTemplate(models.Model):
+    language = models.CharField(max_length=12, choices=settings.LANGUAGES,
+        help_text=_("Render template in alternative language"),
+        default=settings.LANGUAGES[0][0])
+    default_template = models.ForeignKey(EmailTemplate, related_name='translated_template')
+    description = models.TextField(blank=True, help_text=_("Description of this template."))
+    subject = models.CharField(max_length=255, blank=True,
+        verbose_name=_("Subject"), validators=[validate_template_syntax])
+    content = models.TextField(blank=True,
+        verbose_name=_("Content"), validators=[validate_template_syntax])
+    html_content = models.TextField(blank=True,
+        verbose_name=_("HTML Content"), validators=[validate_template_syntax])
+
+    class Meta:
+        unique_together = ('language', 'default_template')
+
+    def save(self, *args, **kwargs):
+        self.default_template.save(*args, **kwargs)
+        translated_template = super(TranslatedEmailTemplate, self).save(*args, **kwargs)
+        return translated_template
 
 
 def get_upload_path(instance, filename):

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from django.db import models
 from django.contrib import admin
 from django.forms.widgets import TextInput
 from django.utils import six
 from django.utils.text import Truncator
 
 from .fields import CommaSeparatedEmailField
-from .models import Email, Log, EmailTemplate, STATUS
+from .models import Email, Log, EmailTemplate, TranslatedEmailTemplate, STATUS
 
 
 def get_message_preview(instance):
@@ -66,6 +67,21 @@ class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
 
 
+class SubjectField(TextInput):
+    def __init__(self, *args, **kwargs):
+        super(SubjectField, self).__init__(*args, **kwargs)
+        self.attrs.update({'style': 'width: 610px;'})
+
+
+class TranslatedEmailTemplateInline(admin.StackedInline):
+    model = TranslatedEmailTemplate
+    extra = 0
+    fields = ('language', 'subject', 'content', 'html_content',)
+    formfield_overrides = {
+        models.CharField: {'widget': SubjectField}
+    }
+
+
 class EmailTemplateAdmin(admin.ModelAdmin):
     list_display = ('name', 'description_shortened', 'subject', 'created')
     search_fields = ('name', 'description', 'subject')
@@ -77,6 +93,10 @@ class EmailTemplateAdmin(admin.ModelAdmin):
             'fields': ('subject', 'content', 'html_content'),
         }),
     ]
+    inlines = (TranslatedEmailTemplateInline,)
+    formfield_overrides = {
+        models.CharField: {'widget': SubjectField}
+    }
 
     def description_shortened(self, instance):
         return Truncator(instance.description.split('\n')[0]).chars(200)
