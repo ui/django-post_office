@@ -8,7 +8,7 @@ from collections import namedtuple
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, override as translation_override
 from post_office.fields import CommaSeparatedEmailField
 
 try:
@@ -62,6 +62,8 @@ class Email(models.Model):
     headers = JSONField(blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
     context = context_field_class(blank=True, null=True)
+    language = models.CharField(max_length=12, blank=True, null=True,
+        help_text=_("Language in which the given template shall be rendered."))
 
     class Meta:
         app_label = 'post_office'
@@ -78,9 +80,16 @@ class Email(models.Model):
 
         if self.template is not None:
             _context = Context(self.context)
-            subject = Template(self.template.subject).render(_context)
-            message = Template(self.template.content).render(_context)
-            html_message = Template(self.template.html_content).render(_context)
+            try:
+                translated_template = self.template.translated_template.get(language=self.language)
+                with translation_override(self.language):
+                    subject = Template(translated_template.subject).render(_context)
+                    message = Template(translated_template.content).render(_context)
+                    html_message = Template(translated_template.html_content).render(_context)
+            except TranslatedEmailTemplate.DoesNotExist:
+                subject = Template(self.template.subject).render(_context)
+                message = Template(self.template.content).render(_context)
+                html_message = Template(self.template.html_content).render(_context)
         else:
             subject = self.subject
             message = self.message

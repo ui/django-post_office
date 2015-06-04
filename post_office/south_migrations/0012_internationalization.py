@@ -12,7 +12,7 @@ class Migration(SchemaMigration):
         db.create_table(u'post_office_translatedemailtemplate', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('language', self.gf('django.db.models.fields.CharField')(default=u'de', max_length=12)),
-            ('default_template', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['post_office.EmailTemplate'])),
+            ('default_template', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'translated_template', to=orm['post_office.EmailTemplate'])),
             ('description', self.gf('django.db.models.fields.TextField')(blank=True)),
             ('subject', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
             ('content', self.gf('django.db.models.fields.TextField')(blank=True)),
@@ -23,6 +23,11 @@ class Migration(SchemaMigration):
         # Adding unique constraint on 'TranslatedEmailTemplate', fields ['language', 'default_template']
         db.create_unique(u'post_office_translatedemailtemplate', ['language', 'default_template_id'])
 
+        # Adding field 'Email.language'
+        db.add_column(u'post_office_email', 'language',
+                      self.gf('django.db.models.fields.CharField')(max_length=12, null=True, blank=True),
+                      keep_default=False)
+
 
     def backwards(self, orm):
         # Removing unique constraint on 'TranslatedEmailTemplate', fields ['language', 'default_template']
@@ -30,6 +35,9 @@ class Migration(SchemaMigration):
 
         # Deleting model 'TranslatedEmailTemplate'
         db.delete_table(u'post_office_translatedemailtemplate')
+
+        # Deleting field 'Email.language'
+        db.delete_column(u'post_office_email', 'language')
 
 
     models = {
@@ -50,6 +58,7 @@ class Migration(SchemaMigration):
             'headers': ('jsonfield.fields.JSONField', [], {'null': 'True', 'blank': 'True'}),
             'html_message': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'language': ('django.db.models.fields.CharField', [], {'max_length': '12', 'null': 'True', 'blank': 'True'}),
             'last_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
             'message': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'priority': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -82,7 +91,7 @@ class Migration(SchemaMigration):
         u'post_office.translatedemailtemplate': {
             'Meta': {'unique_together': "((u'language', u'default_template'),)", 'object_name': 'TranslatedEmailTemplate'},
             'content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'default_template': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['post_office.EmailTemplate']"}),
+            'default_template': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'translated_template'", 'to': u"orm['post_office.EmailTemplate']"}),
             'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'html_content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),

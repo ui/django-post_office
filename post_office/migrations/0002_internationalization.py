@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(help_text='Description of this template.', blank=True)),
                 ('subject', models.CharField(blank=True, max_length=255, verbose_name='Subject', validators=[post_office.validators.validate_template_syntax])),
                 ('content', models.TextField(blank=True, verbose_name='Content', validators=[post_office.validators.validate_template_syntax])),
-                ('html_content', models.TextField(blank=True, verbose_name='HTML Content', validators=[post_office.validators.validate_template_syntax])),
+                ('html_content', models.TextField(blank=True, verbose_name='HTML content', validators=[post_office.validators.validate_template_syntax])),
                 ('default_template', models.ForeignKey(related_name='translated_template', to='post_office.EmailTemplate')),
             ],
             options={
@@ -31,6 +31,12 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='translatedemailtemplate',
             unique_together=set([('language', 'default_template')]),
+        ),
+        migrations.AddField(
+            model_name='email',
+            name='language',
+            field=models.CharField(help_text='Language in which the given template shall be rendered.', max_length=12, null=True, blank=True),
+            preserve_default=True,
         ),
         migrations.AlterField(
             model_name='email',

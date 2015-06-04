@@ -30,7 +30,7 @@ logger = setup_loghandlers("INFO")
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, headers=None,
            template=None, priority=None, render_on_delivery=False,
-           commit=True):
+           language=None, commit=True):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -46,6 +46,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         bcc = []
     if context is None:
         context = ''
+    if language is None:
+        language = get_language()
 
     # If email is to be rendered during delivery, save all necessary
     # information
@@ -57,7 +59,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             bcc=bcc,
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
-            context=context, template=template
+            context=context, template=template, language=language
         )
 
     else:
@@ -65,7 +67,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         if template:
             # override template entries with translated instances, if they exists for the current language
             try:
-                translated_template = template.translated_template.get(language=get_language())
+                translated_template = template.translated_template.get(language=language)
                 subject = translated_template.subject
                 message = translated_template.content
                 html_message = translated_template.html_content
@@ -100,7 +102,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
 def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=None, commit=True, cc=None, bcc=None):
+         log_level=None, commit=True, cc=None, bcc=None, language=None):
 
     try:
         recipients = parse_emails(recipients)
@@ -147,7 +149,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, headers, template, priority,
-                   render_on_delivery, commit=commit)
+                   render_on_delivery, language, commit=commit)
 
     if attachments:
         attachments = create_attachments(attachments)
@@ -178,7 +180,7 @@ def get_queued():
      - Has scheduled_time lower than the current time or None
     """
     return Email.objects.filter(status=STATUS.queued) \
-        .select_related('template') \
+        .select_related('template', 'template__translated_template') \
         .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
         .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
 
