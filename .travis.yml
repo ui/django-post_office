@@ -8,7 +8,7 @@ python:
 
 env:
   - DJANGO=1.4.20
-  - DJANGO=1.5.13
+  - DJANGO=1.5.12
   - DJANGO=1.6.11
   - DJANGO=1.7.8
   - DJANGO=1.8.2
