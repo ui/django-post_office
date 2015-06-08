@@ -465,6 +465,14 @@ To run the test suite::
 Changelog
 =========
 
+Version 1.1.2
+-------------
+* Adds Django 1.8 compatibility.
+
+Version 1.1.1
+-------------
+* Fixes a migration error. Thanks @garry-cairns!
+
 Version 1.1.0
 -------------
 * Support for Django 1.7 migrations. If you're still on Django < 1.7,
