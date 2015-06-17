@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 from django.db import models
 from django.contrib import admin
+from django.conf import settings
 from django.forms.widgets import TextInput
 from django.utils import six
 from django.utils.text import Truncator
@@ -93,7 +94,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
             'fields': ('subject', 'content', 'html_content'),
         }),
     ]
-    inlines = (TranslatedEmailTemplateInline,)
+    inlines = (TranslatedEmailTemplateInline,) if settings.USE_I18N else ()
     formfield_overrides = {
         models.CharField: {'widget': SubjectField}
     }
