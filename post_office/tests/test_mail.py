@@ -137,19 +137,23 @@ class MailTest(TestCase):
         """
         Ensure BATCH_SIZE setting is read correctly.
         """
+        previous_settings = settings.POST_OFFICE
         self.assertEqual(get_batch_size(), 5000)
         setattr(settings, 'POST_OFFICE', {'BATCH_SIZE': 100})
         self.assertEqual(get_batch_size(), 100)
+        settings.POST_OFFICE = previous_settings
 
     def test_get_log_level(self):
         """
         Ensure LOG_LEVEL setting is read correctly.
         """
+        previous_settings = settings.POST_OFFICE
         self.assertEqual(get_log_level(), 2)
         setattr(settings, 'POST_OFFICE', {'LOG_LEVEL': 1})
         self.assertEqual(get_log_level(), 1)
         # Restore ``LOG_LEVEL``
         setattr(settings, 'POST_OFFICE', {'LOG_LEVEL': 2})
+        settings.POST_OFFICE = previous_settings
 
     def test_create(self):
         """

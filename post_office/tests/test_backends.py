@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY
-from ..settings import get_email_backend
+from ..settings import get_backend
 
 
 class ErrorRaisingBackend(backends.base.BaseEmailBackend):
@@ -39,22 +39,26 @@ class BackendTest(TestCase):
             delattr(settings, 'EMAIL_BACKEND')
         if hasattr(settings, 'POST_OFFICE_BACKEND'):
             delattr(settings, 'POST_OFFICE_BACKEND')
+
+        previous_settings = settings.POST_OFFICE
+        delattr(settings, 'POST_OFFICE')
         # If no email backend is set, backend should default to SMTP
-        self.assertEqual(get_email_backend(), 'django.core.mail.backends.smtp.EmailBackend')
+        self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If EMAIL_BACKEND is set to PostOfficeBackend, use SMTP to send by default
         setattr(settings, 'EMAIL_BACKEND', 'post_office.EmailBackend')
-        self.assertEqual(get_email_backend(), 'django.core.mail.backends.smtp.EmailBackend')
+        self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If EMAIL_BACKEND is set on new dictionary-styled settings, use that
         setattr(settings, 'POST_OFFICE', {'EMAIL_BACKEND': 'test'})
-        self.assertEqual(get_email_backend(), 'test')
+        self.assertEqual(get_backend(), 'test')
         delattr(settings, 'POST_OFFICE')
 
         if old_email_backend:
             setattr(settings, 'EMAIL_BACKEND', old_email_backend)
         else:
             delattr(settings, 'EMAIL_BACKEND')
+        setattr(settings, 'POST_OFFICE', previous_settings)
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_sending_html_email(self):
@@ -94,10 +98,15 @@ class BackendTest(TestCase):
         self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')
 
     @override_settings(POST_OFFICE={'DEFAULT_PRIORITY': 'now',
-                                    'EMAIL_BACKEND': 'django.core.mail.backends.locmem.EmailBackend'},
+                                    'BACKENDS': {
+                                        'default': 'django.core.mail.backends.dummy.EmailBackend',
+                                        'locmem': 'django.core.mail.backends.locmem.EmailBackend',
+                                        'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
+                                        'dummy': 'django.core.mail.backends.dummy.EmailBackend',
+                                    }},
                        EMAIL_BACKEND='post_office.EmailBackend')
     def test_default_priority_now(self):
         # If DEFAULT_PRIORITY is "now", mails should be sent right away
-        send_mail('Test', 'Message', 'from@example.com', ['to@example.com'])
+        send_mail('Test', 'Message', 'from1@example.com', ['to@example.com'])
         email = Email.objects.latest('id')
         self.assertEqual(email.status, STATUS.sent)

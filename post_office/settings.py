@@ -1,3 +1,5 @@
+import warnings
+
 from django.conf import settings
 from django.core.cache.backends.base import InvalidCacheBackendError
 
@@ -13,18 +15,45 @@ except ImportError:
     from django.core.cache import get_cache
 
 
-def get_email_backend():
+def get_backend(alias='default'):
+    return get_available_backends()[alias]
+
+
+def get_available_backends():
+    """ Returns a dictionary of defined backend classes. For example:
+    {
+        'default': 'django.core.mail.backends.smtp.EmailBackend',
+        'locmem': 'django.core.mail.backends.locmem.EmailBackend',
+    }
+    """
+    backends = get_config().get('BACKENDS', {})
+
+    if backends:
+        return backends
+
+    # Try to get backend settings from old style
+    # POST_OFFICE = {
+    #     'EMAIL_BACKEND': 'mybackend'
+    # }
     backend = get_config().get('EMAIL_BACKEND')
+    if backend:
+        warnings.warn('Please use the new POST_OFFICE["BACKENDS"] settings',
+                      DeprecationWarning)
 
-    if not backend:
-        backend = getattr(settings, 'EMAIL_BACKEND',
-                          'django.core.mail.backends.smtp.EmailBackend')
-        # If EMAIL_BACKEND is set to use PostOfficeBackend
-        # and POST_OFFICE_BACKEND is not set, fall back to SMTP
-        if 'post_office.EmailBackend' in backend:
-            backend = 'django.core.mail.backends.smtp.EmailBackend'
+        backends['default'] = backend
+        return backends
 
-    return backend
+    # Fall back to Django's EMAIL_BACKEND definition
+    backends['default'] = getattr(
+        settings, 'EMAIL_BACKEND',
+        'django.core.mail.backends.smtp.EmailBackend')
+
+    # If EMAIL_BACKEND is set to use PostOfficeBackend
+    # and POST_OFFICE_BACKEND is not set, fall back to SMTP
+    if 'post_office.EmailBackend' in backends['default']:
+        backends['default'] = 'django.core.mail.backends.smtp.EmailBackend'
+
+    return backends
 
 
 def get_cache_backend():

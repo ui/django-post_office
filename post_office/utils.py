@@ -13,7 +13,7 @@ except ImportError:
 from post_office import cache
 from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
-from .settings import get_default_priority, get_email_backend
+from .settings import get_default_priority, get_backend
 
 try:
     from django.utils import timezone
@@ -61,7 +61,7 @@ def send_queued_mail():
 
         # Try to open a connection, if we can't just pass in None as connection
         try:
-            connection = get_connection(get_email_backend())
+            connection = get_connection(get_backend())
             connection.open()
         except Exception:
             connection = None

@@ -22,7 +22,12 @@ CACHES = {
 }
 
 POST_OFFICE = {
-    # 'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField',
+    'BACKENDS': {
+        'default': 'django.core.mail.backends.dummy.EmailBackend',
+        'locmem': 'django.core.mail.backends.locmem.EmailBackend',
+        'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
+        'smtp': 'django.core.mail.backends.smtp.EmailBackend',
+    }
 }
 
 

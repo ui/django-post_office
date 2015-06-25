@@ -17,7 +17,8 @@ from django.template import Context, Template
 from jsonfield import JSONField
 from post_office import cache
 from .compat import text_type
-from .settings import get_email_backend, context_field_class, get_log_level
+from .connections import connections
+from .settings import get_backend, context_field_class, get_log_level
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -58,6 +59,7 @@ class Email(models.Model):
     headers = JSONField(blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
     context = context_field_class(blank=True, null=True)
+    backend_alias = models.CharField(blank=True, default='', max_length=64)
 
     class Meta:
         app_label = 'post_office'
@@ -110,7 +112,7 @@ class Email(models.Model):
 
         try:
             if connection is None:
-                connection = get_connection(get_email_backend())
+                connection = connections[self.backend_alias or 'default']
                 connection.open()
                 connection_opened = True
 
@@ -122,7 +124,7 @@ class Email(models.Model):
             if connection_opened:
                 connection.close()
 
-        except Exception:
+        except Exception as e:
             status = STATUS.failed
             exception, message, _ = sys.exc_info()
             exception_type = exception.__name__
