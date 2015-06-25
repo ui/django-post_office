@@ -1,5 +1,3 @@
-import warnings
-
 from django.conf import settings
 from django.core.cache.backends.base import InvalidCacheBackendError
 
@@ -19,17 +17,13 @@ def get_email_backend():
     backend = get_config().get('EMAIL_BACKEND')
 
     if not backend:
-        if hasattr(settings, 'POST_OFFICE_BACKEND'):
-            warnings.warn("Please use the new dictionary styled settings for "
-                          "POST_OFFICE_BACKEND", DeprecationWarning)
-            backend = getattr(settings, 'POST_OFFICE_BACKEND')
-        else:
-            backend = getattr(settings, 'EMAIL_BACKEND',
-                              'django.core.mail.backends.smtp.EmailBackend')
-            # If EMAIL_BACKEND is set to use PostOfficeBackend
-            # and POST_OFFICE_BACKEND is not set, fall back to SMTP
-            if 'post_office.EmailBackend' in backend:
-                backend = 'django.core.mail.backends.smtp.EmailBackend'
+        backend = getattr(settings, 'EMAIL_BACKEND',
+                          'django.core.mail.backends.smtp.EmailBackend')
+        # If EMAIL_BACKEND is set to use PostOfficeBackend
+        # and POST_OFFICE_BACKEND is not set, fall back to SMTP
+        if 'post_office.EmailBackend' in backend:
+            backend = 'django.core.mail.backends.smtp.EmailBackend'
+
     return backend
 
 
