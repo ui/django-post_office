@@ -97,14 +97,13 @@ class BackendTest(TestCase):
         self.assertEqual(email.attachments.all()[0].name, 'attachment.txt')
         self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')
 
-    @override_settings(POST_OFFICE={'DEFAULT_PRIORITY': 'now',
-                                    'BACKENDS': {
-                                        'default': 'django.core.mail.backends.dummy.EmailBackend',
-                                        'locmem': 'django.core.mail.backends.locmem.EmailBackend',
-                                        'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
-                                        'dummy': 'django.core.mail.backends.dummy.EmailBackend',
-                                    }},
-                       EMAIL_BACKEND='post_office.EmailBackend')
+    @override_settings(
+        EMAIL_BACKEND='post_office.EmailBackend',
+        POST_OFFICE={
+            'DEFAULT_PRIORITY': 'now',
+            'BACKENDS': {'default': 'django.core.mail.backends.dummy.EmailBackend'}
+        }
+    )
     def test_default_priority_now(self):
         # If DEFAULT_PRIORITY is "now", mails should be sent right away
         send_mail('Test', 'Message', 'from1@example.com', ['to@example.com'])
