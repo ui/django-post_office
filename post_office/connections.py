@@ -29,11 +29,16 @@ class ConnectionHandler(object):
             raise KeyError('%s is not a valid backend alias' % alias)
 
         connection = get_connection(backend)
+        connection.open()
         self._connections.connections[alias] = connection
         return connection
 
     def all(self):
         return getattr(self._connections, 'connections', {}).values()
+
+    def close(self):
+        for connection in self.all():
+            connection.close()
 
 
 connections = ConnectionHandler()

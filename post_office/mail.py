@@ -250,7 +250,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     if connection:
         connection.close()
 
-    logger.info('Process finished, %s emails attempted, %s sent, %s failed' %
-               (email_count, sent_count, failed_count))
+    logger.info('Process finished, %s attempted, %s sent, %s failed' %
+                (email_count, sent_count, failed_count))
 
     return (sent_count, failed_count)

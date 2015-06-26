@@ -72,15 +72,16 @@ class MailTest(TestCase):
         total_sent, total_failed = send_queued(processes=2)
         self.assertEqual(total_sent, 3)
 
-    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_send_bulk(self):
         """
         Ensure _send_bulk() properly sends out emails.
         """
         email = Email.objects.create(
             to=['to@example.com'], from_email='bob@example.com',
-            subject='send bulk', message='Message', status=STATUS.queued)
-        _send_bulk([email])
+            subject='send bulk', message='Message', status=STATUS.queued,
+            backend_alias='locmem')
+        sent_count, _ = _send_bulk([email])
+        self.assertEqual(sent_count, 1)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'send bulk')
 
@@ -93,10 +94,11 @@ class MailTest(TestCase):
         self.assertEqual(connection_counter, 0)
         email = Email.objects.create(to=['to@example.com'],
                                      from_email='bob@example.com', subject='',
-                                     message='', status=STATUS.queued)
+                                     message='', status=STATUS.queued, backend_alias='connection_tester')
         email_2 = Email.objects.create(to=['to@example.com'],
                                        from_email='bob@example.com', subject='',
-                                       message='', status=STATUS.queued)
+                                       message='', status=STATUS.queued,
+                                       backend_alias='connection_tester')
         _send_bulk([email, email_2])
         self.assertEqual(connection_counter, 1)
 

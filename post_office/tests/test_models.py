@@ -78,7 +78,6 @@ class ModelTest(TestCase):
         # Ensure that after dispatch status and logs are correctly set
         email.dispatch()
         log = Log.objects.latest('id')
-        print 'LOG MESSAGE:', log.message
         self.assertEqual(email.status, STATUS.sent)
         self.assertEqual(log.email, email)
 
@@ -88,7 +87,7 @@ class ModelTest(TestCase):
         """
         email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test', message='Message',
-                                    backend_alias='error')
+                                     backend_alias='error')
         # Ensure that after dispatch status and logs are correctly set
         email.dispatch()
         log = Log.objects.latest('id')
@@ -97,27 +96,6 @@ class ModelTest(TestCase):
         self.assertEqual(log.status, STATUS.failed)
         self.assertEqual(log.message, 'Fake Error')
         self.assertEqual(log.exception_type, 'Exception')
-
-    # def test_dispatch_uses_opened_connection(self):
-    #     """
-    #     Test that the ``dispatch`` method uses the argument supplied connection.
-    #     We test this by overriding the email backend with a dummy backend,
-    #     but passing in a previously opened connection from locmem backend.
-    #     """
-    #     email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
-    #                                  subject='Test', message='Message')
-    #     previous_backend = django_settings.EMAIL_BACKEND
-    #     django_settings.EMAIL_BACKEND = \
-    #         'django.core.mail.backends.dummy.EmailBackend'
-    #     email.dispatch()
-    #     # Outbox should be empty since dummy backend doesn't do anything
-    #     self.assertEqual(len(mail.outbox), 0)
-    #     django_settings.EMAIL_BACKEND = previous_backend
-
-    #     # Message should go to outbox since locmem connection is explicitly passed in
-    #     connection = get_connection('django.core.mail.backends.locmem.EmailBackend')
-    #     email.dispatch(connection=connection)
-    #     self.assertEqual(len(mail.outbox), 1)
 
     def test_errors_while_getting_connection_are_logged(self):
         """

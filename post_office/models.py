@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from collections import namedtuple
 
-from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from post_office.fields import CommaSeparatedEmailField
 
@@ -18,7 +18,7 @@ from jsonfield import JSONField
 from post_office import cache
 from .compat import text_type
 from .connections import connections
-from .settings import get_backend, context_field_class, get_log_level
+from .settings import context_field_class, get_log_level
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -69,8 +69,8 @@ class Email(models.Model):
 
     def email_message(self, connection=None):
         """
-        Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object
-        from a ``Message`` instance, depending on whether html_message is empty.
+        Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object,
+        depending on whether html_message is empty.
         """
         subject = smart_text(self.subject)
 
@@ -105,26 +105,18 @@ class Email(models.Model):
         """
         Actually send out the email and log the result
         """
-        connection_opened = False
 
         if log_level is None:
             log_level = get_log_level()
 
         try:
-            if connection is None:
-                connection = connections[self.backend_alias or 'default']
-                connection.open()
-                connection_opened = True
-
+            connection = connections[self.backend_alias or 'default']
             self.email_message(connection=connection).send()
             status = STATUS.sent
             message = ''
             exception_type = ''
 
-            if connection_opened:
-                connection.close()
-
-        except Exception as e:
+        except:
             status = STATUS.failed
             exception, message, _ = sys.exc_info()
             exception_type = exception.__name__
