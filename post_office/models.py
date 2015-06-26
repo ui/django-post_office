@@ -101,7 +101,7 @@ class Email(models.Model):
 
         return msg
 
-    def dispatch(self, connection=None, log_level=None):
+    def dispatch(self, log_level=None):
         """
         Actually send out the email and log the result
         """

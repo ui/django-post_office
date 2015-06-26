@@ -4,13 +4,13 @@ from multiprocessing import Pool
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.mail import get_connection
 from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 
+from .connections import connections
 from .models import Email, EmailTemplate, PRIORITY, STATUS
-from .settings import get_batch_size, get_backend, get_log_level, get_sending_order
+from .settings import get_batch_size, get_log_level, get_sending_order
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
@@ -228,16 +228,9 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     email_count = len(emails)
     logger.info('Process started, sending %s emails' % email_count)
 
-    # Try to open a connection, if we can't just pass in None as connection
-    try:
-        connection = get_connection(get_backend())
-        connection.open()
-    except Exception:
-        connection = None
-
     try:
         for email in emails:
-            status = email.dispatch(connection, log_level)
+            status = email.dispatch(log_level=log_level)
             if status == STATUS.sent:
                 sent_count += 1
                 logger.debug('Successfully sent email #%d' % email.id)
@@ -247,8 +240,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     except Exception as e:
         logger.error(e, exc_info=sys.exc_info(), extra={'status_code': 500})
 
-    if connection:
-        connection.close()
+    connections.close()
 
     logger.info('Process finished, %s attempted, %s sent, %s failed' %
                 (email_count, sent_count, failed_count))
