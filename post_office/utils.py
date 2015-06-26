@@ -1,9 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.core.mail import get_connection
 from django.core.validators import validate_email
-from django.db.models import Q
 
 try:
     from django.utils.encoding import force_text
@@ -13,7 +11,8 @@ except ImportError:
 from post_office import cache
 from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
-from .settings import get_default_priority, get_backend
+from .settings import get_default_priority
+
 
 try:
     from django.utils import timezone
@@ -45,38 +44,6 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
         for email in emails:
             email.dispatch()
     return emails
-
-
-def send_queued_mail():
-    """
-    Sends out all queued mails that has scheduled_time less than now or None
-    """
-    sent_count = 0
-    failed_count = 0
-    queued_emails = Email.objects.filter(status=STATUS.queued) \
-        .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
-        .order_by('-priority')
-
-    if queued_emails:
-
-        # Try to open a connection, if we can't just pass in None as connection
-        try:
-            connection = get_connection(get_backend())
-            connection.open()
-        except Exception:
-            connection = None
-
-        for mail in queued_emails:
-            status = mail.dispatch(connection)
-            if status == STATUS.sent:
-                sent_count += 1
-            else:
-                failed_count += 1
-        if connection:
-            connection.close()
-    print('%s emails attempted, %s sent, %s failed' % (
-        len(queued_emails), sent_count, failed_count)
-    )
 
 
 def get_email_template(name):
