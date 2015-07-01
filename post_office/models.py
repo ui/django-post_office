@@ -81,15 +81,14 @@ class Email(models.Model):
         if self.template is not None:
             _context = Context(self.context)
             try:
-                translated_template = self.template.translated_template.get(language=self.language)
-                with translation_override(self.language):
-                    subject = Template(translated_template.subject).render(_context)
-                    message = Template(translated_template.content).render(_context)
-                    html_message = Template(translated_template.html_content).render(_context)
+                template = self.template.translated_template.get(language=self.language)
             except TranslatedEmailTemplate.DoesNotExist:
-                subject = Template(self.template.subject).render(_context)
-                message = Template(self.template.content).render(_context)
-                html_message = Template(self.template.html_content).render(_context)
+                template = self.template
+            finally:
+                with translation_override(self.language):
+                    subject = Template(template.subject).render(_context)
+                    message = Template(template.content).render(_context)
+                    html_message = Template(template.html_content).render(_context)
         else:
             subject = self.subject
             message = self.message
@@ -180,24 +179,32 @@ class Log(models.Model):
         return text_type(self.date)
 
 
-class EmailTemplate(models.Model):
-    """
-    Model to hold template information from db
-    """
-    name = models.CharField(max_length=255, help_text=_("e.g: 'welcome_email'"))
-    description = models.TextField(blank=True,
-        help_text=_("Description of this template."))
+class EmailTemplatePayload(models.Model):
     subject = models.CharField(max_length=255, blank=True,
         verbose_name=_("Subject"), validators=[validate_template_syntax])
     content = models.TextField(blank=True,
         verbose_name=_("Content"), validators=[validate_template_syntax])
     html_content = models.TextField(blank=True,
         verbose_name=_("HTML content"), validators=[validate_template_syntax])
+
+    class Meta:
+        abstract = True
+
+
+class EmailTemplate(EmailTemplatePayload):
+    """
+    Model to hold template information from db
+    """
+    name = models.CharField(max_length=255, help_text=_("e.g: 'welcome_email'"))
+    description = models.TextField(blank=True,
+        help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         app_label = 'post_office'
+        verbose_name = _("Email Template")
+        verbose_name_plural = _("Email Templates")
 
     def __unicode__(self):
         return self.name
@@ -208,21 +215,16 @@ class EmailTemplate(models.Model):
         return template
 
 
-class TranslatedEmailTemplate(models.Model):
+class TranslatedEmailTemplate(EmailTemplatePayload):
     language = models.CharField(max_length=12, choices=settings.LANGUAGES,
         help_text=_("Render template in alternative language"),
         default=settings.LANGUAGES[0][0])
     default_template = models.ForeignKey(EmailTemplate, related_name='translated_template')
-    description = models.TextField(blank=True, help_text=_("Description of this template."))
-    subject = models.CharField(max_length=255, blank=True,
-        verbose_name=_("Subject"), validators=[validate_template_syntax])
-    content = models.TextField(blank=True,
-        verbose_name=_("Content"), validators=[validate_template_syntax])
-    html_content = models.TextField(blank=True,
-        verbose_name=_("HTML content"), validators=[validate_template_syntax])
 
     class Meta:
         unique_together = ('language', 'default_template')
+        verbose_name = _("Translated Email")
+        verbose_name_plural = _("Translated Emails")
 
     def save(self, *args, **kwargs):
         self.default_template.save(*args, **kwargs)

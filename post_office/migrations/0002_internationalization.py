@@ -17,20 +17,25 @@ class Migration(migrations.Migration):
             name='TranslatedEmailTemplate',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('language', models.CharField(default=b'en-us', help_text='Render template in alternative language', max_length=12, choices=[(b'en-us', b'English')])),
-                ('description', models.TextField(help_text='Description of this template.', blank=True)),
                 ('subject', models.CharField(blank=True, max_length=255, verbose_name='Subject', validators=[post_office.validators.validate_template_syntax])),
                 ('content', models.TextField(blank=True, verbose_name='Content', validators=[post_office.validators.validate_template_syntax])),
                 ('html_content', models.TextField(blank=True, verbose_name='HTML content', validators=[post_office.validators.validate_template_syntax])),
+                ('language', models.CharField(default=b'en-us', help_text='Render template in alternative language', max_length=12, choices=[(b'en-us', b'English')])),
                 ('default_template', models.ForeignKey(related_name='translated_template', to='post_office.EmailTemplate')),
             ],
             options={
+                'verbose_name': 'Translated Email',
+                'verbose_name_plural': 'Translated Emails',
             },
             bases=(models.Model,),
         ),
         migrations.AlterUniqueTogether(
             name='translatedemailtemplate',
             unique_together=set([('language', 'default_template')]),
+        ),
+        migrations.AlterModelOptions(
+            name='emailtemplate',
+            options={'verbose_name': 'Email Template', 'verbose_name_plural': 'Email Templates'},
         ),
         migrations.AddField(
             model_name='email',

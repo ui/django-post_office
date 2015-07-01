@@ -11,12 +11,11 @@ class Migration(SchemaMigration):
         # Adding model 'TranslatedEmailTemplate'
         db.create_table(u'post_office_translatedemailtemplate', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('language', self.gf('django.db.models.fields.CharField')(default=u'de', max_length=12)),
-            ('default_template', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'translated_template', to=orm['post_office.EmailTemplate'])),
-            ('description', self.gf('django.db.models.fields.TextField')(blank=True)),
             ('subject', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
             ('content', self.gf('django.db.models.fields.TextField')(blank=True)),
             ('html_content', self.gf('django.db.models.fields.TextField')(blank=True)),
+            ('language', self.gf('django.db.models.fields.CharField')(default=u'de', max_length=12)),
+            ('default_template', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'translated_template', to=orm['post_office.EmailTemplate'])),
         ))
         db.send_create_signal(u'post_office', ['TranslatedEmailTemplate'])
 
@@ -92,7 +91,6 @@ class Migration(SchemaMigration):
             'Meta': {'unique_together': "((u'language', u'default_template'),)", 'object_name': 'TranslatedEmailTemplate'},
             'content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'default_template': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'translated_template'", 'to': u"orm['post_office.EmailTemplate']"}),
-            'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'html_content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'language': ('django.db.models.fields.CharField', [], {'default': "u'de'", 'max_length': '12'}),

@@ -67,11 +67,10 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         if template:
             # override template entries with translated instances, if they exists for the current language
             try:
-                translated_template = template.translated_template.get(language=language)
-                subject = translated_template.subject
-                message = translated_template.content
-                html_message = translated_template.html_content
+                template = template.translated_template.get(language=language)
             except TranslatedEmailTemplate.DoesNotExist:
+                pass
+            finally:
                 subject = template.subject
                 message = template.content
                 html_message = template.html_content
