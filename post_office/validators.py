@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.template import Template, TemplateSyntaxError
+from django.template import Template, TemplateSyntaxError, TemplateDoesNotExist
 from django.utils.encoding import force_text
 
 from .compat import text_type
@@ -46,5 +46,5 @@ def validate_template_syntax(source):
     """
     try:
         Template(source)
-    except TemplateSyntaxError as err:
+    except (TemplateSyntaxError, TemplateDoesNotExist) as err:
         raise ValidationError(text_type(err))

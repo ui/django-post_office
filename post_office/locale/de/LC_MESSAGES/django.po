@@ -1,0 +1,107 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-05-29 11:59+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: fields.py:11
+msgid "Comma-separated emails"
+msgstr "Komma separierte Emails"
+
+#: fields.py:20
+msgid "Only comma separated emails are allowed."
+msgstr "Nur Komma separierte Emails sind erlaubt"
+
+#: models.py:37
+msgid "low"
+msgstr "niedrig"
+
+#: models.py:37
+msgid "medium"
+msgstr "mittel"
+
+#: models.py:38
+msgid "high"
+msgstr "hoch"
+
+#: models.py:38
+msgid "now"
+msgstr "sofort"
+
+#: models.py:39 models.py:159
+msgid "sent"
+msgstr "gesendet"
+
+#: models.py:39 models.py:159
+msgid "failed"
+msgstr "fehlgeschlagen"
+
+#: models.py:40
+msgid "queued"
+msgstr "in der Warteschleife"
+
+#: models.py:43
+msgid "Email From"
+msgstr "Email von"
+
+#: models.py:44
+msgid "Email To"
+msgstr "Email an"
+
+#: models.py:45
+msgid "Cc"
+msgstr "Kopie"
+
+#: models.py:46
+msgid "Bcc"
+msgstr "Blinde Kopie"
+
+#: models.py:47 models.py:182 models.py:209
+msgid "Subject"
+msgstr "Betreff"
+
+#: models.py:48
+msgid "Message"
+msgstr "Nachricht"
+
+#: models.py:49
+msgid "HTML Message"
+msgstr "HTML Nachricht"
+
+#: models.py:178
+msgid "e.g: 'welcome_email'"
+msgstr "z.B. 'welcome_email'"
+
+#: models.py:180 models.py:207
+msgid "Description of this template."
+msgstr "Beschreibung dieser Vorlage"
+
+#: models.py:184 models.py:211
+msgid "Content"
+msgstr "Inhalt"
+
+#: models.py:186
+msgid "HTML content"
+msgstr "HTML Inhalt"
+
+#: models.py:204
+msgid "Render template in alternative language"
+msgstr "In alternativer Sprache rendern"
+
+#: models.py:240
+msgid "The original filename"
+msgstr "Original Dateiname"

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from datetime import date, datetime
 
 from django.core import mail
@@ -6,6 +8,7 @@ from django.conf import settings
 
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.utils import translation
 
 from ..settings import get_batch_size, get_log_level
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
@@ -303,6 +306,7 @@ class MailTest(TestCase):
         self.assertEqual(email.context, None)
         self.assertEqual(email.template, None)
 
+    @override_settings(LANGUAGES=(('en', 'English'), ('ru', 'Russian')))
     def test_send_with_template(self):
         """If render_on_delivery is False, subject and content
         will be rendered, context won't be saved."""
@@ -312,6 +316,15 @@ class MailTest(TestCase):
             content='Content {{ name }}',
             html_content='HTML {{ name }}'
         )
+        russian_template = EmailTemplate(
+            default_template=template,
+            language='ru',
+            subject='предмет {{ name }}',
+            content='содержание {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+        russian_template.save()
+
         context = {'name': 'test'}
         email = send(recipients=['to@example.com'], sender='from@example.com',
                      template=template, context=context)
@@ -321,3 +334,24 @@ class MailTest(TestCase):
         self.assertEqual(email.html_message, 'HTML test')
         self.assertEqual(email.context, None)
         self.assertEqual(email.template, None)
+
+        # check, if we use the Russian version
+        email = send(recipients=['to@example.com'], sender='from@example.com',
+                 template=russian_template, context=context)
+        email = Email.objects.get(id=email.id)
+        self.assertEqual(email.subject, 'предмет test')
+        self.assertEqual(email.message, 'содержание test')
+        self.assertEqual(email.html_message, 'HTML test')
+        self.assertEqual(email.context, None)
+        self.assertEqual(email.template, None)
+
+        # check, if Italian falls back to English
+        with translation.override('it'):
+            email = send(recipients=['to@example.com'], sender='from@example.com',
+                     template=template, context=context)
+            email = Email.objects.get(id=email.id)
+            self.assertEqual(email.subject, 'Subject test')
+            self.assertEqual(email.message, 'Content test')
+            self.assertEqual(email.html_message, 'HTML test')
+            self.assertEqual(email.context, None)
+            self.assertEqual(email.template, None)

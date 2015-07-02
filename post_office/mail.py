@@ -28,8 +28,7 @@ logger = setup_loghandlers("INFO")
 
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, headers=None,
-           template=None, priority=None, render_on_delivery=False,
-           commit=True):
+           template=None, priority=None, render_on_delivery=False, commit=True):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -171,6 +170,7 @@ def get_queued():
     """
     return Email.objects.filter(status=STATUS.queued) \
         .select_related('template') \
+        .prefetch_related('template__translated_template') \
         .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
         .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
 
