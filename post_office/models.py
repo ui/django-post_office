@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
 from django.utils.translation import ugettext_lazy as _, override as translation_override
+from django.utils.translation import get_language
 from post_office.fields import CommaSeparatedEmailField
 
 try:
@@ -62,8 +63,6 @@ class Email(models.Model):
     headers = JSONField(blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
     context = context_field_class(blank=True, null=True)
-    language = models.CharField(max_length=12, blank=True, null=True,
-        help_text=_("Language in which the given template shall be rendered."))
 
     class Meta:
         app_label = 'post_office'
@@ -80,15 +79,18 @@ class Email(models.Model):
 
         if self.template is not None:
             _context = Context(self.context)
-            try:
-                template = self.template.translated_template.get(language=self.language)
-            except TranslatedEmailTemplate.DoesNotExist:
-                template = self.template
-            finally:
-                with translation_override(self.language):
-                    subject = Template(template.subject).render(_context)
-                    message = Template(template.content).render(_context)
-                    html_message = Template(template.html_content).render(_context)
+            if settings.USE_I18N:
+                language_override = self.template.language
+                if language_override not in dict(settings.LANGUAGES).keys():
+                    language_override = get_language()
+                with translation_override(language_override):
+                    subject = Template(self.template.subject).render(_context)
+                    message = Template(self.template.content).render(_context)
+                    html_message = Template(self.template.html_content).render(_context)
+            else:
+                subject = Template(self.template.subject).render(_context)
+                message = Template(self.template.content).render(_context)
+                html_message = Template(self.template.html_content).render(_context)
         else:
             subject = self.subject
             message = self.message
@@ -179,19 +181,7 @@ class Log(models.Model):
         return text_type(self.date)
 
 
-class EmailTemplatePayload(models.Model):
-    subject = models.CharField(max_length=255, blank=True,
-        verbose_name=_("Subject"), validators=[validate_template_syntax])
-    content = models.TextField(blank=True,
-        verbose_name=_("Content"), validators=[validate_template_syntax])
-    html_content = models.TextField(blank=True,
-        verbose_name=_("HTML content"), validators=[validate_template_syntax])
-
-    class Meta:
-        abstract = True
-
-
-class EmailTemplate(EmailTemplatePayload):
+class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
@@ -200,9 +190,21 @@ class EmailTemplate(EmailTemplatePayload):
         help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    subject = models.CharField(max_length=255, blank=True,
+        verbose_name=_("Subject"), validators=[validate_template_syntax])
+    content = models.TextField(blank=True,
+        verbose_name=_("Content"), validators=[validate_template_syntax])
+    html_content = models.TextField(blank=True,
+        verbose_name=_("HTML content"), validators=[validate_template_syntax])
+    language = models.CharField(max_length=12, choices=settings.LANGUAGES,
+        help_text=_("Render template in alternative language"),
+        default=settings.LANGUAGES[0][0])
+    default_template = models.ForeignKey('self', related_name='translated_templates',
+        null=True, default=None)
 
     class Meta:
         app_label = 'post_office'
+        unique_together = ('language', 'default_template')
         verbose_name = _("Email Template")
         verbose_name_plural = _("Email Templates")
 
@@ -213,23 +215,6 @@ class EmailTemplate(EmailTemplatePayload):
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
-
-
-class TranslatedEmailTemplate(EmailTemplatePayload):
-    language = models.CharField(max_length=12, choices=settings.LANGUAGES,
-        help_text=_("Render template in alternative language"),
-        default=settings.LANGUAGES[0][0])
-    default_template = models.ForeignKey(EmailTemplate, related_name='translated_template')
-
-    class Meta:
-        unique_together = ('language', 'default_template')
-        verbose_name = _("Translated Email")
-        verbose_name_plural = _("Translated Emails")
-
-    def save(self, *args, **kwargs):
-        self.default_template.save(*args, **kwargs)
-        translated_template = super(TranslatedEmailTemplate, self).save(*args, **kwargs)
-        return translated_template
 
 
 def get_upload_path(instance, filename):

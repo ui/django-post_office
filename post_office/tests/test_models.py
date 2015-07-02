@@ -230,9 +230,11 @@ class ModelTest(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertEqual(form.errors, {
-            'subject': [u"Empty variable tag"],
+            'default_template': [u'This field is required.'],
             'content': [u"Invalid filter: 'titl'"],
-            'html_content': [u"Unclosed tags: endblock "]
+            'html_content': [u'Unclosed tags: endblock '],
+            'language': [u'This field is required.'],
+            'subject': [u'Empty variable tag']
         })
 
     def test_string_priority(self):
