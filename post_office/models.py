@@ -198,7 +198,7 @@ class EmailTemplate(models.Model):
         verbose_name=_("HTML content"), validators=[validate_template_syntax])
     language = models.CharField(max_length=12, choices=settings.LANGUAGES,
         help_text=_("Render template in alternative language"),
-        default=settings.LANGUAGES[0][0])
+        default='', blank=True)
     default_template = models.ForeignKey('self', related_name='translated_templates',
         null=True, default=None)
 

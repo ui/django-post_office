@@ -233,7 +233,6 @@ class ModelTest(TestCase):
             'default_template': [u'This field is required.'],
             'content': [u"Invalid filter: 'titl'"],
             'html_content': [u'Unclosed tags: endblock '],
-            'language': [u'This field is required.'],
             'subject': [u'Empty variable tag']
         })
 
