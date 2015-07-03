@@ -10,7 +10,7 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         # Adding field 'EmailTemplate.language'
         db.add_column(u'post_office_emailtemplate', 'language',
-                      self.gf('django.db.models.fields.CharField')(default=u'de', max_length=12),
+                      self.gf('django.db.models.fields.CharField')(default=u'', max_length=12, blank=True),
                       keep_default=False)
 
         # Adding field 'EmailTemplate.default_template'
@@ -68,7 +68,7 @@ class Migration(SchemaMigration):
             'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'html_content': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'language': ('django.db.models.fields.CharField', [], {'default': "u'de'", 'max_length': '12'}),
+            'language': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '12', 'blank': 'True'}),
             'last_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'subject': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'})
