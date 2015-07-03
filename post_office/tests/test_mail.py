@@ -8,7 +8,6 @@ from django.conf import settings
 
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils import translation
 
 from ..settings import get_batch_size, get_log_level
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
@@ -337,7 +336,7 @@ class MailTest(TestCase):
 
         # check, if we use the Russian version
         email = send(recipients=['to@example.com'], sender='from@example.com',
-                 template=russian_template, context=context)
+                     template=russian_template, context=context)
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'предмет test')
         self.assertEqual(email.message, 'содержание test')
@@ -345,13 +344,13 @@ class MailTest(TestCase):
         self.assertEqual(email.context, None)
         self.assertEqual(email.template, None)
 
-        # check, if Italian falls back to English
-        with translation.override('it'):
-            email = send(recipients=['to@example.com'], sender='from@example.com',
-                     template=template, context=context)
-            email = Email.objects.get(id=email.id)
-            self.assertEqual(email.subject, 'Subject test')
-            self.assertEqual(email.message, 'Content test')
-            self.assertEqual(email.html_message, 'HTML test')
-            self.assertEqual(email.context, None)
-            self.assertEqual(email.template, None)
+        # Check that send picks template with the right language
+        email = send(recipients=['to@example.com'], sender='from@example.com',
+                     template=template, context=context, language='ru')
+        email = Email.objects.get(id=email.id)
+        self.assertEqual(email.subject, 'предмет test')
+
+        email = send(recipients=['to@example.com'], sender='from@example.com',
+                     template=template, context=context, language='ru',
+                     render_on_delivery=True)
+        self.assertEqual(email.template.language, 'ru')

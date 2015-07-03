@@ -8,8 +8,7 @@ from collections import namedtuple
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
 from django.db import models
-from django.utils.translation import ugettext_lazy as _, override as translation_override
-from django.utils.translation import get_language
+from django.utils.translation import ugettext_lazy as _
 from post_office.fields import CommaSeparatedEmailField
 
 try:
@@ -40,14 +39,14 @@ class Email(models.Model):
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
                       (STATUS.queued, _("queued"))]
 
-    from_email = models.CharField(max_length=254,
-        verbose_name=_("Email From"), validators=[validate_email_with_name])
-    to = CommaSeparatedEmailField(verbose_name=_("Email To"))
-    cc = CommaSeparatedEmailField(verbose_name=_("Cc"))
-    bcc = CommaSeparatedEmailField(verbose_name=_("Bcc"))
-    subject = models.CharField(max_length=255, blank=True, verbose_name=_("Subject"),)
-    message = models.TextField(blank=True, verbose_name=_("Message"))
-    html_message = models.TextField(blank=True, verbose_name=_("HTML Message"))
+    from_email = models.CharField(_("Email From"), max_length=254,
+                                  validators=[validate_email_with_name])
+    to = CommaSeparatedEmailField(_("Email To"))
+    cc = CommaSeparatedEmailField(_("Cc"))
+    bcc = CommaSeparatedEmailField(("Bcc"))
+    subject = models.CharField(_("Subject"), max_length=255, blank=True)
+    message = models.TextField(_("Message"), blank=True)
+    html_message = models.TextField(_("HTML Message"), blank=True)
     """
     Emails with 'queued' status will get processed by ``send_queued`` command.
     Status field will then be set to ``failed`` or ``sent`` depending on
@@ -79,18 +78,10 @@ class Email(models.Model):
 
         if self.template is not None:
             _context = Context(self.context)
-            if settings.USE_I18N:
-                language_override = self.template.language
-                if language_override not in dict(settings.LANGUAGES).keys():
-                    language_override = get_language()
-                with translation_override(language_override):
-                    subject = Template(self.template.subject).render(_context)
-                    message = Template(self.template.content).render(_context)
-                    html_message = Template(self.template.html_content).render(_context)
-            else:
-                subject = Template(self.template.subject).render(_context)
-                message = Template(self.template.content).render(_context)
-                html_message = Template(self.template.html_content).render(_context)
+            subject = Template(self.template.subject).render(_context)
+            message = Template(self.template.content).render(_context)
+            html_message = Template(self.template.html_content).render(_context)
+
         else:
             subject = self.subject
             message = self.message

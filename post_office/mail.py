@@ -133,6 +133,10 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         # template can be an EmailTemplate instance or name
         if isinstance(template, EmailTemplate):
             template = template
+            # If language is specified, ensure template uses the right language
+            if language:
+                if template.language != language:
+                    template = template.translated_templates.get(language=language)
         else:
             template = get_email_template(template, language)
 
@@ -170,7 +174,6 @@ def get_queued():
     """
     return Email.objects.filter(status=STATUS.queued) \
         .select_related('template') \
-        .prefetch_related('template__translated_template') \
         .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
         .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
 
