@@ -79,19 +79,21 @@ def send_queued_mail():
     )
 
 
-def get_email_template(name):
+def get_email_template(name, language=''):
     """
     Function that returns an email template instance, from cache or DB.
     """
     if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
-        return EmailTemplate.objects.get(name=name)
+        return EmailTemplate.objects.get(name=name, language=language)
     else:
-        email_template = cache.get(name)
+        composite_name = '%s:%s' % (name, language)
+        email_template = cache.get(composite_name)
         if email_template is not None:
             return email_template
         else:
-            email_template = EmailTemplate.objects.get(name=name)
-            cache.set(name, email_template)
+            email_template = EmailTemplate.objects.get(name=name,
+                                                       language=language)
+            cache.set(composite_name, email_template)
             return email_template
 
 

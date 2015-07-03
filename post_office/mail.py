@@ -91,7 +91,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
 def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=None, commit=True, cc=None, bcc=None):
+         log_level=None, commit=True, cc=None, bcc=None, language=''):
 
     try:
         recipients = parse_emails(recipients)
@@ -134,7 +134,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         if isinstance(template, EmailTemplate):
             template = template
         else:
-            template = get_email_template(template)
+            template = get_email_template(template, language)
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, headers, template, priority,
