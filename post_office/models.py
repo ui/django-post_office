@@ -203,6 +203,10 @@ class EmailTemplate(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        # If template is a translation, use default template's name
+        if self.default_template and not self.name:
+            self.name = self.default_template.name
+
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
