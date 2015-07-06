@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
-from ..mail import send, _send_bulk
+from ..mail import send
 
 
 class ModelTest(TestCase):
@@ -230,9 +230,10 @@ class ModelTest(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertEqual(form.errors, {
-            'subject': [u"Empty variable tag"],
+            'default_template': [u'This field is required.'],
             'content': [u"Invalid filter: 'titl'"],
-            'html_content': [u"Unclosed tags: endblock "]
+            'html_content': [u'Unclosed tags: endblock '],
+            'subject': [u'Empty variable tag']
         })
 
     def test_string_priority(self):
@@ -282,3 +283,8 @@ class ModelTest(TestCase):
 
         self.assertEqual(message.attachments,
                          [('test.txt', b'test file content', None)])
+
+    def test_translated_template_uses_default_templates_name(self):
+        template = EmailTemplate.objects.create(name='name')
+        id_template = template.translated_templates.create(language='id')
+        self.assertEqual(id_template.name, template.name)

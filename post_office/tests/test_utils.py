@@ -60,17 +60,28 @@ class UtilsTest(TestCase):
 
     def test_get_template_email(self):
         # Sanity Check
-        template_name = 'customer/en/happy-holidays'
-        self.assertRaises(EmailTemplate.DoesNotExist, get_email_template, template_name)
-        email_template = EmailTemplate.objects.create(name=template_name, content='Happy Holiday!')
+        name = 'customer/happy-holidays'
+        self.assertRaises(EmailTemplate.DoesNotExist, get_email_template, name)
+        template = EmailTemplate.objects.create(name=name, content='test')
 
         # First query should hit database
-        self.assertNumQueries(1, lambda: get_email_template(template_name))
+        self.assertNumQueries(1, lambda: get_email_template(name))
         # Second query should hit cache instead
-        self.assertNumQueries(0, lambda: get_email_template(template_name))
+        self.assertNumQueries(0, lambda: get_email_template(name))
 
         # It should return the correct template
-        self.assertEqual(email_template, get_email_template(template_name))
+        self.assertEqual(template, get_email_template(name))
+
+        # Repeat with language support
+        template = EmailTemplate.objects.create(name=name, content='test',
+                                                language='en')
+        # First query should hit database
+        self.assertNumQueries(1, lambda: get_email_template(name, 'en'))
+        # Second query should hit cache instead
+        self.assertNumQueries(0, lambda: get_email_template(name, 'en'))
+
+        # It should return the correct template
+        self.assertEqual(template, get_email_template(name, 'en'))
 
     def test_split_emails(self):
         """

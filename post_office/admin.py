@@ -1,7 +1,12 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from django.db import models
 from django.contrib import admin
+from django.conf import settings
 from django.forms.widgets import TextInput
 from django.utils import six
 from django.utils.text import Truncator
+from django.utils.translation import ugettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
 from .models import Email, Log, EmailTemplate, STATUS
@@ -64,23 +69,52 @@ class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
 
 
+class SubjectField(TextInput):
+    def __init__(self, *args, **kwargs):
+        super(SubjectField, self).__init__(*args, **kwargs)
+        self.attrs.update({'style': 'width: 610px;'})
+
+
+class EmailTemplateInline(admin.StackedInline):
+    model = EmailTemplate
+    extra = 0
+    fields = ('language', 'subject', 'content', 'html_content',)
+    formfield_overrides = {
+        models.CharField: {'widget': SubjectField}
+    }
+
+    def get_max_num(self, request, obj=None, **kwargs):
+        return len(settings.LANGUAGES)
+
+
 class EmailTemplateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description_shortened', 'subject', 'created')
+    list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
     search_fields = ('name', 'description', 'subject')
     fieldsets = [
         (None, {
             'fields': ('name', 'description'),
         }),
-        ('Email', {
+        (_("Default Content"), {
             'fields': ('subject', 'content', 'html_content'),
         }),
     ]
+    inlines = (EmailTemplateInline,) if settings.USE_I18N else ()
+    formfield_overrides = {
+        models.CharField: {'widget': SubjectField}
+    }
+
+    def get_queryset(self, request):
+        return self.model.objects.filter(default_template__isnull=True)
 
     def description_shortened(self, instance):
         return Truncator(instance.description.split('\n')[0]).chars(200)
-    description_shortened.short_description = 'description'
+    description_shortened.short_description = _("Description")
     description_shortened.admin_order_field = 'description'
 
+    def languages_compact(self, instance):
+        languages = [tt.language for tt in instance.translated_templates.all()]
+        return ', '.join(languages)
+    languages_compact.short_description = _("Languages")
 
 admin.site.register(Email, EmailAdmin)
 admin.site.register(Log, LogAdmin)
