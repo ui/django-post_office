@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import sys
 from uuid import uuid4
 
 from collections import namedtuple
 
+from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 from post_office.fields import CommaSeparatedEmailField
 
 try:
@@ -31,19 +35,19 @@ class Email(models.Model):
     A model to hold email information.
     """
 
-    PRIORITY_CHOICES = [(PRIORITY.low, 'low'), (PRIORITY.medium, 'medium'),
-                        (PRIORITY.high, 'high'), (PRIORITY.now, 'now')]
-    STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed'),
-                      (STATUS.queued, 'queued')]
+    PRIORITY_CHOICES = [(PRIORITY.low, _("low")), (PRIORITY.medium, _("medium")),
+                        (PRIORITY.high, _("high")), (PRIORITY.now, _("now"))]
+    STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
+                      (STATUS.queued, _("queued"))]
 
-    from_email = models.CharField(max_length=254,
+    from_email = models.CharField(_("Email From"), max_length=254,
                                   validators=[validate_email_with_name])
-    to = CommaSeparatedEmailField()
-    cc = CommaSeparatedEmailField()
-    bcc = CommaSeparatedEmailField()
-    subject = models.CharField(max_length=255, blank=True)
-    message = models.TextField(blank=True)
-    html_message = models.TextField(blank=True)
+    to = CommaSeparatedEmailField(_("Email To"))
+    cc = CommaSeparatedEmailField(_("Cc"))
+    bcc = CommaSeparatedEmailField(("Bcc"))
+    subject = models.CharField(_("Subject"), max_length=255, blank=True)
+    message = models.TextField(_("Message"), blank=True)
+    html_message = models.TextField(_("HTML Message"), blank=True)
     """
     Emails with 'queued' status will get processed by ``send_queued`` command.
     Status field will then be set to ``failed`` or ``sent`` depending on
@@ -79,6 +83,7 @@ class Email(models.Model):
             subject = Template(self.template.subject).render(_context)
             message = Template(self.template.content).render(_context)
             html_message = Template(self.template.html_content).render(_context)
+
         else:
             subject = self.subject
             message = self.message
@@ -146,7 +151,7 @@ class Log(models.Model):
     A model to record sending email sending activities.
     """
 
-    STATUS_CHOICES = [(STATUS.sent, 'sent'), (STATUS.failed, 'failed')]
+    STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
 
     email = models.ForeignKey(Email, editable=False, related_name='logs')
     date = models.DateTimeField(auto_now_add=True)
@@ -165,25 +170,37 @@ class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
-    name = models.CharField(max_length=255, help_text=("e.g: 'welcome_email'"))
+    name = models.CharField(max_length=255, help_text=_("e.g: 'welcome_email'"))
     description = models.TextField(blank=True,
-                                   help_text='Description of this template.')
-    subject = models.CharField(max_length=255, blank=True,
-                               validators=[validate_template_syntax])
-    content = models.TextField(blank=True,
-                               validators=[validate_template_syntax])
-    html_content = models.TextField(blank=True,
-                                    validators=[validate_template_syntax])
+        help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    subject = models.CharField(max_length=255, blank=True,
+        verbose_name=_("Subject"), validators=[validate_template_syntax])
+    content = models.TextField(blank=True,
+        verbose_name=_("Content"), validators=[validate_template_syntax])
+    html_content = models.TextField(blank=True,
+        verbose_name=_("HTML content"), validators=[validate_template_syntax])
+    language = models.CharField(max_length=12, choices=settings.LANGUAGES,
+        help_text=_("Render template in alternative language"),
+        default='', blank=True)
+    default_template = models.ForeignKey('self', related_name='translated_templates',
+        null=True, default=None)
 
     class Meta:
         app_label = 'post_office'
+        unique_together = ('language', 'default_template')
+        verbose_name = _("Email Template")
+        verbose_name_plural = _("Email Templates")
 
     def __unicode__(self):
         return self.name
 
     def save(self, *args, **kwargs):
+        # If template is a translation, use default template's name
+        if self.default_template and not self.name:
+            self.name = self.default_template.name
+
         template = super(EmailTemplate, self).save(*args, **kwargs)
         cache.delete(self.name)
         return template
@@ -205,5 +222,5 @@ class Attachment(models.Model):
     A model describing an email attachment.
     """
     file = models.FileField(upload_to=get_upload_path)
-    name = models.CharField(max_length=255, help_text='The original filename')
+    name = models.CharField(max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments')

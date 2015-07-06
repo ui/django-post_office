@@ -7,18 +7,18 @@ python:
   - "3.4"
 
 env:
-  - DJANGO=1.4.9
-  - DJANGO=1.5.5
-  - DJANGO=1.6.1
+  - DJANGO=1.4.20
+  - DJANGO=1.5.12
+  - DJANGO=1.6.11
   - DJANGO=1.7.8
   - DJANGO=1.8.2
 
 matrix:
   exclude:
     - python: "3.3"
-      env: DJANGO=1.4.9
+      env: DJANGO=1.4.20
     - python: "3.4"
-      env: DJANGO=1.4.9
+      env: DJANGO=1.4.20
     - python: "2.6"
       env: DJANGO=1.7.8
     - python: "2.6"
