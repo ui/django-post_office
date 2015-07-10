@@ -253,10 +253,10 @@ Multilingual Email Templates
 ----------------------------
 
 You can easily create email templates in various different languanges.
-For example::
+For example:
 
 .. code-block:: python
-    
+
     template = EmailTemplate.objects.create(
         name='hello',
         subject='Hello world!',
@@ -269,10 +269,10 @@ For example::
     )
 
 Sending an email using template in a non default languange is
-also similarly easy::
+also similarly easy:
 
 .. code-block:: python
-    
+
     mail.send(
         ['recipient@example.com'],
         'from@example.com',
@@ -301,10 +301,10 @@ For example if you want to use `django-ses <https://github.com/hmarr/django-ses>
         }
     }
 
-You can then choose what backend you want to use when sending mail::
+You can then choose what backend you want to use when sending mail:
 
 .. code-block:: python
-    
+
     # If you omit `backend_alias` argument, `default` will be used
     mail.send(
         ['recipient@example.com'],
