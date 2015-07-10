@@ -533,6 +533,9 @@ Version 1.0.0
 * Added ``EMAIL_BACKEND`` setting to the new dictionary-styled settings.
 
 
+Full changelog can be found `here <https://github.com/ui/django-post_office/blob/master/CHANGELOG.md>`_.
+
+
 Created and maintained by the cool guys at `Stamps <https://stamps.co.id>`_,
 Indonesia's most elegant CRM/loyalty platform.
 
