@@ -9,13 +9,18 @@ import post_office.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('post_office', '0002_email_backend_alias'),
+        ('post_office', '0001_initial'),
     ]
 
     operations = [
         migrations.AlterModelOptions(
             name='emailtemplate',
             options={'verbose_name': 'Email Template', 'verbose_name_plural': 'Email Templates'},
+        ),
+        migrations.AddField(
+            model_name='email',
+            name='backend_alias',
+            field=models.CharField(default='', max_length=64, blank=True),
         ),
         migrations.AddField(
             model_name='emailtemplate',
