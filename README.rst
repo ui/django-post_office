@@ -6,6 +6,7 @@ Django Post Office is a simple app to send and manage your emails in Django.
 Some awesome features are:
 
 * Allows you to send email asynchronously
+* Multi backend support
 * Supports HTML email
 * Supports database based email templates
 * Built in scheduling support
@@ -122,6 +123,9 @@ arguments:
 | html_message      | No       | HTML content (if ``template`` is not specified) |
 +-------------------+----------+-------------------------------------------------+
 | template          | No       | ``EmailTemplate`` instance or name              |
++-------------------+----------+-------------------------------------------------+
+| language          | No       | Language in which you want to send the email in |
+|                   |          | (if you have multilingual email templates.)     |
 +-------------------+----------+-------------------------------------------------+
 | cc                | No       | list emails, will appear in ``cc`` field        |
 +-------------------+----------+-------------------------------------------------+
@@ -246,37 +250,38 @@ Multilingual Email Templates
 ----------------------------
 
 You can easily create email templates in various different languanges.
-For example:
-```python
-template = EmailTemplate.objects.create(
-    name='hello',
-    subject='Hello world!',
-)
+For example::
 
-# Add an Indonesian version of this template:
-indonesian_template = template.translated_templates.create(
-    language='id',
-    subject='Halo Dunia!'
-)
-```
+.. code-block:: python
+    
+    template = EmailTemplate.objects.create(
+        name='hello',
+        subject='Hello world!',
+    )
+
+    # Add an Indonesian version of this template:
+    indonesian_template = template.translated_templates.create(
+        language='id',
+        subject='Halo Dunia!'
+    )
 
 Sending an email using template in a non default languange is
-also similarly easy.
+also similarly easy::
 
-```python
-mail.send(
-    ['recipient@example.com'],
-    'from@example.com',
-    template=template, # Sends using the default template
-)
+.. code-block:: python
+    
+    mail.send(
+        ['recipient@example.com'],
+        'from@example.com',
+        template=template, # Sends using the default template
+    )
 
-mail.send(
-    ['recipient@example.com'],
-    'from@example.com',
-    template=template,
-    language='id', # Sends using Indonesian template
-)
-```
+    mail.send(
+        ['recipient@example.com'],
+        'from@example.com',
+        template=template,
+        language='id', # Sends using Indonesian template
+    )
 
 Custom Email Backends
 ---------------------
