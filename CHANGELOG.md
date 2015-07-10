@@ -3,6 +3,7 @@ Changelog
 
 Version 2.0
 -----------
+* Added multi backend support. Now you can use multiple email backends with ``post-office``!
 * Added multi language support. Thanks @jrief!
 
 Version 1.1.2

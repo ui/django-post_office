@@ -148,6 +148,9 @@ arguments:
 | priority          | No       | ``high``, ``medium``, ``low`` or ``now``        |
 |                   |          | (send_immediately)                              |
 +-------------------+----------+-------------------------------------------------+
+| backend           | No       | Alias of the backend you want to use.           |
+|                   |          | ``default`` will be used if not specified.      |
++-------------------+----------+-------------------------------------------------+
 | render_on_delivery| No       | Setting this to ``True`` causes email to be     |
 |                   |          | lazily rendered during delivery. ``template``   |
 |                   |          | is required when ``render_on_delivery`` is True.|
@@ -286,14 +289,36 @@ also similarly easy::
 Custom Email Backends
 ---------------------
 
-By default, ``post_office`` uses django's SMTP ``EmailBackend``. If you want to
-use a different backend, you can do so by changing ``EMAIL_BACKEND``.
+By default, ``post_office`` uses django's ``smtp.EmailBackend``. If you want to
+use a different backend, you can do so by configuring ``BACKENDS``.
 
 For example if you want to use `django-ses <https://github.com/hmarr/django-ses>`_::
 
     POST_OFFICE = {
-        'EMAIL_BACKEND': 'django_ses.SESBackend'
+        'BACKENDS': {
+            'default': 'smtp.EmailBackend',
+            'ses': 'django_ses.SESBackend',
+        }
     }
+
+You can then choose what backend you want to use when sending mail::
+
+.. code-block:: python
+    
+    # If you omit `backend_alias` argument, `default` will be used
+    mail.send(
+        ['recipient@example.com'],
+        'from@example.com',
+        subject='Hello',
+    )
+
+    # If you want to send using `ses` backend
+    mail.send(
+        ['recipient@example.com'],
+        'from@example.com',
+        subject='Hello',
+        backend='ses',
+    )
 
 
 Management Commands
@@ -509,6 +534,7 @@ Changelog
 
 Version 2.0
 -----------
+* Added multi backend support. Now you can use multiple email backends with ``post-office``!
 * Added multi language support. Thanks @jrief!
 
 Version 1.1.2

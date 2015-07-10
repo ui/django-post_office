@@ -311,6 +311,23 @@ class MailTest(TestCase):
         self.assertEqual(email.context, None)
         self.assertEqual(email.template, None)
 
+    def test_backend_alias(self):
+        """Test backend_alias field is properly set."""
+
+        email = send(recipients=['a@example.com'],
+                     sender='from@example.com', message='message',
+                     subject='subject')
+        self.assertEqual(email.backend_alias, '')
+
+        email = send(recipients=['a@example.com'],
+                     sender='from@example.com', message='message',
+                     subject='subject', backend='locmem')
+        self.assertEqual(email.backend_alias, 'locmem')
+
+        with self.assertRaises(ValueError):
+            send(recipients=['a@example.com'], sender='from@example.com',
+                 message='message', subject='subject', backend='foo')
+
     @override_settings(LANGUAGES=(('en', 'English'), ('ru', 'Russian')))
     def test_send_with_template(self):
         """If render_on_delivery is False, subject and content

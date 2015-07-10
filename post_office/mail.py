@@ -10,7 +10,8 @@ from django.template import Context, Template
 
 from .connections import connections
 from .models import Email, EmailTemplate, PRIORITY, STATUS
-from .settings import get_batch_size, get_log_level, get_sending_order
+from .settings import (get_available_backends, get_batch_size,
+                       get_log_level, get_sending_order)
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
@@ -28,7 +29,8 @@ logger = setup_loghandlers("INFO")
 
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, headers=None,
-           template=None, priority=None, render_on_delivery=False, commit=True):
+           template=None, priority=None, render_on_delivery=False, commit=True,
+           backend=''):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -55,7 +57,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             bcc=bcc,
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
-            context=context, template=template
+            context=context, template=template, backend_alias=backend
         )
 
     else:
@@ -80,6 +82,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             html_message=html_message,
             scheduled_time=scheduled_time,
             headers=headers, priority=priority, status=status,
+            backend_alias=backend
         )
 
     if commit:
@@ -91,7 +94,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
 def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
-         log_level=None, commit=True, cc=None, bcc=None, language=''):
+         log_level=None, commit=True, cc=None, bcc=None, language='',
+         backend=''):
 
     try:
         recipients = parse_emails(recipients)
@@ -140,9 +144,12 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         else:
             template = get_email_template(template, language)
 
+    if backend and backend not in get_available_backends().keys():
+        raise ValueError('%s is not a valid backend alias' % backend)
+
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, headers, template, priority,
-                   render_on_delivery, commit=commit)
+                   render_on_delivery, commit=commit, backend=backend)
 
     if attachments:
         attachments = create_attachments(attachments)
