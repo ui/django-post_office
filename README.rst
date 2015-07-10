@@ -11,6 +11,7 @@ Some awesome features are:
 * Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
 * Uses multiprocessing to send a large number of emails in parallel
+* Supports multilingual email templates (i18n)
 
 
 Dependencies
@@ -240,6 +241,42 @@ For example, if you put "Hello, {{ name }}" in the subject line and pass in
     content = 'Hi alice, how are you feeling today?'
     content = 'Hi <strong>alice</strong>, how are you feeling today?'
 
+
+Multilingual Email Templates
+----------------------------
+
+You can easily create email templates in various different languanges.
+For example:
+```python
+template = EmailTemplate.objects.create(
+    name='hello',
+    subject='Hello world!',
+)
+
+# Add an Indonesian version of this template:
+indonesian_template = template.translated_templates.create(
+    language='id',
+    subject='Halo Dunia!'
+)
+```
+
+Sending an email using template in a non default languange is
+also similarly easy.
+
+```python
+mail.send(
+    ['recipient@example.com'],
+    'from@example.com',
+    template=template, # Sends using the default template
+)
+
+mail.send(
+    ['recipient@example.com'],
+    'from@example.com',
+    template=template,
+    language='id', # Sends using Indonesian template
+)
+```
 
 Custom Email Backends
 ---------------------
@@ -591,6 +628,10 @@ Version 0.2
 Version 0.1.5
 -------------
 * Errors when opening connection in ``Email.dispatch`` method are now logged
+
+
+Created and maintained by the cool guys at `Stamps <https://stamps.co.id>`_,
+Indonesia's most elegant CRM/loyalty platform.
 
 
 .. |Build Status| image:: https://travis-ci.org/ui/django-post_office.png?branch=master
