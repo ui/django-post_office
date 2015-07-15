@@ -138,9 +138,8 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         if isinstance(template, EmailTemplate):
             template = template
             # If language is specified, ensure template uses the right language
-            if language:
-                if template.language != language:
-                    template = template.translated_templates.get(language=language)
+            if language and language != template.language:
+                template = template.translated_templates.filter(language=language).first() or template
         else:
             template = get_email_template(template, language)
 
