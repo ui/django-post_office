@@ -309,7 +309,7 @@ class MailTest(TestCase):
         self.assertEqual(email.message, 'Content %d' % current_year)
         self.assertEqual(email.html_message, 'HTML %d' % current_year)
         self.assertEqual(email.context, None)
-        self.assertEqual(email.template, None)
+        self.assertEqual(email.template, template)
 
     def test_backend_alias(self):
         """Test backend_alias field is properly set."""
@@ -355,7 +355,7 @@ class MailTest(TestCase):
         self.assertEqual(email.message, 'Content test')
         self.assertEqual(email.html_message, 'HTML test')
         self.assertEqual(email.context, None)
-        self.assertEqual(email.template, None)
+        self.assertEqual(email.template, template)
 
         # check, if we use the Russian version
         email = send(recipients=['to@example.com'], sender='from@example.com',
@@ -365,7 +365,7 @@ class MailTest(TestCase):
         self.assertEqual(email.message, 'содержание test')
         self.assertEqual(email.html_message, 'HTML test')
         self.assertEqual(email.context, None)
-        self.assertEqual(email.template, None)
+        self.assertEqual(email.template, russian_template)
 
         # Check that send picks template with the right language
         email = send(recipients=['to@example.com'], sender='from@example.com',
