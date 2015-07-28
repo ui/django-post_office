@@ -532,6 +532,11 @@ To run the test suite::
 Changelog
 =========
 
+Version 2.0.1
+-------------
+* Fixes migration related packaging issues.
+* Fixes deprecation warning in Django 1.8.
+
 Version 2.0
 -----------
 * Added multi backend support. Now you can use multiple email backends with ``post-office``!
