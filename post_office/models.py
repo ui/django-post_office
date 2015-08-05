@@ -224,3 +224,6 @@ class Attachment(models.Model):
     file = models.FileField(upload_to=get_upload_path)
     name = models.CharField(max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments')
+
+    class Meta:
+        app_label = 'post_office'
