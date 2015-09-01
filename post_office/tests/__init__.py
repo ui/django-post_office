@@ -6,3 +6,4 @@ from .test_models import ModelTest
 from .test_utils import UtilsTest
 from .test_cache import CacheTest
 from .test_views import AdminViewTest
+from .routers.test_sms import SMSTest

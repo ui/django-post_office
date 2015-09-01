@@ -64,6 +64,19 @@ def get_email_template(name, language=''):
             return email_template
 
 
+def parse_email_template(template, language=''):
+    """Returns the right email template, supports multi-lingual template"""
+    if isinstance(template, EmailTemplate):
+        template = template
+        # If language is specified, ensure template uses the right language
+        if language:
+            if template.language != language:
+                template = get_email_template(template.name, language)
+    else:
+        template = get_email_template(template, language)
+    return template
+
+
 def split_emails(emails, split_count=1):
     # Group emails into X sublists
     # taken from http://www.garyrobinson.net/2008/04/splitting-a-pyt.html

@@ -9,12 +9,13 @@ from django.db.models import Q
 from django.template import Context, Template
 
 from .connections import connections
-from .models import Email, EmailTemplate, PRIORITY, STATUS
+from .logutils import setup_loghandlers
+from .models import Email, PRIORITY, STATUS
 from .settings import (get_available_backends, get_batch_size,
                        get_log_level, get_sending_order)
-from .utils import (get_email_template, parse_emails, parse_priority,
-                    split_emails, create_attachments)
-from .logutils import setup_loghandlers
+from .utils import (parse_emails, parse_priority,
+                    parse_email_template, split_emails, create_attachments)
+from .validators import validate_email_with_name
 
 try:
     from django.utils import timezone
@@ -115,6 +116,8 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
 
+    validate_email_with_name(sender)
+
     priority = parse_priority(priority)
 
     if log_level is None:
@@ -134,15 +137,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         if html_message:
             raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
-        # template can be an EmailTemplate instance or name
-        if isinstance(template, EmailTemplate):
-            template = template
-            # If language is specified, ensure template uses the right language
-            if language:
-                if template.language != language:
-                    template = template.translated_templates.get(language=language)
-        else:
-            template = get_email_template(template, language)
+        template = parse_email_template(template, language)
 
     if backend and backend not in get_available_backends().keys():
         raise ValueError('%s is not a valid backend alias' % backend)

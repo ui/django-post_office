@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from post_office.fields import CommaSeparatedEmailField
+from post_office.fields import CommaSeparatedField, CommaSeparatedEmailField
 
 try:
     from django.utils.encoding import smart_text  # For Django >= 1.5
@@ -23,7 +23,7 @@ from post_office import cache
 from .compat import text_type
 from .connections import connections
 from .settings import context_field_class, get_log_level
-from .validators import validate_email_with_name, validate_template_syntax
+from .validators import validate_template_syntax
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
@@ -40,9 +40,8 @@ class Email(models.Model):
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
                       (STATUS.queued, _("queued"))]
 
-    from_email = models.CharField(_("Email From"), max_length=254,
-                                  validators=[validate_email_with_name])
-    to = CommaSeparatedEmailField(_("Email To"))
+    from_email = models.CharField(_("Sender"), max_length=254)
+    to = CommaSeparatedField(_("Recipients"))
     cc = CommaSeparatedEmailField(_("Cc"))
     bcc = CommaSeparatedEmailField(("Bcc"))
     subject = models.CharField(_("Subject"), max_length=255, blank=True)
@@ -140,10 +139,6 @@ class Email(models.Model):
                              exception_type=exception_type)
 
         return status
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super(Email, self).save(*args, **kwargs)
 
 
 class Log(models.Model):

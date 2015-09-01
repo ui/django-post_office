@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 
@@ -6,7 +8,8 @@ from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
 from ..utils import (create_attachments, get_email_template, parse_emails,
-                     parse_priority, send_mail, split_emails)
+                     parse_email_template, parse_priority, send_mail,
+                     split_emails)
 from ..validators import validate_email_with_name, validate_comma_separated_emails
 
 
@@ -141,3 +144,34 @@ class UtilsTest(TestCase):
             ValidationError,
             parse_emails, ['invalid_email', 'test@example.com']
         )
+
+    @override_settings(LANGUAGES=(('en', 'English'), ('ru', 'Russian')))
+    def test_parse_template(self):
+        name = 'test_template'
+        template = EmailTemplate.objects.create(
+            name='test_template',
+            subject='Subject {{ name }}',
+            content='Content {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+
+        # Works with both template name and EmailTemplate instance
+        self.assertEqual(parse_email_template(name), template)
+        self.assertEqual(parse_email_template(template), template)
+
+        russian_template = EmailTemplate(
+            default_template=template,
+            language='ru',
+            subject='предмет {{ name }}',
+            content='содержание {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+        russian_template.save()
+
+        # Also works for template in other language
+        self.assertEqual(parse_email_template(russian_template),
+                         russian_template)
+        self.assertEqual(parse_email_template(template, language='ru'),
+                         russian_template)
+        self.assertEqual(parse_email_template(name, language='ru'),
+                         russian_template)
