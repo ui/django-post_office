@@ -324,10 +324,6 @@ class MailTest(TestCase):
                      subject='subject', backend='locmem')
         self.assertEqual(email.backend_alias, 'locmem')
 
-        with self.assertRaises(ValueError):
-            send(recipients=['a@example.com'], sender='from@example.com',
-                 message='message', subject='subject', backend='foo')
-
     @override_settings(LANGUAGES=(('en', 'English'), ('ru', 'Russian')))
     def test_send_with_template(self):
         """If render_on_delivery is False, subject and content

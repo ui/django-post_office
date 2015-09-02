@@ -3,8 +3,8 @@ from django.core.exceptions import ValidationError
 from ..compat import string_types
 from ..mail import create
 from ..models import Email, EmailTemplate, PRIORITY
-from ..settings import get_available_backends, get_log_level
-from ..utils import get_email_template, parse_email_template, parse_priority
+from ..settings import get_log_level
+from ..utils import parse_email_template, parse_backend, parse_priority
 
 
 def send(recipient, sender, template=None, context=None, message='',
@@ -29,8 +29,7 @@ def send(recipient, sender, template=None, context=None, message='',
 
         template = parse_email_template(template)
 
-    if backend and backend not in get_available_backends().keys():
-        raise ValueError('%s is not a valid backend alias' % backend)
+    parse_backend(backend)
 
     email = create(sender, recipient, message=message, context=context,
                    scheduled_time=scheduled_time, template=template,

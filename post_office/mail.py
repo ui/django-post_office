@@ -11,9 +11,8 @@ from django.template import Context, Template
 from .connections import connections
 from .logutils import setup_loghandlers
 from .models import Email, PRIORITY, STATUS
-from .settings import (get_available_backends, get_batch_size,
-                       get_log_level, get_sending_order)
-from .utils import (parse_emails, parse_priority,
+from .settings import get_batch_size, get_log_level, get_sending_order
+from .utils import (parse_backend, parse_emails, parse_priority,
                     parse_email_template, split_emails, create_attachments)
 from .validators import validate_email_with_name
 
@@ -139,8 +138,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
         template = parse_email_template(template, language)
 
-    if backend and backend not in get_available_backends().keys():
-        raise ValueError('%s is not a valid backend alias' % backend)
+    parse_backend(backend)
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, headers, template, priority,

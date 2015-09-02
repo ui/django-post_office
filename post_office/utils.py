@@ -11,7 +11,7 @@ except ImportError:
 from post_office import cache
 from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
-from .settings import get_default_priority
+from .settings import get_available_backends, get_default_priority
 
 
 try:
@@ -148,3 +148,8 @@ def parse_emails(emails):
             raise ValidationError('%s is not a valid email address' % email)
 
     return emails
+
+
+def parse_backend(name):
+    if name and name not in get_available_backends().keys():
+        raise ValueError('%s is not a valid backend alias' % name)

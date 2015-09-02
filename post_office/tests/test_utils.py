@@ -7,9 +7,9 @@ from django.test import TestCase
 from django.test.utils import override_settings
 
 from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
-from ..utils import (create_attachments, get_email_template, parse_emails,
-                     parse_email_template, parse_priority, send_mail,
-                     split_emails)
+from ..utils import (create_attachments, get_email_template, parse_backend,
+                     parse_emails, parse_email_template, parse_priority,
+                     send_mail, split_emails)
 from ..validators import validate_email_with_name, validate_comma_separated_emails
 
 
@@ -175,3 +175,10 @@ class UtilsTest(TestCase):
                          russian_template)
         self.assertEqual(parse_email_template(name, language='ru'),
                          russian_template)
+
+    def test_parse_backend(self):
+        """parse_backend raises an Exception if given an invalid name."""
+
+        parse_backend('')
+        parse_backend('locmem')
+        self.assertRaises(ValueError, parse_backend, 'foo')
