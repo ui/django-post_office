@@ -120,11 +120,12 @@ class Email(models.Model):
             status = STATUS.sent
             message = ''
             exception_type = ''
-
         except:
             status = STATUS.failed
             exception, message, _ = sys.exc_info()
             exception_type = exception.__name__
+        else:
+            connection.close()
 
         self.status = status
         self.save()
