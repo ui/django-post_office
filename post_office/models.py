@@ -106,7 +106,7 @@ class Email(models.Model):
 
         return msg
 
-    def dispatch(self, log_level=None):
+    def dispatch(self, log_level=None, disconnect_after_delivery=True):
         """
         Actually send out the email and log the result
         """
@@ -114,8 +114,8 @@ class Email(models.Model):
         if log_level is None:
             log_level = get_log_level()
 
+        connection = connections[self.backend_alias or 'default']
         try:
-            connection = connections[self.backend_alias or 'default']
             self.email_message(connection=connection).send()
             status = STATUS.sent
             message = ''
@@ -124,7 +124,8 @@ class Email(models.Model):
             status = STATUS.failed
             exception, message, _ = sys.exc_info()
             exception_type = exception.__name__
-        else:
+
+        if disconnect_after_delivery:
             connection.close()
 
         self.status = status
