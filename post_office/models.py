@@ -114,8 +114,9 @@ class Email(models.Model):
         if log_level is None:
             log_level = get_log_level()
 
-        connection = connections[self.backend_alias or 'default']
+        connection = None
         try:
+            connection = connections[self.backend_alias or 'default']
             self.email_message(connection=connection).send()
             status = STATUS.sent
             message = ''
@@ -125,7 +126,7 @@ class Email(models.Model):
             exception, message, _ = sys.exc_info()
             exception_type = exception.__name__
 
-        if disconnect_after_delivery:
+        if connection and disconnect_after_delivery:
             connection.close()
 
         self.status = status
