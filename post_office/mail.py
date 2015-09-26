@@ -240,7 +240,8 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     try:
         for email in emails:
-            status = email.dispatch(log_level=log_level)
+            status = email.dispatch(log_level=log_level,
+                                    disconnect_after_delivery=False)
             if status == STATUS.sent:
                 sent_count += 1
                 logger.debug('Successfully sent email #%d' % email.id)
