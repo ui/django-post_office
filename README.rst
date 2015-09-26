@@ -532,6 +532,11 @@ To run the test suite::
 Changelog
 =========
 
+Version 2.0.2
+-------------
+* Fixes more Django 1.8 deprecation warnings.
+* email.dispatch() now closes connection by default
+
 Version 2.0.1
 -------------
 * Fixes migration related packaging issues.
