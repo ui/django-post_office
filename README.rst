@@ -155,7 +155,7 @@ arguments:
 |                   |          | lazily rendered during delivery. ``template``   |
 |                   |          | is required when ``render_on_delivery`` is True.|
 |                   |          | This way content is never stored in the DB.     |
-|                   |          | May result in significat space savings.         |
+|                   |          | May result in significant space savings.        |
 +-------------------+----------+-------------------------------------------------+
 
 
