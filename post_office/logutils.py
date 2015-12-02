@@ -1,6 +1,6 @@
 import logging
 
-from django.utils.log import dictConfig
+from .compat import dictConfig
 
 
 # Taken from https://github.com/nvie/rq/blob/master/rq/logutils.py
