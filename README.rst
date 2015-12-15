@@ -74,7 +74,7 @@ Send a simple email is really easy:
         subject='My email',
         message='Hi there!',
         html_message='Hi <strong>there</strong>!',
-    )    
+    )
 
 
 If you want to use templates, ensure that Django's admin interface is enabled. Create an
@@ -212,8 +212,8 @@ If you want to send an email with attachments:
         context={'foo': 'bar'},
         priority='now',
         attachments={
-            'attachment1.doc', '/path/to/file/file1.doc',
-            'attachment2.txt', ContentFile('file content'),
+            'attachment1.doc': '/path/to/file/file1.doc',
+            'attachment2.txt': ContentFile('file content'),
         }
     )
 
@@ -410,7 +410,7 @@ setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIF
     POST_OFFICE = {
         'SENDING_ORDER': ['created']
     }
-    
+
 Context Field Serializer
 ------------------------
 
