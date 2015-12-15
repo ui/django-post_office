@@ -532,7 +532,7 @@ To run the test suite::
 Changelog
 =========
 
-Version 2.0.2
+Version 2.0.4
 -------------
 * `Email.dispatch()` now closes backend connection by default. Thanks @zwack
 * Compatibility fixes for Django 1.9. Thanks @yprez!
