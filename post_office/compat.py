@@ -3,6 +3,11 @@ try:
 except ImportError:
     from django.utils import importlib
 
+try:
+    from logging.config import dictConfig  # Python >= 2.7
+except ImportError:
+    from django.utils.log import dictConfig  # Django <= 1.9
+
 import sys
 
 

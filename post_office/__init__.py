@@ -1,4 +1,5 @@
-VERSION = (2, 0, 3)
+VERSION = (2, 0, 4)
 
 from .backends import EmailBackend
-from .utils import send_mail
+
+default_app_config = 'post_office.apps.PostOfficeConfig'

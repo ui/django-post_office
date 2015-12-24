@@ -1,5 +1,6 @@
 from django.conf import settings
-from django.core.mail import backends, EmailMultiAlternatives, send_mail, EmailMessage
+from django.core.mail import EmailMultiAlternatives, send_mail, EmailMessage
+from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase
 from django.test.utils import override_settings
 
@@ -7,7 +8,7 @@ from ..models import Email, STATUS, PRIORITY
 from ..settings import get_backend
 
 
-class ErrorRaisingBackend(backends.base.BaseEmailBackend):
+class ErrorRaisingBackend(BaseEmailBackend):
     '''
     An EmailBackend that always raises an error during sending
     to test if django_mailer handles sending error correctly

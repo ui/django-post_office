@@ -102,7 +102,7 @@ class ModelTest(TestCase):
         Ensure that status and log are set properly on sending failure
         """
         email = Email.objects.create(to=['to@example.com'], subject='Test',
-                                     from_email='from@example.com', 
+                                     from_email='from@example.com',
                                      message='Message', backend_alias='random')
         # Ensure that after dispatch status and logs are correctly set
         email.dispatch()
@@ -208,12 +208,14 @@ class ModelTest(TestCase):
         form = EmailTemplateForm(data)
 
         self.assertFalse(form.is_valid())
-        self.assertEqual(form.errors, {
-            'default_template': [u'This field is required.'],
-            'content': [u"Invalid filter: 'titl'"],
-            'html_content': [u'Unclosed tags: endblock '],
-            'subject': [u'Empty variable tag']
-        })
+
+        self.assertEqual(form.errors['default_template'],  [u'This field is required.'])
+        self.assertEqual(form.errors['content'], [u"Invalid filter: 'titl'"])
+        self.assertIn(form.errors['html_content'],
+                      [[u'Unclosed tags: endblock '],
+                       [u"Unclosed tag on line 1: 'block'. Looking for one of: endblock."]])
+        self.assertIn(form.errors['subject'],
+                      [[u'Empty variable tag'], [u'Empty variable tag on line 1']])
 
     def test_string_priority(self):
         """

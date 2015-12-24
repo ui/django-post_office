@@ -74,7 +74,7 @@ Send a simple email is really easy:
         subject='My email',
         message='Hi there!',
         html_message='Hi <strong>there</strong>!',
-    )    
+    )
 
 
 If you want to use templates, ensure that Django's admin interface is enabled. Create an
@@ -155,7 +155,7 @@ arguments:
 |                   |          | lazily rendered during delivery. ``template``   |
 |                   |          | is required when ``render_on_delivery`` is True.|
 |                   |          | This way content is never stored in the DB.     |
-|                   |          | May result in significat space savings.         |
+|                   |          | May result in significant space savings.        |
 +-------------------+----------+-------------------------------------------------+
 
 
@@ -212,8 +212,8 @@ If you want to send an email with attachments:
         context={'foo': 'bar'},
         priority='now',
         attachments={
-            'attachment1.doc', '/path/to/file/file1.doc',
-            'attachment2.txt', ContentFile('file content'),
+            'attachment1.doc': '/path/to/file/file1.doc',
+            'attachment2.txt': ContentFile('file content'),
         }
     )
 
@@ -410,7 +410,7 @@ setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIF
     POST_OFFICE = {
         'SENDING_ORDER': ['created']
     }
-    
+
 Context Field Serializer
 ------------------------
 
@@ -532,10 +532,11 @@ To run the test suite::
 Changelog
 =========
 
-Version 2.0.2
+Version 2.0.4
 -------------
 * Fixes more Django 1.8 deprecation warnings.
-* email.dispatch() now closes connection by default
+* `Email.dispatch()` now closes backend connection by default. Thanks @zwack
+* Compatibility fixes for Django 1.9. Thanks @yprez!
 
 Version 2.0.1
 -------------

@@ -1,9 +1,7 @@
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
 
-from .mail import create
 from .settings import get_default_priority
-from .utils import create_attachments
 
 
 class EmailBackend(BaseEmailBackend):
@@ -19,6 +17,9 @@ class EmailBackend(BaseEmailBackend):
         Queue one or more EmailMessage objects and returns the number of
         email messages sent.
         """
+        from .mail import create
+        from .utils import create_attachments
+
         if not email_messages:
             return
 
