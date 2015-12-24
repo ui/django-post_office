@@ -532,7 +532,7 @@ To run the test suite::
 Changelog
 =========
 
-Version 2.0.4
+Version 2.0.5
 -------------
 * Fixes more Django 1.8 deprecation warnings.
 * `Email.dispatch()` now closes backend connection by default. Thanks @zwack
