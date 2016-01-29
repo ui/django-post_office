@@ -201,7 +201,7 @@ class EmailTemplate(models.Model):
         verbose_name_plural = _("Email Templates")
 
     def __str__(self):
-        return self.name
+        return u'%s %s' % (self.name, self.language)
 
     def save(self, *args, **kwargs):
         # If template is a translation, use default template's name
