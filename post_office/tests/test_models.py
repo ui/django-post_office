@@ -269,3 +269,9 @@ class ModelTest(TestCase):
         template = EmailTemplate.objects.create(name='name')
         id_template = template.translated_templates.create(language='id')
         self.assertEqual(id_template.name, template.name)
+
+    def test_models_repr(self):
+        self.assertEqual(repr(EmailTemplate(name='test', language='en')),
+                         '<EmailTemplate: test en>')
+        self.assertEqual(repr(Email(to='test@example.com')),
+                         "<Email: ['test@example.com']>")
