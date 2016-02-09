@@ -32,7 +32,7 @@ class EmailBackend(BaseEmailBackend):
             # Check whether email has 'text/html' alternative
             alternatives = getattr(email_message, 'alternatives', ())
             for alternative in alternatives:
-                if alternative[1] == 'text/html':
+                if alternative[1].startswith('text/html'):
                     html_message = alternative[0]
                     break
             else:
