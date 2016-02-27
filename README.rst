@@ -533,6 +533,11 @@ To run the test suite::
 Changelog
 =========
 
+Version 2.0.6
+-------------
+* Fixes Django 1.10 deprecation warnings and other minor improvements. Thanks @yprez!
+* Email.subject can now accept up to 989 characters. This should also fix minor migration issues. Thanks @yprez!
+
 Version 2.0.5
 -------------
 * Fixes more Django 1.8 deprecation warnings.
