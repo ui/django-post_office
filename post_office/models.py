@@ -223,6 +223,7 @@ def get_upload_path(instance, filename):
     return 'post_office_attachments/' + filename
 
 
+@python_2_unicode_compatible
 class Attachment(models.Model):
     """
     A model describing an email attachment.
@@ -233,3 +234,6 @@ class Attachment(models.Model):
 
     class Meta:
         app_label = 'post_office'
+
+    def __str__(self):
+        return self.name
