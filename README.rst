@@ -393,6 +393,7 @@ This behavior can be changed by setting ``LOG_LEVEL``.
     }
 
 The different options are:
+
 * ``0`` logs nothing
 * ``1`` logs only failed deliveries
 * ``2`` logs everything (both successful and failed delivery attempts)
