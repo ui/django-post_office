@@ -55,8 +55,6 @@ class UtilsTest(TestCase):
 
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_comma_separated_emails,
-                          ['Alice Bob <email@example.com>'])
-        self.assertRaises(ValidationError, validate_comma_separated_emails,
                           ['email@example.com', 'invalid_mail', 'email@example.com'])
 
     def test_get_template_email(self):
