@@ -240,6 +240,14 @@ class ModelTest(TestCase):
             'Invalid priority, must be one of: low, medium, high, now'
         )
 
+    def test_send_recipient_display_name(self):
+        """
+        Regression test for:
+        https://github.com/ui/django-post_office/issues/73
+        """
+        email = send(recipients=['Alice Bob <email@example.com>'], sender='from@a.com')
+        self.assertTrue(email.to)
+
     def test_attachment_filename(self):
         attachment = Attachment()
 
