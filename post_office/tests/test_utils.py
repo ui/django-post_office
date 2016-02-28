@@ -48,13 +48,12 @@ class UtilsTest(TestCase):
         validate_comma_separated_emails(
             ['email@example.com', 'email2@example.com', 'email3@example.com']
         )
+        validate_comma_separated_emails(['Alice Bob <email@example.com>'])
 
         # Should also support international domains
         validate_comma_separated_emails(['email@example.co.id'])
 
         # These should raise ValidationError
-        self.assertRaises(ValidationError, validate_comma_separated_emails,
-                          ['Alice Bob <email@example.com>'])
         self.assertRaises(ValidationError, validate_comma_separated_emails,
                           ['email@example.com', 'invalid_mail', 'email@example.com'])
 
