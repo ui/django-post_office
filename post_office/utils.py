@@ -14,14 +14,6 @@ from .settings import get_default_priority
 from .validators import validate_email_with_name
 
 
-try:
-    from django.utils import timezone
-    now = timezone.now
-except ImportError:
-    import datetime
-    now = datetime.datetime.now
-
-
 def send_mail(subject, message, from_email, recipient_list, html_message='',
               scheduled_time=None, headers=None, priority=PRIORITY.medium):
     """
