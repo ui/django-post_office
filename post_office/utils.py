@@ -1,11 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
-
-try:
-    from django.utils.encoding import force_text
-except ImportError:
-    from django.utils.encoding import force_unicode as force_text
+from django.utils.encoding import force_text
 
 from post_office import cache
 from .compat import string_types
