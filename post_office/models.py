@@ -11,16 +11,11 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import python_2_unicode_compatible
 from post_office.fields import CommaSeparatedEmailField
 
-try:
-    from django.utils.encoding import smart_text  # For Django >= 1.5
-except ImportError:
-    from django.utils.encoding import smart_unicode as smart_text
-
 from django.template import Context, Template
 
 from jsonfield import JSONField
 from post_office import cache
-from .compat import text_type
+from .compat import text_type, smart_text
 from .connections import connections
 from .settings import context_field_class, get_log_level
 from .validators import validate_email_with_name, validate_template_syntax
