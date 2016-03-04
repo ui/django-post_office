@@ -50,3 +50,23 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
+
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'OPTIONS': {
+        'loaders': [
+            'django.template.loaders.filesystem.Loader',
+            'django.template.loaders.app_directories.Loader',
+            ('django.template.loaders.locmem.Loader', {
+                'test_email_template/subject.txt': 'Subject',
+                'test_email_template/content.html': '<html>Content</html>',
+                'test_email_template/content.txt': 'Content',
+            }),
+        ],
+        'context_processors': [
+            'django.contrib.auth.context_processors.auth',
+            'django.core.context_processors.request',
+            'django.core.context_processors.static',
+        ],
+    },
+}]

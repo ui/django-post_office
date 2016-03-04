@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils.timezone import now
 
-from ..models import Email, STATUS
+from ..models import Email, EmailTemplate, STATUS
 
 
 class CommandTest(TestCase):
@@ -79,3 +79,15 @@ class CommandTest(TestCase):
                                      backend_alias='error')
         call_command('send_queued_mail', log_level=2)
         self.assertEqual(email.logs.count(), 1)
+
+    def test_load_email_template(self):
+        self.assertEqual(EmailTemplate.objects.count(), 0)
+
+        call_command('load_email_template', 'test_email_template')
+        self.assertEqual(EmailTemplate.objects.count(), 1)
+
+        template = EmailTemplate.objects.get()
+        self.assertEqual(template.name, 'test_email_template')
+        self.assertEqual(template.content, 'Content')
+        self.assertEqual(template.html_content, '<html>Content</html>')
+        self.assertEqual(template.subject, 'Subject')
