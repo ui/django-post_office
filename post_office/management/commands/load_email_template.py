@@ -11,11 +11,7 @@ def _get_template(template_name):
     """Find the template and return the raw template file content"""
 
     template = loader.get_template(template_name)
-    filename = template.origin.name
-
-    with open(filename) as f:
-        content = f.read()
-
+    content = template.template.source
     content = content.strip()
     return content
 
