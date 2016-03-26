@@ -90,7 +90,7 @@ class UtilsTest(TestCase):
             """Raise exception if real cache usage not equal to desired_cache value
             """
             # to avoid cache cleaning - just create new template
-            name = 'can_i/suport_cache_settings{}'.format(suffix)
+            name = 'can_i/suport_cache_settings%s' % suffix
             self.assertRaises(
                 EmailTemplate.DoesNotExist, get_email_template, name
             )
