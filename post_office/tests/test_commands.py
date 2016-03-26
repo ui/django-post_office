@@ -2,14 +2,9 @@ import datetime
 
 from django.core.management import call_command
 from django.test import TestCase
+from django.utils.timezone import now
 
 from ..models import Email, STATUS
-
-try:
-    from django.utils.timezone import now
-    now = now
-except ImportError:
-    now = datetime.now
 
 
 class CommandTest(TestCase):

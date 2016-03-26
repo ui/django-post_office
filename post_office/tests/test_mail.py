@@ -302,7 +302,6 @@ class MailTest(TestCase):
             sender='from@example.com', recipients=['to@example.com'],
             template=template, context=context
         )
-        from datetime import date
         today = date.today()
         current_year = today.year
         self.assertEqual(email.subject, 'Subject %d' % current_year)

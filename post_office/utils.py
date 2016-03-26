@@ -1,25 +1,13 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
-
-try:
-    from django.utils.encoding import force_text
-except ImportError:
-    from django.utils.encoding import force_unicode as force_text
+from django.utils.encoding import force_text
 
 from post_office import cache
 from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_default_priority
 from .validators import validate_email_with_name
-
-
-try:
-    from django.utils import timezone
-    now = timezone.now
-except ImportError:
-    import datetime
-    now = datetime.datetime.now
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',

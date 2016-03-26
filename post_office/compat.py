@@ -23,6 +23,21 @@ else:
     text_type = unicode
 
 
+try:
+    from django.core.cache import caches  # Django >= 1.7
+
+    def get_cache(name):
+        return caches[name]
+except ImportError:
+    from django.core.cache import get_cache
+
+
+try:
+    from django.utils.encoding import smart_text  # For Django >= 1.5
+except ImportError:
+    from django.utils.encoding import smart_unicode as smart_text
+
+
 # Django 1.4 doesn't have ``import_string`` or ``import_by_path``
 def import_attribute(name):
     """Return an attribute from a dotted path name (e.g. "path.to.func")."""

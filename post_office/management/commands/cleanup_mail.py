@@ -2,15 +2,9 @@ import datetime
 from optparse import make_option
 
 from django.core.management.base import BaseCommand
+from django.utils.timezone import now
 
 from ...models import Email
-
-
-try:
-    from django.utils.timezone import now
-    now = now
-except ImportError:
-    now = datetime.now
 
 
 class Command(BaseCommand):
