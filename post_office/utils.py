@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.core.validators import validate_email
 
 try:
     from django.utils.encoding import force_text
@@ -12,6 +11,7 @@ from post_office import cache
 from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_default_priority
+from .validators import validate_email_with_name
 
 
 try:
@@ -130,7 +130,7 @@ def parse_emails(emails):
 
     for email in emails:
         try:
-            validate_email(email)
+            validate_email_with_name(email)
         except ValidationError:
             raise ValidationError('%s is not a valid email address' % email)
 
