@@ -533,6 +533,10 @@ To run the test suite::
 Changelog
 =========
 
+Version 2.0.7
+-------------
+* Fixed an issue with sending email to recipients with display name. Thanks @yprez!
+
 Version 2.0.6
 -------------
 * Fixes Django 1.10 deprecation warnings and other minor improvements. Thanks @yprez!
