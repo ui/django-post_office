@@ -31,7 +31,7 @@ POST_OFFICE = {
         'smtp': 'django.core.mail.backends.smtp.EmailBackend',
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
     },
-    'TEMPLATE_DIR': os.path.join(BASE_DIR, 'post_office', 'tests', 'templates'),
+    'TEMPLATE_DIR': os.path.join(BASE_DIR, 'post_office', 'tests', 'email_templates'),
 }
 
 
