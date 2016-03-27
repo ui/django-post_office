@@ -88,6 +88,6 @@ class CommandTest(TestCase):
 
         template = EmailTemplate.objects.get()
         self.assertEqual(template.name, 'test_email_template')
-        self.assertEqual(template.content, 'Content')
-        self.assertEqual(template.html_content, '<html>Content</html>')
+        self.assertEqual(template.content, 'Content\n')
+        self.assertEqual(template.html_content, '<h1>Content</h1>\n')
         self.assertEqual(template.subject, 'Subject')

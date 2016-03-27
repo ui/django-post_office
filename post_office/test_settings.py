@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 DATABASES = {
@@ -53,15 +55,11 @@ MIDDLEWARE_CLASSES = (
 
 TEMPLATES = [{
     'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [os.path.join(BASE_DIR, 'post_office', 'tests', 'templates')],
     'OPTIONS': {
         'loaders': [
             'django.template.loaders.filesystem.Loader',
             'django.template.loaders.app_directories.Loader',
-            ('django.template.loaders.locmem.Loader', {
-                'test_email_template/subject.txt': 'Subject',
-                'test_email_template/content.html': '<html>Content</html>',
-                'test_email_template/content.txt': 'Content',
-            }),
         ],
         'context_processors': [
             'django.contrib.auth.context_processors.auth',
