@@ -86,6 +86,10 @@ def get_sending_order():
     return get_config().get('SENDING_ORDER', ['-priority'])
 
 
+def get_template_dir():
+    return get_config().get('TEMPLATE_DIR', 'email_templates')
+
+
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
                                        'jsonfield.JSONField')
 context_field_class = import_attribute(CONTEXT_FIELD_CLASS)

@@ -30,7 +30,8 @@ POST_OFFICE = {
         'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
         'smtp': 'django.core.mail.backends.smtp.EmailBackend',
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
-    }
+    },
+    'TEMPLATE_DIR': os.path.join(BASE_DIR, 'post_office', 'tests', 'templates'),
 }
 
 
@@ -52,19 +53,3 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
-
-TEMPLATES = [{
-    'BACKEND': 'django.template.backends.django.DjangoTemplates',
-    'DIRS': [os.path.join(BASE_DIR, 'post_office', 'tests', 'templates')],
-    'OPTIONS': {
-        'loaders': [
-            'django.template.loaders.filesystem.Loader',
-            'django.template.loaders.app_directories.Loader',
-        ],
-        'context_processors': [
-            'django.contrib.auth.context_processors.auth',
-            'django.core.context_processors.request',
-            'django.core.context_processors.static',
-        ],
-    },
-}]
