@@ -29,9 +29,17 @@ class Command(BaseCommand):
         content = _get_template(template_name, 'content.txt')
         html_content = _get_template(template_name, 'content.html')
 
-        EmailTemplate.objects.update_or_create(name=template_name, defaults={
+        fields = {
             'subject': subject,
             'content': content,
             'html_content': html_content,
-        })
+        }
+        template, created = EmailTemplate.objects.get_or_create(
+            name=template_name, defaults=fields)
+
+        if not created:  # update fields
+            for k, v in fields.items():
+                setattr(template, k, v)
+            template.save()
+
         logger.info('Loaded template: %s', template_name)

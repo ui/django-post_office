@@ -91,3 +91,14 @@ class CommandTest(TestCase):
         self.assertEqual(template.content, 'Content\n')
         self.assertEqual(template.html_content, '<h1>Content</h1>\n')
         self.assertEqual(template.subject, 'Subject')
+
+    def test_load_email_template_update(self):
+        EmailTemplate.objects.create(name='test_email_template', subject='foo')
+        call_command('load_email_template', 'test_email_template')
+        self.assertEqual(EmailTemplate.objects.count(), 1)
+
+        template = EmailTemplate.objects.get()
+        self.assertEqual(template.name, 'test_email_template')
+        self.assertEqual(template.content, 'Content\n')
+        self.assertEqual(template.html_content, '<h1>Content</h1>\n')
+        self.assertEqual(template.subject, 'Subject')
