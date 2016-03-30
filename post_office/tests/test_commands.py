@@ -102,3 +102,7 @@ class CommandTest(TestCase):
         self.assertEqual(template.content, 'Content\n')
         self.assertEqual(template.html_content, '<h1>Content</h1>\n')
         self.assertEqual(template.subject, 'Subject')
+
+    def test_load_email_template_not_found(self):
+        call_command('load_email_template', 'nonexistent')
+        self.assertEqual(EmailTemplate.objects.count(), 0)
