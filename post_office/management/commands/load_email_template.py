@@ -30,7 +30,7 @@ class Command(BaseCommand):
             message += (
                 '\n\nPlease make sure you defined the correct email '
                 'template directory structure.\n'
-                'You can change the base directory ("{}") by setting '
+                'You can change the base directory ("{0}") by setting '
                 'POST_OFFICE["TEMPLATE_DIR"] in your settings file.'
             ).format(base_dir)
             self.stderr.write(message)
