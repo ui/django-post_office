@@ -98,7 +98,7 @@ You can schedule this management command to run regularly via cron::
 
     * * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
 
-or, if you use (uWSGI)[https://uwsgi-docs.readthedocs.org/en/latest/] as application
+or, if you use uWSGI_ as application
 server, add this short snipped  to the project's ``wsgi.py`` file:
 
 .. code-block:: python
@@ -624,3 +624,5 @@ Indonesia's most elegant CRM/loyalty platform.
 
 .. |Build Status| image:: https://travis-ci.org/ui/django-post_office.png?branch=master
    :target: https://travis-ci.org/ui/django-post_office
+
+.. _uWSGI: https://uwsgi-docs.readthedocs.org/en/latest/
