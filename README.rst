@@ -98,6 +98,36 @@ You can schedule this management command to run regularly via cron::
 
     * * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
 
+or, if you use (uWSGI)[https://uwsgi-docs.readthedocs.org/en/latest/] as application
+server, add this short snipped  to the project's ``wsgi.py`` file:
+
+.. code-block:: python
+    :caption: wsgi.py
+
+    from django.core.wsgi import get_wsgi_application
+    
+    application = get_wsgi_application()
+    
+    # add this block of code
+    try:
+        import uwsgidecorators
+        from django.core.management import call_command
+    
+        @uwsgidecorators.timer(10)
+        def send_queued_mail(num):
+            """Send queued mail every 10 seconds"""
+            call_command('send_queued_mail')
+    
+    except ImportError:
+        print("uwsgidecorators not found. Cron and timers are disabled")
+
+Note, ``uwsgidecorators`` are available only if you start your application with **uWSGI**.
+However, Django's internal ``./manange.py runserver`` also access this file, therefore
+wrap the block into an exception handler as shown above.
+
+This configuration is very useful in environments, such as Docker containers, where you
+don't have a running cron-daemon.
+
 
 Usage
 =====
