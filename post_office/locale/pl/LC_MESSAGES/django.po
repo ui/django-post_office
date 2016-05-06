@@ -1,0 +1,206 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-05-06 14:56+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2);\n"
+
+#: admin.py:81 models.py:199
+msgid "Render template in alternative language"
+msgstr "Wygeneruj szablon w alternatywnym języku"
+
+#: admin.py:82 models.py:198
+msgid "Language"
+msgstr "Język"
+
+#: admin.py:111
+msgid "Default Content"
+msgstr "Domyślna zawartość"
+
+#: admin.py:125 models.py:187
+msgid "Description"
+msgstr "Opis"
+
+#: admin.py:131
+msgid "Languages"
+msgstr "Języki"
+
+#: fields.py:11
+msgid "Comma-separated emails"
+msgstr "Oddzielone przecinkami emaile"
+
+#: fields.py:20
+msgid "Only comma separated emails are allowed."
+msgstr "Tylko oddzielone przecinkami emaile są dozwolone."
+
+#: models.py:35
+msgid "low"
+msgstr "niski"
+
+#: models.py:35
+msgid "medium"
+msgstr "średni"
+
+#: models.py:36
+msgid "high"
+msgstr "wysoki"
+
+#: models.py:36
+msgid "now"
+msgstr "natychmiastowy"
+
+#: models.py:37 models.py:163
+msgid "sent"
+msgstr "wysłany"
+
+#: models.py:37 models.py:163
+msgid "failed"
+msgstr "odrzucony"
+
+#: models.py:38
+msgid "queued"
+msgstr "w kolejce"
+
+#: models.py:40
+msgid "Email From"
+msgstr "Email od"
+
+#: models.py:42
+msgid "Email To"
+msgstr "Email do"
+
+#: models.py:43
+msgid "Cc"
+msgstr "Cc"
+
+#: models.py:45 models.py:192
+msgid "Subject"
+msgstr "Temat"
+
+#: models.py:46 models.py:170
+msgid "Message"
+msgstr "Wiadomość"
+
+#: models.py:47
+msgid "HTML Message"
+msgstr "Wiadomość w HTML"
+
+#: models.py:54 models.py:168
+msgid "Status"
+msgstr "Status"
+
+#: models.py:57
+msgid "Priority"
+msgstr "Priorytet"
+
+#: models.py:62
+msgid "The scheduled sending time"
+msgstr "Zaplanowany czas wysłania"
+
+#: models.py:64
+msgid "Headers"
+msgstr "Nagłówki"
+
+#: models.py:66
+msgid "Email template"
+msgstr "Szablon emaila"
+
+#: models.py:67
+msgid "Context"
+msgstr "Kontekst"
+
+#: models.py:68
+msgid "Backend alias"
+msgstr "Backend alias"
+
+#: models.py:73
+msgctxt "Email address"
+msgid "Email"
+msgstr "Email"
+
+#: models.py:74
+msgctxt "Email addresses"
+msgid "Emails"
+msgstr "Emaile"
+
+#: models.py:166
+msgid "Email address"
+msgstr "Adres email"
+
+#: models.py:169
+msgid "Exception type"
+msgstr "Typ wyjątku"
+
+#: models.py:174
+msgid "Log"
+msgstr "Log"
+
+#: models.py:175
+msgid "Logs"
+msgstr "Logi"
+
+#: models.py:186 models.py:240
+msgid "Name"
+msgstr "Nazwa"
+
+#: models.py:186
+msgid "e.g: 'welcome_email'"
+msgstr "np: 'powitalny_email'"
+
+#: models.py:188
+msgid "Description of this template."
+msgstr "Opis tego szablonu"
+
+#: models.py:194
+msgid "Content"
+msgstr "Zawartość"
+
+#: models.py:196
+msgid "HTML content"
+msgstr "Zawartość w HTML"
+
+#: models.py:202
+msgid "Default template"
+msgstr "Domyślna zawartość"
+
+#: models.py:207
+msgid "Email Template"
+msgstr "Szablon emaila"
+
+#: models.py:208
+msgid "Email Templates"
+msgstr "Szablony emaili"
+
+#: models.py:239
+msgid "File"
+msgstr "Plik"
+
+#: models.py:240
+msgid "The original filename"
+msgstr "Oryginalna nazwa pliku"
+
+#: models.py:242
+msgid "Email addresses"
+msgstr "Adresy email"
+
+#: models.py:246
+msgid "Attachment"
+msgstr "Załącznik"
+
+#: models.py:247
+msgid "Attachments"
+msgstr "Załączniki"
