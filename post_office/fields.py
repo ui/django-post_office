@@ -9,6 +9,16 @@ class CommaSeparatedEmailField(TextField):
     default_validators = [validate_comma_separated_emails]
     description = _("Comma-separated emails")
 
+    @staticmethod
+    def parse_value(value):
+        if isinstance(value, six.string_types):
+            if value == '':
+                return []
+            else:
+                return [s.strip() for s in value.split(',')]
+        else:
+            return value
+
     def __init__(self, *args, **kwargs):
         kwargs['blank'] = True
         super(CommaSeparatedEmailField, self).__init__(*args, **kwargs)
@@ -38,14 +48,11 @@ class CommaSeparatedEmailField(TextField):
     def from_db_value(self, value, expression, connection, context):
         return self.to_python(value)
 
+    def from_db_value(self, value, expression, connection, context):
+        return self.parse_value(value)
+
     def to_python(self, value):
-        if isinstance(value, six.string_types):
-            if value == '':
-                return []
-            else:
-                return [s.strip() for s in value.split(',')]
-        else:
-            return value
+        return self.parse_value(value)
 
     def south_field_triple(self):
         """
