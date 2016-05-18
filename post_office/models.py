@@ -240,4 +240,4 @@ class Attachment(models.Model):
 
 import django
 if django.VERSION < (1, 7):
-    import signals
+    import post_office.signals
