@@ -166,6 +166,14 @@ class Log(models.Model):
         return text_type(self.date)
 
 
+class EmailTemplateMeta(models.base.ModelBase):
+    def __new__(cls, name, bases, attrs):
+        # Override choices attr
+        cls = models.base.ModelBase.__new__(cls, name, bases, attrs)
+        setattr(cls._meta.get_field('language'), 'choices_', settings.LANGUAGES)
+        return cls
+
+
 @python_2_unicode_compatible
 class EmailTemplate(models.Model):
     """
@@ -182,7 +190,7 @@ class EmailTemplate(models.Model):
         verbose_name=_("Content"), validators=[validate_template_syntax])
     html_content = models.TextField(blank=True,
         verbose_name=_("HTML content"), validators=[validate_template_syntax])
-    language = models.CharField(max_length=12, choices=settings.LANGUAGES,
+    language = models.CharField(max_length=12, choices=[],
         help_text=_("Render template in alternative language"),
         default='', blank=True)
     default_template = models.ForeignKey('self', related_name='translated_templates',
