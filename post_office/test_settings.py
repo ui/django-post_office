@@ -7,6 +7,10 @@ DATABASES = {
     },
 }
 
+# Default values: True
+# POST_OFFICE_CACHE = True
+# POST_OFFICE_TEMPLATE_CACHE = True
+
 
 CACHES = {
     'default': {
