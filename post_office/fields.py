@@ -46,9 +46,6 @@ class CommaSeparatedEmailField(TextField):
             return ', '.join(map(lambda s: s.strip(), value))
 
     def from_db_value(self, value, expression, connection, context):
-        return self.to_python(value)
-
-    def from_db_value(self, value, expression, connection, context):
         return self.parse_value(value)
 
     def to_python(self, value):
