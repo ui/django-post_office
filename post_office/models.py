@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from uuid import uuid4
 
 from collections import namedtuple
+from uuid import uuid4
 
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
-from django.utils.translation import pgettext_lazy
+from django.template import Context, Template
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.translation import pgettext_lazy
+from django.utils.translation import ugettext_lazy as _
+from jsonfield import JSONField
+
+from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
 
-from django.template import Context, Template
-
-from jsonfield import JSONField
-from post_office import cache
 from .compat import text_type, smart_text
 from .connections import connections
 from .settings import context_field_class, get_log_level
