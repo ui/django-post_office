@@ -38,7 +38,10 @@ def get_email_template(name, language=''):
     """
     Function that returns an email template instance, from cache or DB.
     """
-    if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
+    use_cache = getattr(settings, 'POST_OFFICE_CACHE', True)
+    if use_cache:
+        use_cache = getattr(settings, 'POST_OFFICE_TEMPLATE_CACHE', True)
+    if not use_cache:
         return EmailTemplate.objects.get(name=name, language=language)
     else:
         composite_name = '%s:%s' % (name, language)
