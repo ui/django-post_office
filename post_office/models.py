@@ -26,6 +26,7 @@ PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 
 
+
 @python_2_unicode_compatible
 class Email(models.Model):
     """
