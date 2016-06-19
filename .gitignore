@@ -1,2 +1,4 @@
 *.pyc
 post_office_attachments
+.tox
+*.egg-info
