@@ -562,6 +562,13 @@ To run the test suite::
 
     `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
 
+To run slow test against different Django and Python versions::
+    
+    pip install tox
+    tox
+
+You can ignore errors about not installed python versions, but it's good to have at least single python2 and single python3. CI server (travis-ci) will have all of them and do basically the same when you create pull request.
+
 
 Changelog
 =========
