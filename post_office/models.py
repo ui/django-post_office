@@ -98,7 +98,7 @@ class Email(models.Model):
                 connection=connection, headers=self.headers)
 
         for attachment in self.attachments.all():
-            msg.attach(attachment.name, attachment.file.read())
+            msg.attach_file(attachment.file.path)
 
         return msg
 
@@ -212,8 +212,8 @@ def get_upload_path(instance, filename):
     if not instance.name:
         instance.name = filename  # set original filename
 
-    filename = '{name}.{ext}'.format(name=uuid4().hex,
-                                     ext=filename.split('.')[-1])
+    # Save the file with original filename, until https://code.djangoproject.com/ticket/26802 is resolved
+    filename = '{path}/{filename}'.format(path=uuid4().hex, filename=filename)
 
     return 'post_office_attachments/' + filename
 
