@@ -281,5 +281,5 @@ class ModelTest(TestCase):
     def test_models_repr(self):
         self.assertEqual(repr(EmailTemplate(name='test', language='en')),
                          '<EmailTemplate: test en>')
-        self.assertEqual(repr(Email(to='test@example.com')),
+        self.assertEqual(repr(Email(to=['test@example.com'])),
                          "<Email: ['test@example.com']>")
