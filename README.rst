@@ -141,55 +141,55 @@ mail.send()
 ``mail.send`` is the most important function in this library, it takes these
 arguments:
 
-+-------------------+----------+-------------------------------------------------+
-| Argument          | Required | Description                                     |
-+-------------------+----------+-------------------------------------------------+
-| recipients        | Yes      | list of recipient email addresses               |
-+-------------------+----------+-------------------------------------------------+
-| sender            | No       | Defaults to ``settings.DEFAULT_FROM_EMAIL``,    |
-|                   |          | display name is allowed (``John <john@a.com>``) |
-+-------------------+----------+-------------------------------------------------+
-| subject           | No       | Email subject (if ``template`` is not specified)|
-+-------------------+----------+-------------------------------------------------+
-| message           | No       | Email content (if ``template`` is not specified)|
-+-------------------+----------+-------------------------------------------------+
-| html_message      | No       | HTML content (if ``template`` is not specified) |
-+-------------------+----------+-------------------------------------------------+
-| template          | No       | ``EmailTemplate`` instance or name              |
-+-------------------+----------+-------------------------------------------------+
-| language          | No       | Language in which you want to send the email in |
-|                   |          | (if you have multilingual email templates.)     |
-+-------------------+----------+-------------------------------------------------+
-| cc                | No       | list emails, will appear in ``cc`` field        |
-+-------------------+----------+-------------------------------------------------+
-| bcc               | No       | list of emails, will appear in `bcc` field      |
-+-------------------+----------+-------------------------------------------------+
-| attachments       | No       | Email attachments - A dictionary where the keys |
-|                   |          | are the filenames and the values are either:    |
-|                   |          |                                                 |
-|                   |          | * files                                         |
-|                   |          | * file-like objects                             |
-|                   |          | * full path of the file                         |
-+-------------------+----------+-------------------------------------------------+
-| context           | No       | A dictionary, used to render templated email    |
-+-------------------+----------+-------------------------------------------------+
-| headers           | No       | A dictionary of extra headers on the message    |
-+-------------------+----------+-------------------------------------------------+
-| scheduled_time    | No       | A date/datetime object indicating when the email|
-|                   |          | should be sent                                  |
-+-------------------+----------+-------------------------------------------------+
-| priority          | No       | ``high``, ``medium``, ``low`` or ``now``        |
-|                   |          | (send_immediately)                              |
-+-------------------+----------+-------------------------------------------------+
-| backend           | No       | Alias of the backend you want to use.           |
-|                   |          | ``default`` will be used if not specified.      |
-+-------------------+----------+-------------------------------------------------+
-| render_on_delivery| No       | Setting this to ``True`` causes email to be     |
-|                   |          | lazily rendered during delivery. ``template``   |
-|                   |          | is required when ``render_on_delivery`` is True.|
-|                   |          | This way content is never stored in the DB.     |
-|                   |          | May result in significant space savings.        |
-+-------------------+----------+-------------------------------------------------+
++--------------------+----------+--------------------------------------------------+
+| Argument           | Required | Description                                      |
++--------------------+----------+--------------------------------------------------+
+| recipients         | Yes      | list of recipient email addresses                |
++--------------------+----------+--------------------------------------------------+
+| sender             | No       | Defaults to ``settings.DEFAULT_FROM_EMAIL``,     |
+|                    |          | display name is allowed (``John <john@a.com>``)  |
++--------------------+----------+--------------------------------------------------+
+| subject            | No       | Email subject (if ``template`` is not specified) |
++--------------------+----------+--------------------------------------------------+
+| message            | No       | Email content (if ``template`` is not specified) |
++--------------------+----------+--------------------------------------------------+
+| html_message       | No       | HTML content (if ``template`` is not specified)  |
++--------------------+----------+--------------------------------------------------+
+| template           | No       | ``EmailTemplate`` instance or name               |
++--------------------+----------+--------------------------------------------------+
+| language           | No       | Language in which you want to send the email in  |
+|                    |          | (if you have multilingual email templates.)      |
++--------------------+----------+--------------------------------------------------+
+| cc                 | No       | list emails, will appear in ``cc`` field         |
++--------------------+----------+--------------------------------------------------+
+| bcc                | No       | list of emails, will appear in `bcc` field       |
++--------------------+----------+--------------------------------------------------+
+| attachments        | No       | Email attachments - A dictionary where the keys  |
+|                    |          | are the filenames and the values are either:     |
+|                    |          |                                                  |
+|                    |          | * files                                          |
+|                    |          | * file-like objects                              |
+|                    |          | * full path of the file                          |
++--------------------+----------+--------------------------------------------------+
+| context            | No       | A dictionary, used to render templated email     |
++--------------------+----------+--------------------------------------------------+
+| headers            | No       | A dictionary of extra headers on the message     |
++--------------------+----------+--------------------------------------------------+
+| scheduled_time     | No       | A date/datetime object indicating when the email |
+|                    |          | should be sent                                   |
++--------------------+----------+--------------------------------------------------+
+| priority           | No       | ``high``, ``medium``, ``low`` or ``now``         |
+|                    |          | (send_immediately)                               |
++--------------------+----------+--------------------------------------------------+
+| backend            | No       | Alias of the backend you want to use.            |
+|                    |          | ``default`` will be used if not specified.       |
++--------------------+----------+--------------------------------------------------+
+| render_on_delivery | No       | Setting this to ``True`` causes email to be      |
+|                    |          | lazily rendered during delivery. ``template``    |
+|                    |          | is required when ``render_on_delivery`` is True. |
+|                    |          | This way content is never stored in the DB.      |
+|                    |          | May result in significant space savings.         |
++--------------------+----------+--------------------------------------------------+
 
 
 Here are a few examples.
@@ -360,15 +360,15 @@ Management Commands
 * ``send_queued_mail`` - send queued emails, those aren't successfully sent
   will be marked as ``failed``. Accepts the following arguments:
 
-+---------------------------+-------------------------------------------------+
-| Argument                  | Description                                     |
-+---------------------------+-------------------------------------------------+
-| ``--processes`` or ``-p`` | Number of parallel processes to send email.     |
-|                           | Defaults to 1                                   |
-+---------------------------+---------+---------------------------------------+
-| ``--lockfile`` or ``-L``  | Full path to file used as lock file. Defaults to|
-|                           | ``/tmp/post_office.lock``                       |
-+---------------------------+-------------------------------------------------+
++---------------------------+--------------------------------------------------++
+| Argument                  | Description                                      ||
++---------------------------+--------------------------------------------------++
+| ``--processes`` or ``-p`` | Number of parallel processes to send email.      ||
+|                           | Defaults to 1                                    ||
++---------------------------+--------------------------------------------------++
+| ``--lockfile`` or ``-L``  | Full path to file used as lock file. Defaults to ||
+|                           | ``/tmp/post_office.lock``                        ||
++---------------------------+--------------------------------------------------++
 
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
@@ -433,7 +433,7 @@ The different options are:
 
 
 Sending Order
-----------------
+-------------
 
 The default sending order for emails is ``-priority``, but this can be altered by
 setting ``SENDING_ORDER``. For example, if you want to send queued emails in FIFO order :
@@ -562,6 +562,14 @@ To run the test suite::
 
     `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
 
+You can run the full test suite with::
+
+    tox
+
+or::
+
+    python setup.py test
+    
 
 Changelog
 =========

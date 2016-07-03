@@ -1,2 +1,39 @@
-*.pyc
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+eggs/
+sdist/
+tmp/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+.tmp/
+ghostdriver.log
+
+# Editor configs
+.project
+.pydevproject
+.python-version
+.ruby-version
+.settings/
+
+## generic files to ignore
+*~
+*.lock
+
 post_office_attachments

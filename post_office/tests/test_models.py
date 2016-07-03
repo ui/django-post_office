@@ -256,7 +256,7 @@ class ModelTest(TestCase):
             content=ContentFile('test file content'),
             save=True
         )
-        self.assertEquals(attachment.name, 'test.txt')
+        self.assertEqual(attachment.name, 'test.txt')
 
     def test_attachments_email_message(self):
         email = Email.objects.create(to=['to@example.com'],

@@ -228,7 +228,7 @@ class MailTest(TestCase):
                      subject='subject', attachments=attachments)
 
         self.assertTrue(email.pk)
-        self.assertEquals(email.attachments.count(), 2)
+        self.assertEqual(email.attachments.count(), 2)
 
     def test_send_with_render_on_delivery(self):
         """
@@ -265,8 +265,8 @@ class MailTest(TestCase):
                      sender='from@example.com', message='message',
                      subject='subject', attachments=attachments)
 
-        self.assertEquals(email.attachments.count(), 2)
-        self.assertEquals(Attachment.objects.count(), 2)
+        self.assertEqual(email.attachments.count(), 2)
+        self.assertEqual(Attachment.objects.count(), 2)
 
     def test_create_with_template(self):
         """If render_on_delivery is True, subject and content

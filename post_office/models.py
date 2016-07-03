@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from uuid import uuid4
 
 from collections import namedtuple
+from uuid import uuid4
 
 from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.template import Context, Template
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.translation import pgettext_lazy
+from django.utils.translation import ugettext_lazy as _
+from jsonfield import JSONField
+
+from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
 
-from django.template import Context, Template
-
-from jsonfield import JSONField
-from post_office import cache
 from .compat import text_type, smart_text
 from .connections import connections
 from .settings import context_field_class, get_log_level
@@ -23,6 +24,7 @@ from .validators import validate_email_with_name, validate_template_syntax
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
+
 
 
 @python_2_unicode_compatible
@@ -49,20 +51,28 @@ class Email(models.Model):
     Status field will then be set to ``failed`` or ``sent`` depending on
     whether it's successfully delivered.
     """
-    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, db_index=True,
-                                              blank=True, null=True)
-    priority = models.PositiveSmallIntegerField(choices=PRIORITY_CHOICES,
+    status = models.PositiveSmallIntegerField(
+        _("Status"),
+        choices=STATUS_CHOICES, db_index=True,
+        blank=True, null=True)
+    priority = models.PositiveSmallIntegerField(_("Priority"),
+                                                choices=PRIORITY_CHOICES,
                                                 blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
-    scheduled_time = models.DateTimeField(blank=True, null=True, db_index=True)
-    headers = JSONField(blank=True, null=True)
-    template = models.ForeignKey('post_office.EmailTemplate', blank=True, null=True)
-    context = context_field_class(blank=True, null=True)
-    backend_alias = models.CharField(blank=True, default='', max_length=64)
+    scheduled_time = models.DateTimeField(_('The scheduled sending time'), 
+                                          blank=True, null=True, db_index=True)
+    headers = JSONField(_('Headers'),blank=True, null=True)
+    template = models.ForeignKey('post_office.EmailTemplate', blank=True, 
+                                 null=True, verbose_name=_('Email template'))
+    context = context_field_class(_('Context'),blank=True, null=True)
+    backend_alias = models.CharField(_('Backend alias'), blank=True, default='',
+                                     max_length=64)
 
     class Meta:
         app_label = 'post_office'
+        verbose_name = pgettext_lazy("Email address","Email")
+        verbose_name_plural = pgettext_lazy("Email addresses","Emails")
 
     def __str__(self):
         return u'%s' % self.to
@@ -153,14 +163,17 @@ class Log(models.Model):
 
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
 
-    email = models.ForeignKey(Email, editable=False, related_name='logs')
+    email = models.ForeignKey(Email, editable=False, related_name='logs', 
+                              verbose_name=_('Email address'))
     date = models.DateTimeField(auto_now_add=True)
-    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES)
-    exception_type = models.CharField(max_length=255, blank=True)
-    message = models.TextField()
+    status = models.PositiveSmallIntegerField(_('Status'),choices=STATUS_CHOICES)
+    exception_type = models.CharField(_('Exception type'),max_length=255, blank=True)
+    message = models.TextField(_('Message'))
 
     class Meta:
         app_label = 'post_office'
+        verbose_name = _("Log")
+        verbose_name_plural = _("Logs")
 
     def __str__(self):
         return text_type(self.date)
@@ -171,8 +184,8 @@ class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
-    name = models.CharField(max_length=255, help_text=_("e.g: 'welcome_email'"))
-    description = models.TextField(blank=True,
+    name = models.CharField(_('Name'),max_length=255, help_text=_("e.g: 'welcome_email'"))
+    description = models.TextField(_('Description'), blank=True,
         help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -182,11 +195,12 @@ class EmailTemplate(models.Model):
         verbose_name=_("Content"), validators=[validate_template_syntax])
     html_content = models.TextField(blank=True,
         verbose_name=_("HTML content"), validators=[validate_template_syntax])
-    language = models.CharField(max_length=12, choices=settings.LANGUAGES,
+    language = models.CharField(max_length=12, 
+        verbose_name=_("Language"),
         help_text=_("Render template in alternative language"),
         default='', blank=True)
     default_template = models.ForeignKey('self', related_name='translated_templates',
-        null=True, default=None)
+        null=True, default=None, verbose_name=_('Default template'))
 
     class Meta:
         app_label = 'post_office'
@@ -223,12 +237,15 @@ class Attachment(models.Model):
     """
     A model describing an email attachment.
     """
-    file = models.FileField(upload_to=get_upload_path)
-    name = models.CharField(max_length=255, help_text=_("The original filename"))
-    emails = models.ManyToManyField(Email, related_name='attachments')
+    file = models.FileField(_('File'),upload_to=get_upload_path)
+    name = models.CharField(_('Name'),max_length=255, help_text=_("The original filename"))
+    emails = models.ManyToManyField(Email, related_name='attachments',
+                                    verbose_name=_('Email addresses'))
 
     class Meta:
         app_label = 'post_office'
+        verbose_name = _("Attachment")
+        verbose_name_plural = _("Attachments")
 
     def __str__(self):
         return self.name
