@@ -1,12 +1,11 @@
-from django.db.models import TextField, SubfieldBase
+from django.db.models import TextField
 from django.utils import six
-from django.utils.six import with_metaclass
 from django.utils.translation import ugettext_lazy as _
 
 from .validators import validate_comma_separated_emails
 
 
-class CommaSeparatedEmailField(with_metaclass(SubfieldBase, TextField)):
+class CommaSeparatedEmailField(TextField):
     default_validators = [validate_comma_separated_emails]
     description = _("Comma-separated emails")
 
@@ -22,6 +21,9 @@ class CommaSeparatedEmailField(with_metaclass(SubfieldBase, TextField)):
         }
         defaults.update(kwargs)
         return super(CommaSeparatedEmailField, self).formfield(**defaults)
+
+    def from_db_value(self, value, expression, connection, context):
+        return self.to_python(value)
 
     def get_prep_value(self, value):
         """
