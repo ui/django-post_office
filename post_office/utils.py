@@ -1,25 +1,13 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.core.validators import validate_email
-
-try:
-    from django.utils.encoding import force_text
-except ImportError:
-    from django.utils.encoding import force_unicode as force_text
+from django.utils.encoding import force_text
 
 from post_office import cache
 from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_default_priority
-
-
-try:
-    from django.utils import timezone
-    now = timezone.now
-except ImportError:
-    import datetime
-    now = datetime.datetime.now
+from .validators import validate_email_with_name
 
 
 def send_mail(subject, message, from_email, recipient_list, html_message='',
@@ -50,7 +38,10 @@ def get_email_template(name, language=''):
     """
     Function that returns an email template instance, from cache or DB.
     """
-    if hasattr(settings, 'POST_OFFICE_CACHE') and settings.POST_OFFICE_TEMPLATE_CACHE is False:
+    use_cache = getattr(settings, 'POST_OFFICE_CACHE', True)
+    if use_cache:
+        use_cache = getattr(settings, 'POST_OFFICE_TEMPLATE_CACHE', True)
+    if not use_cache:
         return EmailTemplate.objects.get(name=name, language=language)
     else:
         composite_name = '%s:%s' % (name, language)
@@ -130,7 +121,7 @@ def parse_emails(emails):
 
     for email in emails:
         try:
-            validate_email(email)
+            validate_email_with_name(email)
         except ValidationError:
             raise ValidationError('%s is not a valid email address' % email)
 

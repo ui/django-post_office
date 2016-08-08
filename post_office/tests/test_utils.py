@@ -48,13 +48,12 @@ class UtilsTest(TestCase):
         validate_comma_separated_emails(
             ['email@example.com', 'email2@example.com', 'email3@example.com']
         )
+        validate_comma_separated_emails(['Alice Bob <email@example.com>'])
 
         # Should also support international domains
         validate_comma_separated_emails(['email@example.co.id'])
 
         # These should raise ValidationError
-        self.assertRaises(ValidationError, validate_comma_separated_emails,
-                          ['Alice Bob <email@example.com>'])
         self.assertRaises(ValidationError, validate_comma_separated_emails,
                           ['email@example.com', 'invalid_mail', 'email@example.com'])
 
@@ -83,6 +82,46 @@ class UtilsTest(TestCase):
         # It should return the correct template
         self.assertEqual(template, get_email_template(name, 'en'))
 
+    def test_template_caching_settings(self):
+        """Check if POST_OFFICE_CACHE and POST_OFFICE_TEMPLATE_CACHE understood
+        correctly
+        """
+        def is_cache_used(suffix='', desired_cache=False):
+            """Raise exception if real cache usage not equal to desired_cache value
+            """
+            # to avoid cache cleaning - just create new template
+            name = 'can_i/suport_cache_settings%s' % suffix
+            self.assertRaises(
+                EmailTemplate.DoesNotExist, get_email_template, name
+            )
+            EmailTemplate.objects.create(name=name, content='test')
+
+            # First query should hit database anyway
+            self.assertNumQueries(1, lambda: get_email_template(name))
+            # Second query should hit cache instead only if we want it
+            self.assertNumQueries(
+                0 if desired_cache else 1,
+                lambda: get_email_template(name)
+            )
+            return
+
+        # default - use cache
+        is_cache_used(suffix='with_default_cache', desired_cache=True)
+
+        # disable cache
+        with self.settings(POST_OFFICE_CACHE=False):
+            is_cache_used(suffix='cache_disabled_global', desired_cache=False)
+        with self.settings(POST_OFFICE_TEMPLATE_CACHE=False):
+            is_cache_used(
+                suffix='cache_disabled_for_templates', desired_cache=False
+            )
+        with self.settings(POST_OFFICE_CACHE=True, POST_OFFICE_TEMPLATE_CACHE=False):
+            is_cache_used(
+                suffix='cache_disabled_for_templates_but_enabled_global',
+                desired_cache=False
+            )
+        return
+
     def test_split_emails(self):
         """
         Check that split emails correctly divide email lists for multiprocessing
@@ -102,7 +141,7 @@ class UtilsTest(TestCase):
         self.assertEqual(len(attachments), 2)
         self.assertIsInstance(attachments[0], Attachment)
         self.assertTrue(attachments[0].pk)
-        self.assertEquals(attachments[0].file.read(), b'content')
+        self.assertEqual(attachments[0].file.read(), b'content')
         self.assertTrue(attachments[0].name.startswith('attachment_file'))
 
     def test_create_attachments_open_file(self):
@@ -114,7 +153,7 @@ class UtilsTest(TestCase):
         self.assertIsInstance(attachments[0], Attachment)
         self.assertTrue(attachments[0].pk)
         self.assertTrue(attachments[0].file.read())
-        self.assertEquals(attachments[0].name, 'attachment_file.py')
+        self.assertEqual(attachments[0].name, 'attachment_file.py')
 
     def test_parse_priority(self):
         self.assertEqual(parse_priority('now'), PRIORITY.now)

@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 2.0.2
+-------------
+* `Email.dispatch()` now closes backend connection by default. Thanks @zwack
+* Compatibility fixes for Django 1.9. Thanks @yprez!
+
 Version 2.0.1
 -------------
 * Fixes migration related packaging issues.

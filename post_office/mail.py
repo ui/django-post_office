@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
+from django.utils.timezone import now
 
 from .connections import connections
 from .models import Email, EmailTemplate, PRIORITY, STATUS
@@ -15,13 +16,6 @@ from .settings import (get_available_backends, get_batch_size,
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
-
-try:
-    from django.utils import timezone
-    now = timezone.now
-except ImportError:
-    import datetime
-    now = datetime.datetime.now
 
 
 logger = setup_loghandlers("INFO")

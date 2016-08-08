@@ -1,29 +1,19 @@
 language: python
 
 python:
-  - "2.6"
   - "2.7"
   - "3.3"
   - "3.4"
+  - "3.5"
 
 env:
-  - DJANGO=1.4.20
-  - DJANGO=1.5.12
-  - DJANGO=1.6.11
-  - DJANGO=1.7.8
-  - DJANGO=1.8.2
+  - DJANGO=1.8
+  - DJANGO=1.9
 
 matrix:
   exclude:
     - python: "3.3"
-      env: DJANGO=1.4.20
-    - python: "3.4"
-      env: DJANGO=1.4.20
-    - python: "2.6"
-      env: DJANGO=1.7.8
-    - python: "2.6"
-      env: DJANGO=1.8.2
-
+      env: DJANGO=1.9
 before_install:
   # Workaround for a permissions issue with Travis virtual machine images
   # that breaks Python's multiprocessing:
@@ -32,7 +22,7 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
 
 install:
-  - pip install Django==$DJANGO jsonfield
+  - pip install "Django>=$DJANGO,<${DJANGO}.99" jsonfield
 
 script:
   - "`which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=."
