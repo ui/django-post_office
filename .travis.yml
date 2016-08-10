@@ -15,6 +15,9 @@ matrix:
   exclude:
     - python: "3.3"
       env: DJANGO=1.9
+    - python: "3.3"
+      env: DJANGO=1.10
+
 before_install:
   # Workaround for a permissions issue with Travis virtual machine images
   # that breaks Python's multiprocessing:
