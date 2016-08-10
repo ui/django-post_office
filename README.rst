@@ -18,7 +18,7 @@ Some awesome features are:
 Dependencies
 ============
 
-* `django >= 1.4 <http://djangoproject.com/>`_
+* `django >= 1.8 <http://djangoproject.com/>`_
 * `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
 
 
