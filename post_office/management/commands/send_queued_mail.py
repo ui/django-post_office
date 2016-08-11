@@ -1,6 +1,5 @@
 import tempfile
 import sys
-from optparse import make_option
 
 from django.core.management.base import BaseCommand
 
@@ -14,15 +13,21 @@ default_lockfile = tempfile.gettempdir() + "/post_office"
 
 
 class Command(BaseCommand):
-
-    option_list = BaseCommand.option_list + (
-        make_option('-p', '--processes', type='int',
-                    help='Number of processes used to send emails', default=1),
-        make_option('-L', '--lockfile', type='string', default=default_lockfile,
-                    help='Absolute path of lockfile to acquire'),
-        make_option('-l', '--log-level', type='int',
-                    help='"0" to log nothing, "1" to only log errors'),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument('-p', '--processes',
+            type='int',
+            help='Number of processes used to send emails',
+            default=1
+            )
+        parser.add_argument('-L', '--lockfile',
+            type='string',
+            default=default_lockfile,
+            help='Absolute path of lockfile to acquire'
+            )
+        parser.add_argument('-l', '--log-level',
+            type='int',
+            help='"0" to log nothing, "1" to only log errors'
+            )
 
     def handle(self, *args, **options):
         logger.info('Acquiring lock for sending queued emails at %s.lock' %
