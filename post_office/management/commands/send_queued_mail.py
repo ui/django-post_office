@@ -15,18 +15,17 @@ default_lockfile = tempfile.gettempdir() + "/post_office"
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('-p', '--processes',
-            type='int',
+            type=int,
+            default=1,
             help='Number of processes used to send emails',
-            default=1
             )
         parser.add_argument('-L', '--lockfile',
-            type='string',
             default=default_lockfile,
-            help='Absolute path of lockfile to acquire'
+            help='Absolute path of lockfile to acquire',
             )
         parser.add_argument('-l', '--log-level',
-            type='int',
-            help='"0" to log nothing, "1" to only log errors'
+            type=int,
+            help='"0" to log nothing, "1" to only log errors',
             )
 
     def handle(self, *args, **options):
