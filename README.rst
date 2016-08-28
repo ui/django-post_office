@@ -104,19 +104,19 @@ project's ``wsgi.py`` file:
 .. code-block:: python
 
     from django.core.wsgi import get_wsgi_application
-    
+
     application = get_wsgi_application()
-    
+
     # add this block of code
     try:
         import uwsgidecorators
         from django.core.management import call_command
-    
+
         @uwsgidecorators.timer(10)
         def send_queued_mail(num):
             """Send queued mail every 10 seconds"""
             call_command('send_queued_mail', processes=1)
-    
+
     except ImportError:
         print("uwsgidecorators not found. Cron and timers are disabled")
 
@@ -569,10 +569,15 @@ You can run the full test suite with::
 or::
 
     python setup.py test
-    
+
 
 Changelog
 =========
+
+Version 2.0.8
+-------------
+* Django 1.10 compatibility fixes. Thanks @hockeybuggy!
+* Fixed an issue where Django would sometimes create migration files for post-office. Thanks @fizista!
 
 Version 2.0.7
 -------------
