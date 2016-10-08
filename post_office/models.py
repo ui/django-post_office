@@ -143,14 +143,13 @@ class Email(models.Model):
         self.status = status
         self.save()
 
-        # If log level is 0, log nothing, 1 logs only sending failures
-        # and 2 means log both successes and failures
-
         if status == STATUS.failed:
             logger.error("email send fail: %s", self)
         else:
             logger.debug("mail status: %s \nfor email: %s", status, self)
 
+        # If log level is 0, log nothing, 1 logs only sending failures
+        # and 2 means log both successes and failures
         if log_level == 1:
             if status == STATUS.failed:
                 self.logs.create(status=status, message=message,
