@@ -27,6 +27,7 @@ PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 
 
+logger = logging.getLogger(__name__)
 
 @python_2_unicode_compatible
 class Email(models.Model):
@@ -143,9 +144,11 @@ class Email(models.Model):
         # and 2 means log both successes and failures
         if log_level == 1:
             if status == STATUS.failed:
+                logger.error("failed to send email: %s", self)
                 self.logs.create(status=status, message=message,
                                  exception_type=exception_type)
         elif log_level == 2:
+            logger.debug("successfully sent email: %s", self)
             self.logs.create(status=status, message=message,
                              exception_type=exception_type)
 
