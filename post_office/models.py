@@ -151,7 +151,12 @@ class Email(models.Model):
                 self.logs.create(status=status, message=message,
                                  exception_type=exception_type)
         elif log_level == 2:
-            logger.debug("successfully sent email: %s", self)
+            if status == STATUS.failed:
+                logger.error("failed to send email: %s", self)
+            if status == STATUS.sent:
+                logger.debug("sent email: %s", self)
+            if status == STATUS.queued:
+                logger.debug("queued email: %s", self)
             self.logs.create(status=status, message=message,
                              exception_type=exception_type)
 
