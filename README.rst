@@ -41,9 +41,14 @@ Installation
         "post_office",
     )
 
-* Run ``syncdb``::
+* Run ``syncdb`` for Django <= 1.8::
 
     python manage.py syncdb
+    
+* Run ``makemigrations`` and ``migrate`` for Django > 1.8::
+
+    python manage.py makemigrations
+    python manage.py migrate
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
