@@ -18,7 +18,7 @@ Some awesome features are:
 Dependencies
 ============
 
-* `django >= 1.4 <http://djangoproject.com/>`_
+* `django >= 1.8 <http://djangoproject.com/>`_
 * `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
 
 
@@ -41,7 +41,7 @@ Installation
         "post_office",
     )
 
-* Run ``syncdb`` for Django <= 1.8::
+* Run ``syncdb`` for Django == 1.8::
 
     python manage.py syncdb
     
@@ -53,15 +53,6 @@ Installation
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
     EMAIL_BACKEND = 'post_office.EmailBackend'
-
-If you're still on Django <= 1.6 and use South to manage your migrations,
-you'll need to put the following in ``settings.py``:
-
-.. code-block:: python
-
-    SOUTH_MIGRATION_MODULES = {
-        "post_office": "post_office.south_migrations",
-    }
 
 
 Quickstart
