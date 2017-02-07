@@ -41,11 +41,7 @@ Installation
         "post_office",
     )
 
-* Run ``syncdb`` for Django == 1.8::
-
-    python manage.py syncdb
-    
-* Run ``makemigrations`` and ``migrate`` for Django > 1.8::
+* Run ``makemigrations`` and ``migrate``::
 
     python manage.py makemigrations
     python manage.py migrate
