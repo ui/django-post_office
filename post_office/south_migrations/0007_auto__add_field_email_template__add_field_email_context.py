@@ -15,7 +15,7 @@ class Migration(SchemaMigration):
 
         # Adding field 'Email.context'
         db.add_column(u'post_office_email', 'context',
-                      self.gf('jsonfield.fields.JSONField')(default='', blank=True),
+                      self.gf('jsonfield.fields.JSONField')(default='{}', blank=True),
                       keep_default=False)
 
 
