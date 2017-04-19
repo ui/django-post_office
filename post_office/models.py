@@ -109,6 +109,7 @@ class Email(models.Model):
 
         for attachment in self.attachments.all():
             msg.attach(attachment.name, attachment.file.read())
+            attachment.file.close()
 
         return msg
 
