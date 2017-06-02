@@ -250,3 +250,12 @@ class Attachment(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# For backwards compatiblity
+# Django < 1.7 does not support apps.py and therefore not App.ready()
+# where the signals module should be imported.
+
+import django
+if django.VERSION < (1, 7):
+    import post_office.signals
