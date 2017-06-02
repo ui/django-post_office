@@ -142,7 +142,7 @@ class MailTest(TestCase):
         Ensure BATCH_SIZE setting is read correctly.
         """
         previous_settings = settings.POST_OFFICE
-        self.assertEqual(get_batch_size(), 5000)
+        self.assertEqual(get_batch_size(), 500)
         setattr(settings, 'POST_OFFICE', {'BATCH_SIZE': 100})
         self.assertEqual(get_batch_size(), 100)
         settings.POST_OFFICE = previous_settings
