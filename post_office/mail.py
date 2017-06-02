@@ -228,26 +228,37 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     if log_level is None:
         log_level = get_log_level()
 
-    sent_count, failed_count = 0, 0
+    sent_emails = []
+    failed_emails = []
     email_count = len(emails)
     logger.info('Process started, sending %s emails' % email_count)
 
     try:
         for email in emails:
-            status = email.dispatch(log_level=log_level,
+            status = email.dispatch(log_level=log_level, commit=False,
                                     disconnect_after_delivery=False)
             if status == STATUS.sent:
-                sent_count += 1
+                sent_emails.append(email)
                 logger.debug('Successfully sent email #%d' % email.id)
             else:
-                failed_count += 1
+                failed_emails.append(email)
                 logger.debug('Failed to send email #%d' % email.id)
     except Exception as e:
         logger.error(e, exc_info=sys.exc_info(), extra={'status_code': 500})
 
     connections.close()
 
-    logger.info('Process finished, %s attempted, %s sent, %s failed' %
-                (email_count, sent_count, failed_count))
+    # Update statuses of sent and failed emails
+    email_ids = [email.id for email in sent_emails]
+    Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
+    # Update statuses of sent and failed emails
+    email_ids = [email.id for email in failed_emails]
+    Email.objects.filter(id__in=email_ids).update(status=STATUS.failed)
 
-    return (sent_count, failed_count)
+    logger.info(
+        'Process finished, %s attempted, %s sent, %s failed' % (
+            email_count, len(sent_emails), len(failed_emails)
+        )
+    )
+
+    return len(sent_emails), len(failed_emails)

@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from collections import namedtuple
 from uuid import uuid4
 
-from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.template import Context, Template
@@ -24,7 +23,6 @@ from .validators import validate_email_with_name, validate_template_syntax
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
-
 
 
 @python_2_unicode_compatible
@@ -113,11 +111,11 @@ class Email(models.Model):
 
         return msg
 
-    def dispatch(self, log_level=None, disconnect_after_delivery=True):
+    def dispatch(self, log_level=None,
+                 disconnect_after_delivery=True, commit=True):
         """
-        Actually send out the email and log the result
+        Sends email and log the result.
         """
-
         if log_level is None:
             log_level = get_log_level()
 
@@ -136,8 +134,9 @@ class Email(models.Model):
         if connection and disconnect_after_delivery:
             connection.close()
 
-        self.status = status
-        self.save()
+        if commit:
+            self.status = status
+            self.save(update_fields=['status'])
 
         # If log level is 0, log nothing, 1 logs only sending failures
         # and 2 means log both successes and failures
