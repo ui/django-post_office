@@ -41,9 +41,14 @@ Installation
         "post_office",
     )
 
-* Run ``syncdb``::
+* Run ``syncdb`` for Django <= 1.8::
 
     python manage.py syncdb
+    
+* Run ``makemigrations`` and ``migrate`` for Django > 1.8::
+
+    python manage.py makemigrations
+    python manage.py migrate
 
 * Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
 
@@ -360,15 +365,15 @@ Management Commands
 * ``send_queued_mail`` - send queued emails, those aren't successfully sent
   will be marked as ``failed``. Accepts the following arguments:
 
-+---------------------------+--------------------------------------------------++
-| Argument                  | Description                                      ||
-+---------------------------+--------------------------------------------------++
-| ``--processes`` or ``-p`` | Number of parallel processes to send email.      ||
-|                           | Defaults to 1                                    ||
-+---------------------------+--------------------------------------------------++
-| ``--lockfile`` or ``-L``  | Full path to file used as lock file. Defaults to ||
-|                           | ``/tmp/post_office.lock``                        ||
-+---------------------------+--------------------------------------------------++
++---------------------------+--------------------------------------------------+
+| Argument                  | Description                                      |
++---------------------------+--------------------------------------------------+
+| ``--processes`` or ``-p`` | Number of parallel processes to send email.      |
+|                           | Defaults to 1                                    |
++---------------------------+--------------------------------------------------+
+| ``--lockfile`` or ``-L``  | Full path to file used as lock file. Defaults to |
+|                           | ``/tmp/post_office.lock``                        |
++---------------------------+--------------------------------------------------+
 
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
