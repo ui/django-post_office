@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import logging
 from collections import namedtuple
 from uuid import uuid4
 
-from django.conf import settings
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.template import Context, Template
@@ -26,6 +26,8 @@ PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 
 
+logger = logging.getLogger(__name__)
+
 
 @python_2_unicode_compatible
 class Email(models.Model):
@@ -33,7 +35,8 @@ class Email(models.Model):
     A model to hold email information.
     """
 
-    PRIORITY_CHOICES = [(PRIORITY.low, _("low")), (PRIORITY.medium, _("medium")),
+    PRIORITY_CHOICES = [(PRIORITY.low, _("low")),
+                        (PRIORITY.medium, _("medium")),
                         (PRIORITY.high, _("high")), (PRIORITY.now, _("now"))]
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
                       (STATUS.queued, _("queued"))]
@@ -60,19 +63,20 @@ class Email(models.Model):
                                                 blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
-    scheduled_time = models.DateTimeField(_('The scheduled sending time'), 
+    scheduled_time = models.DateTimeField(_('The scheduled sending time'),
                                           blank=True, null=True, db_index=True)
-    headers = JSONField(_('Headers'),blank=True, null=True)
-    template = models.ForeignKey('post_office.EmailTemplate', blank=True, 
+    headers = JSONField(_('Headers'), blank=True, null=True)
+    template = models.ForeignKey('post_office.EmailTemplate', blank=True,
                                  null=True, verbose_name=_('Email template'))
-    context = context_field_class(_('Context'),blank=True, null=True)
-    backend_alias = models.CharField(_('Backend alias'), blank=True, default='',
+    context = context_field_class(_('Context'), blank=True, null=True)
+    backend_alias = models.CharField(_('Backend alias'),
+                                     blank=True, default='',
                                      max_length=64)
 
     class Meta:
         app_label = 'post_office'
-        verbose_name = pgettext_lazy("Email address","Email")
-        verbose_name_plural = pgettext_lazy("Email addresses","Emails")
+        verbose_name = pgettext_lazy("Email address", "Email")
+        verbose_name_plural = pgettext_lazy("Email addresses", "Emails")
 
     def __str__(self):
         return u'%s' % self.to
@@ -88,7 +92,8 @@ class Email(models.Model):
             _context = Context(self.context)
             subject = Template(self.template.subject).render(_context)
             message = Template(self.template.content).render(_context)
-            html_message = Template(self.template.html_content).render(_context)
+            html_message = Template(
+                self.template.html_content).render(_context)
 
         else:
             subject = self.subject
@@ -143,9 +148,11 @@ class Email(models.Model):
         # and 2 means log both successes and failures
         if log_level == 1:
             if status == STATUS.failed:
+                logger.error("failed to send email: %s", self)
                 self.logs.create(status=status, message=message,
                                  exception_type=exception_type)
         elif log_level == 2:
+            logger.debug("successfully sent email: %s", self)
             self.logs.create(status=status, message=message,
                              exception_type=exception_type)
 
@@ -164,11 +171,13 @@ class Log(models.Model):
 
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
 
-    email = models.ForeignKey(Email, editable=False, related_name='logs', 
+    email = models.ForeignKey(Email, editable=False, related_name='logs',
                               verbose_name=_('Email address'))
     date = models.DateTimeField(auto_now_add=True)
-    status = models.PositiveSmallIntegerField(_('Status'),choices=STATUS_CHOICES)
-    exception_type = models.CharField(_('Exception type'),max_length=255, blank=True)
+    status = models.PositiveSmallIntegerField(
+        _('Status'), choices=STATUS_CHOICES)
+    exception_type = models.CharField(
+        _('Exception type'), max_length=255, blank=True)
     message = models.TextField(_('Message'))
 
     class Meta:
@@ -185,22 +194,29 @@ class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
-    name = models.CharField(_('Name'),max_length=255, help_text=_("e.g: 'welcome_email'"))
-    description = models.TextField(_('Description'), blank=True,
+    name = models.CharField(_('Name'), max_length=255,
+                            help_text=_("e.g: 'welcome_email'"))
+    description = models.TextField(
+        _('Description'), blank=True,
         help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    subject = models.CharField(max_length=255, blank=True,
+    subject = models.CharField(
+        max_length=255, blank=True,
         verbose_name=_("Subject"), validators=[validate_template_syntax])
-    content = models.TextField(blank=True,
+    content = models.TextField(
+        blank=True,
         verbose_name=_("Content"), validators=[validate_template_syntax])
-    html_content = models.TextField(blank=True,
+    html_content = models.TextField(
+        blank=True,
         verbose_name=_("HTML content"), validators=[validate_template_syntax])
-    language = models.CharField(max_length=12, 
-        verbose_name=_("Language"),
-        help_text=_("Render template in alternative language"),
-        default='', blank=True)
-    default_template = models.ForeignKey('self', related_name='translated_templates',
+    language = models.CharField(max_length=12,
+                                verbose_name=_("Language"),
+                                help_text=_(
+                                    "Render template in alternative language"),
+                                default='', blank=True)
+    default_template = models.ForeignKey(
+        'self', related_name='translated_templates',
         null=True, default=None, verbose_name=_('Default template'))
 
     class Meta:
@@ -238,8 +254,9 @@ class Attachment(models.Model):
     """
     A model describing an email attachment.
     """
-    file = models.FileField(_('File'),upload_to=get_upload_path)
-    name = models.CharField(_('Name'),max_length=255, help_text=_("The original filename"))
+    file = models.FileField(_('File'), upload_to=get_upload_path)
+    name = models.CharField(_('Name'), max_length=255,
+                            help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Email addresses'))
 
