@@ -71,7 +71,7 @@ def get_config():
 
 
 def get_batch_size():
-    return get_config().get('BATCH_SIZE', 5000)
+    return get_config().get('BATCH_SIZE', 500)
 
 
 def get_default_priority():
