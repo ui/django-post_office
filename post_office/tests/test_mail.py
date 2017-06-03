@@ -9,7 +9,7 @@ from django.conf import settings
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..settings import get_batch_size, get_log_level
+from ..settings import get_batch_size, get_log_level, get_threads_per_process
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
 from ..mail import (create, get_queued,
                     send, send_many, send_queued, _send_bulk)
@@ -82,8 +82,8 @@ class MailTest(TestCase):
             to=['to@example.com'], from_email='bob@example.com',
             subject='send bulk', message='Message', status=STATUS.queued,
             backend_alias='locmem')
-        sent_count, _ = _send_bulk([email])
-        self.assertEqual(sent_count, 1)
+        _send_bulk([email], uses_multiprocessing=False)
+        self.assertEqual(Email.objects.get(id=email.id).status, STATUS.sent)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'send bulk')
 
@@ -142,9 +142,19 @@ class MailTest(TestCase):
         Ensure BATCH_SIZE setting is read correctly.
         """
         previous_settings = settings.POST_OFFICE
-        self.assertEqual(get_batch_size(), 500)
-        setattr(settings, 'POST_OFFICE', {'BATCH_SIZE': 100})
         self.assertEqual(get_batch_size(), 100)
+        setattr(settings, 'POST_OFFICE', {'BATCH_SIZE': 10})
+        self.assertEqual(get_batch_size(), 10)
+        settings.POST_OFFICE = previous_settings
+
+    def test_get_threads_per_process(self):
+        """
+        Ensure THREADS_PER_PROCESS setting is read correctly.
+        """
+        previous_settings = settings.POST_OFFICE
+        self.assertEqual(get_threads_per_process(), 5)
+        setattr(settings, 'POST_OFFICE', {'THREADS_PER_PROCESS': 10})
+        self.assertEqual(get_threads_per_process(), 10)
         settings.POST_OFFICE = previous_settings
 
     def test_get_log_level(self):
