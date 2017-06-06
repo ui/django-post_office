@@ -2,6 +2,7 @@ import tempfile
 import sys
 
 from django.core.management.base import BaseCommand
+from django.db import connection
 
 from ...lockfile import FileLock, FileLocked
 from ...mail import send_queued
@@ -38,7 +39,7 @@ class Command(BaseCommand):
         try:
             with FileLock(options['lockfile']):
 
-                while Email.objects.filter(status=STATUS.queued).exists():
+                while 1:
                     try:
                         send_queued(options['processes'],
                                     options.get('log_level'))
@@ -46,5 +47,10 @@ class Command(BaseCommand):
                         logger.error(e, exc_info=sys.exc_info(),
                                      extra={'status_code': 500})
                         raise
+
+                    # Close DB connection to avoid multiprocessing errors
+                    connection.close()
+                    if not Email.objects.filter(status=STATUS.queued).exists():
+                        break
         except FileLocked:
             logger.info('Failed to acquire lock, terminating now.')
