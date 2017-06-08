@@ -273,6 +273,23 @@ class ModelTest(TestCase):
         self.assertEqual(message.attachments,
                          [('test.txt', b'test file content', None)])
 
+    def test_attachments_email_message_with_mimetype(self):
+        email = Email.objects.create(to=['to@example.com'],
+                                     from_email='from@example.com',
+                                     subject='Subject')
+
+        attachment = Attachment()
+        attachment.file.save(
+            'test.txt', content=ContentFile('test file content'), save=True
+        )
+        attachment.mimetype = 'text/plain'
+        attachment.save()
+        email.attachments.add(attachment)
+        message = email.email_message()
+
+        self.assertEqual(message.attachments,
+                         [('test.txt', b'test file content', 'text/plain')])
+
     def test_translated_template_uses_default_templates_name(self):
         template = EmailTemplate.objects.create(name='name')
         id_template = template.translated_templates.create(language='id')

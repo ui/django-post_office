@@ -143,6 +143,26 @@ class UtilsTest(TestCase):
         self.assertTrue(attachments[0].pk)
         self.assertEqual(attachments[0].file.read(), b'content')
         self.assertTrue(attachments[0].name.startswith('attachment_file'))
+        self.assertEquals(attachments[0].mimetype, None)
+
+    def test_create_attachments_with_mimetype(self):
+        attachments = create_attachments({
+            'attachment_file1.txt': {
+                'file': ContentFile('content'),
+                'mimetype': 'text/plain'
+            },
+            'attachment_file2.jpg': {
+                'file': ContentFile('content'),
+                'mimetype': 'text/plain'
+            }
+        })
+
+        self.assertEqual(len(attachments), 2)
+        self.assertIsInstance(attachments[0], Attachment)
+        self.assertTrue(attachments[0].pk)
+        self.assertEquals(attachments[0].file.read(), b'content')
+        self.assertTrue(attachments[0].name.startswith('attachment_file'))
+        self.assertEquals(attachments[0].mimetype, 'text/plain')
 
     def test_create_attachments_open_file(self):
         attachments = create_attachments({
@@ -153,7 +173,8 @@ class UtilsTest(TestCase):
         self.assertIsInstance(attachments[0], Attachment)
         self.assertTrue(attachments[0].pk)
         self.assertTrue(attachments[0].file.read())
-        self.assertEqual(attachments[0].name, 'attachment_file.py')
+        self.assertEquals(attachments[0].name, 'attachment_file.py')
+        self.assertEquals(attachments[0].mimetype, None)
 
     def test_parse_priority(self):
         self.assertEqual(parse_priority('now'), PRIORITY.now)

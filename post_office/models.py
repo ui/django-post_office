@@ -60,10 +60,10 @@ class Email(models.Model):
                                                 blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
-    scheduled_time = models.DateTimeField(_('The scheduled sending time'), 
+    scheduled_time = models.DateTimeField(_('The scheduled sending time'),
                                           blank=True, null=True, db_index=True)
     headers = JSONField(_('Headers'),blank=True, null=True)
-    template = models.ForeignKey('post_office.EmailTemplate', blank=True, 
+    template = models.ForeignKey('post_office.EmailTemplate', blank=True,
                                  null=True, verbose_name=_('Email template'))
     context = context_field_class(_('Context'),blank=True, null=True)
     backend_alias = models.CharField(_('Backend alias'), blank=True, default='',
@@ -108,7 +108,7 @@ class Email(models.Model):
                 connection=connection, headers=self.headers)
 
         for attachment in self.attachments.all():
-            msg.attach(attachment.name, attachment.file.read())
+            msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype)
             attachment.file.close()
 
         return msg
@@ -164,7 +164,7 @@ class Log(models.Model):
 
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
 
-    email = models.ForeignKey(Email, editable=False, related_name='logs', 
+    email = models.ForeignKey(Email, editable=False, related_name='logs',
                               verbose_name=_('Email address'))
     date = models.DateTimeField(auto_now_add=True)
     status = models.PositiveSmallIntegerField(_('Status'),choices=STATUS_CHOICES)
@@ -196,7 +196,7 @@ class EmailTemplate(models.Model):
         verbose_name=_("Content"), validators=[validate_template_syntax])
     html_content = models.TextField(blank=True,
         verbose_name=_("HTML content"), validators=[validate_template_syntax])
-    language = models.CharField(max_length=12, 
+    language = models.CharField(max_length=12,
         verbose_name=_("Language"),
         help_text=_("Render template in alternative language"),
         default='', blank=True)
@@ -242,6 +242,7 @@ class Attachment(models.Model):
     name = models.CharField(_('Name'),max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Email addresses'))
+    mimetype = models.CharField(max_length=255, null=True)
 
     class Meta:
         app_label = 'post_office'

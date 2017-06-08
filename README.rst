@@ -238,6 +238,7 @@ If you want to send an email with attachments:
         attachments={
             'attachment1.doc': '/path/to/file/file1.doc',
             'attachment2.txt': ContentFile('file content'),
+            'attachment3.txt': { 'file': ContentFile('file content'), 'mimetype': 'text/plain'},
         }
     )
 
@@ -564,6 +565,11 @@ or::
 
 Changelog
 =========
+
+
+Version 2.0.X
+-------------
+* Added support for mimetypes in email attachments
 
 Version 2.0.8
 -------------
