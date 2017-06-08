@@ -28,7 +28,7 @@ TESTS_REQUIRE = ['tox >= 2.3']
 
 setup(
     name='django-post_office',
-    version='2.0.7',
+    version='2.0.8',
     author='Selwin Ong',
     author_email='selwin.ong@gmail.com',
     packages=['post_office'],
@@ -39,7 +39,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     package_data={'': ['README.rst']},
-    install_requires=['django>=1.4', 'jsonfield'],
+    install_requires=['django>=1.8', 'jsonfield'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',

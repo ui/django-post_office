@@ -109,6 +109,7 @@ class Email(models.Model):
 
         for attachment in self.attachments.all():
             msg.attach(attachment.name, attachment.file.read())
+            attachment.file.close()
 
         return msg
 
@@ -204,7 +205,7 @@ class EmailTemplate(models.Model):
 
     class Meta:
         app_label = 'post_office'
-        unique_together = ('language', 'default_template')
+        unique_together = ('name', 'language', 'default_template')
         verbose_name = _("Email Template")
         verbose_name_plural = _("Email Templates")
 
