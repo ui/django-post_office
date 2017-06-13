@@ -11,7 +11,7 @@ Some awesome features are:
 * Supports database based email templates
 * Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
-* Uses multiprocessing to send a large number of emails in parallel
+* Uses multiprocessing (and threading) to send a large number of emails in parallel
 * Supports multilingual email templates (i18n)
 
 
@@ -386,7 +386,7 @@ number of queued emails fetched in one batch.
 
     # Put this in settings.py
     POST_OFFICE = {
-        'BATCH_SIZE': 5000
+        'BATCH_SIZE': 50
     }
 
 Default Priority
@@ -489,6 +489,22 @@ example:
             },
         },
     }
+
+
+Threads
+-------
+
+``post-office`` >= 3.0 allows you to use multiple threads to dramatically speed up
+the speed at which emails are sent. By default, ``post-office`` uses 5 threads per process.
+You can tweak this setting by changing ``THREADS_PER_PROCESS`` setting. 
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'THREADS_PER_PROCESS': 10
+    }
+
 
 Performance
 ===========

@@ -3,10 +3,9 @@ from datetime import datetime, timedelta
 from django.conf import settings as django_settings
 from django.core import mail
 from django.core.files.base import ContentFile
-from django.core.mail import EmailMessage, EmailMultiAlternatives, get_connection
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.forms.models import modelform_factory
 from django.test import TestCase
-from django.test.utils import override_settings
 
 from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from ..mail import send
