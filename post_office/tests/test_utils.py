@@ -143,7 +143,7 @@ class UtilsTest(TestCase):
         self.assertTrue(attachments[0].pk)
         self.assertEqual(attachments[0].file.read(), b'content')
         self.assertTrue(attachments[0].name.startswith('attachment_file'))
-        self.assertEquals(attachments[0].mimetype, None)
+        self.assertEquals(attachments[0].mimetype, u'')
 
     def test_create_attachments_with_mimetype(self):
         attachments = create_attachments({
@@ -174,7 +174,7 @@ class UtilsTest(TestCase):
         self.assertTrue(attachments[0].pk)
         self.assertTrue(attachments[0].file.read())
         self.assertEquals(attachments[0].name, 'attachment_file.py')
-        self.assertEquals(attachments[0].mimetype, None)
+        self.assertEquals(attachments[0].mimetype, u'')
 
     def test_parse_priority(self):
         self.assertEqual(parse_priority('now'), PRIORITY.now)

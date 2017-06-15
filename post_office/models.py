@@ -108,7 +108,7 @@ class Email(models.Model):
                 connection=connection, headers=self.headers)
 
         for attachment in self.attachments.all():
-            msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype)
+            msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype or None)
             attachment.file.close()
 
         return msg
@@ -242,7 +242,7 @@ class Attachment(models.Model):
     name = models.CharField(_('Name'),max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Email addresses'))
-    mimetype = models.CharField(max_length=255, null=True)
+    mimetype = models.CharField(max_length=255, default='')
 
     class Meta:
         app_label = 'post_office'

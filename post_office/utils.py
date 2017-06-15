@@ -91,7 +91,8 @@ def create_attachments(attachment_files):
             content = File(opened_file)
 
         attachment = Attachment()
-        attachment.mimetype = mimetype
+        if mimetype:
+            attachment.mimetype = mimetype
         attachment.file.save(filename, content=content, save=True)
 
         attachments.append(attachment)
