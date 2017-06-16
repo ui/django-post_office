@@ -121,7 +121,7 @@ class Email(models.Model):
                 headers=self.headers, connection=connection)
 
         for attachment in self.attachments.all():
-            msg.attach(attachment.name, attachment.file.read())
+            msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype or None)
             attachment.file.close()
 
         self._cached_email_message = msg
@@ -179,7 +179,7 @@ class Log(models.Model):
 
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
 
-    email = models.ForeignKey(Email, editable=False, related_name='logs', 
+    email = models.ForeignKey(Email, editable=False, related_name='logs',
                               verbose_name=_('Email address'))
     date = models.DateTimeField(auto_now_add=True)
     status = models.PositiveSmallIntegerField(_('Status'),choices=STATUS_CHOICES)
@@ -211,7 +211,7 @@ class EmailTemplate(models.Model):
         verbose_name=_("Content"), validators=[validate_template_syntax])
     html_content = models.TextField(blank=True,
         verbose_name=_("HTML content"), validators=[validate_template_syntax])
-    language = models.CharField(max_length=12, 
+    language = models.CharField(max_length=12,
         verbose_name=_("Language"),
         help_text=_("Render template in alternative language"),
         default='', blank=True)
@@ -257,6 +257,7 @@ class Attachment(models.Model):
     name = models.CharField(_('Name'),max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Email addresses'))
+    mimetype = models.CharField(max_length=255, default='')
 
     class Meta:
         app_label = 'post_office'

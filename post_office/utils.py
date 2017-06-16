@@ -69,12 +69,20 @@ def create_attachments(attachment_files):
 
     attachment_files is a dict of:
         * Key - the filename to be used for the attachment.
-        * Value - file-like object, or a filename to open.
+        * Value - file-like object, or a filename to open OR a dict of {'file': file-like-object, 'mimetype': string}
 
     Returns a list of Attachment objects
     """
     attachments = []
-    for filename, content in attachment_files.items():
+    for filename, filedata in attachment_files.items():
+
+        if isinstance(filedata, dict):
+            content = filedata.get('file', None)
+            mimetype = filedata.get('mimetype', None)
+        else:
+            content = filedata
+            mimetype = None
+
         opened_file = None
 
         if isinstance(content, string_types):
@@ -83,6 +91,8 @@ def create_attachments(attachment_files):
             content = File(opened_file)
 
         attachment = Attachment()
+        if mimetype:
+            attachment.mimetype = mimetype
         attachment.file.save(filename, content=content, save=True)
 
         attachments.append(attachment)
