@@ -1,6 +1,26 @@
 Changelog
 =========
 
+Version 2.0.8
+-------------
+* Django 1.10 compatibility fixes. Thanks @hockeybuggy!
+* Fixed an issue where Django would sometimes create migration files for post-office. Thanks @fizista!
+
+Version 2.0.7
+-------------
+* Fixed an issue with sending email to recipients with display name. Thanks @yprez!
+
+Version 2.0.6
+-------------
+* Fixes Django 1.10 deprecation warnings and other minor improvements. Thanks @yprez!
+* Email.subject can now accept up to 989 characters. This should also fix minor migration issues. Thanks @yprez!
+
+Version 2.0.5
+-------------
+* Fixes more Django 1.8 deprecation warnings.
+* `Email.dispatch()` now closes backend connection by default. Thanks @zwack
+* Compatibility fixes for Django 1.9. Thanks @yprez!
+
 Version 2.0.2
 -------------
 * `Email.dispatch()` now closes backend connection by default. Thanks @zwack
