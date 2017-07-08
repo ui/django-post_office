@@ -33,6 +33,8 @@ class CommaSeparatedEmailWidget(TextInput):
 
     def _format_value(self, value):
         # If the value is a string wrap it in a list so it does not get sliced.
+        if not value:
+            return ''
         if isinstance(value, six.string_types):
             value = [value, ]
         return ','.join([item for item in value])
