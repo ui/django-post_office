@@ -2,3 +2,4 @@ include LICENSE.txt
 include README.rst
 include AUTHORS.rst
 recursive-include post_office *.py
+recursive-include post_office/locale *.po *.mo
