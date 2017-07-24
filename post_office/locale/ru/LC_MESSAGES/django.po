@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-07-21 12:02+0000\n"
-"PO-Revision-Date: 2017-07-21 15:04+0300\n"
+"POT-Creation-Date: 2017-07-24 09:39+0000\n"
+"PO-Revision-Date: 2017-07-24 12:46+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -19,10 +19,6 @@ msgstr ""
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
 "%100>=11 && n%100<=14)? 2 : 3);\n"
 "X-Generator: Poedit 1.8.11\n"
-
-#: post_office/admin.py:46
-msgid "Requeue selected emails"
-msgstr "Снова поместить в очередь"
 
 #: post_office/admin.py:81 post_office/models.py:216
 msgid "Render template in alternative language"
@@ -156,11 +152,11 @@ msgstr "Тип исключения"
 
 #: post_office/models.py:191
 msgid "Log"
-msgstr "Лог"
+msgstr "Запись журнала"
 
 #: post_office/models.py:192
 msgid "Logs"
-msgstr "Логи"
+msgstr "Журнал"
 
 #: post_office/models.py:203 post_office/models.py:257
 msgid "Name"
@@ -213,3 +209,6 @@ msgstr "Вложение"
 #: post_office/models.py:265
 msgid "Attachments"
 msgstr "Вложения"
+
+#~ msgid "Requeue selected emails"
+#~ msgstr "Снова поместить в очередь"
