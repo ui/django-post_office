@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-07-24 09:39+0000\n"
-"PO-Revision-Date: 2017-07-24 12:46+0300\n"
+"PO-Revision-Date: 2017-07-24 13:06+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ru\n"
@@ -152,7 +152,7 @@ msgstr "Тип исключения"
 
 #: post_office/models.py:191
 msgid "Log"
-msgstr "Запись журнала"
+msgstr "Запись в журнале"
 
 #: post_office/models.py:192
 msgid "Logs"
