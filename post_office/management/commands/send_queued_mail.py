@@ -3,6 +3,8 @@ import sys
 
 from django.core.management.base import BaseCommand
 from django.db import connection
+from django.db.models import Q
+from django.utils.timezone import now
 
 from ...lockfile import FileLock, FileLocked
 from ...mail import send_queued
@@ -50,7 +52,9 @@ class Command(BaseCommand):
 
                     # Close DB connection to avoid multiprocessing errors
                     connection.close()
-                    if not Email.objects.filter(status=STATUS.queued).exists():
+
+                    if not Email.objects.filter(status=STATUS.queued) \
+                            .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)).exists():
                         break
         except FileLocked:
             logger.info('Failed to acquire lock, terminating now.')
