@@ -586,6 +586,11 @@ or::
 Changelog
 =========
 
+Version 3.0.2
+-------------
+- `_send_bulk` now properly catches exceptions when preparing email messages.
+
+
 Version 3.0.1
 -------------
 - Fixed an infinite loop bug in `send_queued_mail` management command.
