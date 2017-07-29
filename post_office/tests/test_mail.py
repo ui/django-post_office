@@ -386,3 +386,15 @@ class MailTest(TestCase):
                      template=template, context=context, language='ru',
                      render_on_delivery=True)
         self.assertEqual(email.template.language, 'ru')
+
+    def test_send_bulk_with_faulty_template(self):
+        template = EmailTemplate.objects.create(
+            subject='{% if foo %}Subject {{ name }}',
+            content='Content {{ name }}',
+            html_content='HTML {{ name }}'
+        )
+        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
+                                     template=template, status=STATUS.queued)
+        _send_bulk([email], uses_multiprocessing=False)
+        email = Email.objects.get(id=email.id)
+        self.assertEqual(email.status, STATUS.failed)
