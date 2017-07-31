@@ -135,6 +135,13 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         return ', '.join(languages)
     languages_compact.short_description = _("Languages")
 
+    def save_model(self, request, obj, form, change):
+        obj.save()
+
+        # if the name got changed, also change the translated templates to match again
+        if 'name' in form.changed_data:
+            obj.translated_templates.update(name=obj.name)
+
 
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ('name', 'file', )
