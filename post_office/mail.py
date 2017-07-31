@@ -204,8 +204,11 @@ def send_queued(processes=1, log_level=None):
                                                   log_level=log_level)
         else:
             email_lists = split_emails(queued_emails, processes)
+
             pool = Pool(processes)
             results = pool.map(_send_bulk, email_lists)
+            pool.terminate()
+
             total_sent = sum([result[0] for result in results])
             total_failed = sum([result[1] for result in results])
     message = '%s emails attempted, %s sent, %s failed' % (
