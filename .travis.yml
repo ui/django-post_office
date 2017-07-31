@@ -5,11 +5,13 @@ python:
   - "3.3"
   - "3.4"
   - "3.5"
+  - "3.6"
 
 env:
   - DJANGO=1.8
   - DJANGO=1.9
   - DJANGO=1.10
+  - DJANGO=1.11
 
 matrix:
   exclude:
@@ -17,6 +19,8 @@ matrix:
       env: DJANGO=1.9
     - python: "3.3"
       env: DJANGO=1.10
+    - python: "3.3"
+      env: DJANGO=1.11
 
 before_install:
   # Workaround for a permissions issue with Travis virtual machine images

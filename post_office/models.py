@@ -62,7 +62,8 @@ class Email(models.Model):
                                           blank=True, null=True, db_index=True)
     headers = JSONField(_('Headers'), blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True,
-                                 null=True, verbose_name=_('Email template'))
+                                 null=True, verbose_name=_('Email template'),
+                                 on_delete=models.CASCADE)
     context = context_field_class(_('Context'), blank=True, null=True)
     backend_alias = models.CharField(_('Backend alias'), blank=True, default='',
                                      max_length=64)
@@ -180,7 +181,7 @@ class Log(models.Model):
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
 
     email = models.ForeignKey(Email, editable=False, related_name='logs',
-                              verbose_name=_('Email address'))
+                              verbose_name=_('Email address'), on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES)
     exception_type = models.CharField(_('Exception type'), max_length=255, blank=True)
@@ -205,15 +206,18 @@ class EmailTemplate(models.Model):
                                    help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    subject = models.CharField(max_length=255, blank=True, verbose_name=_("Subject"),
-                               validators=[validate_template_syntax])
-    content = models.TextField(blank=True, verbose_name=_("Content"), validators=[validate_template_syntax])
-    html_content = models.TextField(blank=True, verbose_name=_("HTML content"),
-                                    validators=[validate_template_syntax])
-    language = models.CharField(max_length=12, verbose_name=_("Language"), default='',
-                                blank=True, help_text=_("Render template in alternative language"))
-    default_template = models.ForeignKey('self', related_name='translated_templates', null=True,
-                                         default=None, verbose_name=_('Default template'))
+    subject = models.CharField(max_length=255, blank=True,
+        verbose_name=_("Subject"), validators=[validate_template_syntax])
+    content = models.TextField(blank=True,
+        verbose_name=_("Content"), validators=[validate_template_syntax])
+    html_content = models.TextField(blank=True,
+        verbose_name=_("HTML content"), validators=[validate_template_syntax])
+    language = models.CharField(max_length=12,
+        verbose_name=_("Language"),
+        help_text=_("Render template in alternative language"),
+        default='', blank=True)
+    default_template = models.ForeignKey('self', related_name='translated_templates',
+        null=True, default=None, verbose_name=_('Default template'), on_delete=models.CASCADE)
 
     class Meta:
         app_label = 'post_office'

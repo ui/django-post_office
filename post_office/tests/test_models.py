@@ -1,3 +1,5 @@
+import django
+
 from datetime import datetime, timedelta
 
 from django.conf import settings as django_settings
@@ -269,8 +271,13 @@ class ModelTest(TestCase):
         email.attachments.add(attachment)
         message = email.email_message()
 
-        self.assertEqual(message.attachments,
-                         [('test.txt', b'test file content', None)])
+        # https://docs.djangoproject.com/en/1.11/releases/1.11/#email
+        if django.VERSION >= (1, 11,):
+            self.assertEqual(message.attachments,
+                             [('test.txt', 'test file content', 'text/plain')])
+        else:
+            self.assertEqual(message.attachments,
+                             [('test.txt', b'test file content', None)])
 
     def test_attachments_email_message_with_mimetype(self):
         email = Email.objects.create(to=['to@example.com'],
@@ -286,8 +293,12 @@ class ModelTest(TestCase):
         email.attachments.add(attachment)
         message = email.email_message()
 
-        self.assertEqual(message.attachments,
-                         [('test.txt', b'test file content', 'text/plain')])
+        if django.VERSION >= (1, 11,):
+            self.assertEqual(message.attachments,
+                             [('test.txt', 'test file content', 'text/plain')])
+        else:
+            self.assertEqual(message.attachments,
+                             [('test.txt', b'test file content', 'text/plain')])
 
     def test_translated_template_uses_default_templates_name(self):
         template = EmailTemplate.objects.create(name='name')

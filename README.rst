@@ -497,7 +497,11 @@ Threads
 
 ``post-office`` >= 3.0 allows you to use multiple threads to dramatically speed up
 the speed at which emails are sent. By default, ``post-office`` uses 5 threads per process.
-You can tweak this setting by changing ``THREADS_PER_PROCESS`` setting. 
+You can tweak this setting by changing ``THREADS_PER_PROCESS`` setting.
+
+This may dramatically increase the speed of bulk email delivery, depending on which email
+backends you use. In my tests, multi threading speeds up email backends that use HTTP based
+(REST) delivery mechanisms but doesn't seem to help SMTP based backends.
 
 .. code-block:: python
 
@@ -582,66 +586,23 @@ or::
 Changelog
 =========
 
-
-Version 2.0.X
+Version 3.0.2
 -------------
-* Added support for mimetypes in email attachments
+- `_send_bulk` now properly catches exceptions when preparing email messages.
 
-Version 2.0.8
+
+Version 3.0.1
 -------------
-* Django 1.10 compatibility fixes. Thanks @hockeybuggy!
-* Fixed an issue where Django would sometimes create migration files for post-office. Thanks @fizista!
+- Fixed an infinite loop bug in `send_queued_mail` management command.
 
-Version 2.0.7
+
+Version 3.0.0
 -------------
-* Fixed an issue with sending email to recipients with display name. Thanks @yprez!
-
-Version 2.0.6
--------------
-* Fixes Django 1.10 deprecation warnings and other minor improvements. Thanks @yprez!
-* Email.subject can now accept up to 989 characters. This should also fix minor migration issues. Thanks @yprez!
-
-Version 2.0.5
--------------
-* Fixes more Django 1.8 deprecation warnings.
-* `Email.dispatch()` now closes backend connection by default. Thanks @zwack
-* Compatibility fixes for Django 1.9. Thanks @yprez!
-
-Version 2.0.1
--------------
-* Fixes migration related packaging issues.
-* Fixes deprecation warning in Django 1.8.
-
-Version 2.0
------------
-* Added multi backend support. Now you can use multiple email backends with ``post-office``!
-* Added multi language support. Thanks @jrief!
-
-Version 1.1.2
--------------
-* Adds Django 1.8 compatibility.
-
-Version 1.1.1
--------------
-* Fixes a migration error. Thanks @garry-cairns!
-
-Version 1.1.0
--------------
-* Support for Django 1.7 migrations. If you're still on Django < 1.7,
-  South migration files are stored in ``south_migrations`` directory.
-
-Version 1.0.0
--------------
-* **IMPORTANT**: in older versions, passing multiple ``recipients`` into
-  ``mail.send()`` will create multiple emails, each addressed to one recipient.
-  Starting from ``1.0.0``, only one email with multiple recipients will be created.
-* Added ``LOG_LEVEL`` setting.
-* ``mail.send()`` now supports ``cc`` and ``bcc``.
-  Thanks Ștefan Daniel Mihăilă (@stefan-mihaila)!
-* Improvements to ``admin`` interface; you can now easily requeue multiple emails.
-* ``Log`` model now stores the type of exception caught during sending.
-* ``send_templated_mail`` command is now deprecated.
-* Added ``EMAIL_BACKEND`` setting to the new dictionary-styled settings.
+* `_send_bulk` now allows each process to use multiple threads to send emails. Allowing 
+* Added support for mimetypes in email attachments. Thanks @clickonchris!
+* An `EmailTemplate` can now be used as defaults multiple times in one language. Thanks @sac7e!
+* `send_queued_mail` management command will now check whether there are more queued emails to be sent before exiting.
+* Drop support for Django < 1.8. Thanks @fendyh!
 
 
 Full changelog can be found `here <https://github.com/ui/django-post_office/blob/master/CHANGELOG.md>`_.
