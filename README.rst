@@ -588,6 +588,12 @@ Changelog
 
 Version 3.0.2
 -------------
+- Fixed memory leak when multiprocessing is used.
+- Fixed a possible error when adding a new email from Django admin. Thanks @ivlevdenis!
+
+
+Version 3.0.2
+-------------
 - `_send_bulk` now properly catches exceptions when preparing email messages.
 
 
