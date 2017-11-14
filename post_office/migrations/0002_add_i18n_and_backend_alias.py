@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='emailtemplate',
             name='default_template',
-            field=models.ForeignKey(related_name='translated_templates', default=None, to='post_office.EmailTemplate', null=True),
+            field=models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='translated_templates', default=None, to='post_office.EmailTemplate', null=True),
         ),
         migrations.AddField(
             model_name='emailtemplate',
