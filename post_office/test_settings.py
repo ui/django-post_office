@@ -50,10 +50,11 @@ ROOT_URLCONF = 'post_office.test_urls'
 
 DEFAULT_FROM_EMAIL = 'webmaster@example.com'
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
+MIDDLEWARE_CLASSES = MIDDLEWARE
 
 TEMPLATES = [
     {
