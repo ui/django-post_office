@@ -1,7 +1,11 @@
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
 from django.test.client import Client
 from django.test import TestCase
+
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 from post_office import mail
 from post_office.models import Email
