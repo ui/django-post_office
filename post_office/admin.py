@@ -78,11 +78,11 @@ class SubjectField(TextInput):
         self.attrs.update({'style': 'width: 610px;'})
 
 class EmailTemplateAdminForm(forms.ModelForm):
- 
-    language = forms.ChoiceField(choices=settings.LANGUAGES, required=False, 
+
+    language = forms.ChoiceField(choices=settings.LANGUAGES, required=False,
                                  help_text=_("Render template in alternative language"),
                                  label=_("Language"))
- 
+
     class Meta:
         model = EmailTemplate
         fields = ('name', 'description', 'subject',
