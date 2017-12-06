@@ -3,41 +3,46 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-01-29 22:13+0300\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2017-08-07 16:47+0300\n"
+"PO-Revision-Date: 2017-08-07 16:49+0300\n"
+"Language: ru_RU\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
 "%100>=11 && n%100<=14)? 2 : 3);\n"
-#: post_office/admin.py:81 post_office/models.py:200
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.11\n"
+
+#: post_office/admin.py:83 post_office/models.py:217
 msgid "Render template in alternative language"
 msgstr "Отправить письмо на другом языке"
 
-#: post_office/admin.py:82 post_office/models.py:199
+#: post_office/admin.py:84 post_office/models.py:216
 msgid "Language"
 msgstr "Язык"
 
-#: post_office/admin.py:111
+#: post_office/admin.py:113
 msgid "Default Content"
 msgstr "Содержимое по умолчанию"
 
-#: post_office/admin.py:125 post_office/models.py:188
+#: post_office/admin.py:127 post_office/models.py:205
 msgid "Description"
 msgstr "Описание"
 
-#: post_office/admin.py:131
+#: post_office/admin.py:133
 msgid "Languages"
 msgstr "Языки"
+
+#: post_office/apps.py:7
+msgid "Post Office"
+msgstr "Менеджер почты"
 
 #: post_office/fields.py:10
 msgid "Comma-separated emails"
@@ -45,162 +50,162 @@ msgstr "Список адресов, разделенных запятыми"
 
 #: post_office/fields.py:19
 msgid "Only comma separated emails are allowed."
-msgstr "Разрешен только разделенный запятыми список адресов"
+msgstr "Разрешен только разделенный запятыми список адресов."
 
-#: post_office/models.py:36
+#: post_office/models.py:34
 msgid "low"
 msgstr "низкий"
 
-#: post_office/models.py:36
+#: post_office/models.py:34
 msgid "medium"
 msgstr "средний"
 
-#: post_office/models.py:37
+#: post_office/models.py:35
 msgid "high"
 msgstr "высокий"
 
-#: post_office/models.py:37
+#: post_office/models.py:35
 msgid "now"
 msgstr "сейчас"
 
-#: post_office/models.py:38 post_office/models.py:164
+#: post_office/models.py:36 post_office/models.py:181
 msgid "sent"
 msgstr "отправлен"
 
-#: post_office/models.py:38 post_office/models.py:164
+#: post_office/models.py:36 post_office/models.py:181
 msgid "failed"
 msgstr "ошибка"
 
-#: post_office/models.py:39
+#: post_office/models.py:37
 msgid "queued"
 msgstr "в очереди"
 
-#: post_office/models.py:41
+#: post_office/models.py:39
 msgid "Email From"
-msgstr "Письмо От"
+msgstr "Отправитель"
 
-#: post_office/models.py:43
+#: post_office/models.py:41
 msgid "Email To"
-msgstr "Письмо Кому"
+msgstr "Получатель"
 
-#: post_office/models.py:44
+#: post_office/models.py:42
 msgid "Cc"
 msgstr "Копия"
 
-#: post_office/models.py:46 post_office/models.py:193
+#: post_office/models.py:44 post_office/models.py:210
 msgid "Subject"
 msgstr "Тема"
 
-#: post_office/models.py:47 post_office/models.py:171
+#: post_office/models.py:45 post_office/models.py:188
 msgid "Message"
 msgstr "Сообщение"
 
-#: post_office/models.py:48
+#: post_office/models.py:46
 msgid "HTML Message"
-msgstr "HTML Сообщение"
+msgstr "HTML-сообщение"
 
-#: post_office/models.py:55 post_office/models.py:169
+#: post_office/models.py:53 post_office/models.py:186
 msgid "Status"
 msgstr "Статус"
 
-#: post_office/models.py:58
+#: post_office/models.py:56
 msgid "Priority"
 msgstr "Приоритет"
 
-#: post_office/models.py:63
+#: post_office/models.py:61
 msgid "The scheduled sending time"
 msgstr "Запланированное время отправки"
 
-#: post_office/models.py:65
+#: post_office/models.py:63
 msgid "Headers"
 msgstr "Заголовки"
 
-#: post_office/models.py:67
+#: post_office/models.py:65
 msgid "Email template"
 msgstr "Шаблон письма"
 
-#: post_office/models.py:68
+#: post_office/models.py:67
 msgid "Context"
 msgstr "Контекст"
 
-#: post_office/models.py:69
+#: post_office/models.py:68
 msgid "Backend alias"
 msgstr "Имя бекенда"
 
-#: post_office/models.py:74
+#: post_office/models.py:73
 msgctxt "Email address"
 msgid "Email"
 msgstr "Письмо"
 
-#: post_office/models.py:75
+#: post_office/models.py:74
 msgctxt "Email addresses"
 msgid "Emails"
 msgstr "Письма"
 
-#: post_office/models.py:167
+#: post_office/models.py:184
 msgid "Email address"
-msgstr "Email адрес"
+msgstr "Email-адрес"
 
-#: post_office/models.py:170
+#: post_office/models.py:187
 msgid "Exception type"
 msgstr "Тип исключения"
 
-#: post_office/models.py:175
+#: post_office/models.py:192
 msgid "Log"
 msgstr "Лог"
 
-#: post_office/models.py:176
+#: post_office/models.py:193
 msgid "Logs"
 msgstr "Логи"
 
-#: post_office/models.py:187 post_office/models.py:241
+#: post_office/models.py:204 post_office/models.py:258
 msgid "Name"
 msgstr "Имя"
 
-#: post_office/models.py:187
+#: post_office/models.py:204
 msgid "e.g: 'welcome_email'"
 msgstr "например: 'welcome_email'"
 
-#: post_office/models.py:189
+#: post_office/models.py:206
 msgid "Description of this template."
-msgstr "Описание шаблона"
+msgstr "Описание шаблона."
 
-#: post_office/models.py:195
+#: post_office/models.py:212
 msgid "Content"
 msgstr "Содержимое"
 
-#: post_office/models.py:197
+#: post_office/models.py:214
 msgid "HTML content"
-msgstr "HTML содержимое"
+msgstr "HTML-содержимое"
 
-#: post_office/models.py:203
+#: post_office/models.py:220
 msgid "Default template"
 msgstr "Шаблон по умолчанию"
 
-#: post_office/models.py:208
+#: post_office/models.py:225
 msgid "Email Template"
 msgstr "Шаблон письма"
 
-#: post_office/models.py:209
+#: post_office/models.py:226
 msgid "Email Templates"
 msgstr "Шаблоны писем"
 
-#: post_office/models.py:240
+#: post_office/models.py:257
 msgid "File"
 msgstr "Файл"
 
-#: post_office/models.py:241
+#: post_office/models.py:258
 msgid "The original filename"
 msgstr "Исходное имя файла"
 
-#: post_office/models.py:243
+#: post_office/models.py:260
 msgid "Email addresses"
 msgstr "Email адреса"
 
-#: post_office/models.py:247
+#: post_office/models.py:265
 msgid "Attachment"
 msgstr "Вложение"
 
-#: post_office/models.py:248
+#: post_office/models.py:266
 msgid "Attachments"
 msgstr "Вложения"
