@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
                 ('status', models.PositiveSmallIntegerField(choices=[(0, 'sent'), (1, 'failed')])),
                 ('exception_type', models.CharField(max_length=255, blank=True)),
                 ('message', models.TextField()),
-                ('email', models.ForeignKey(on_delete=models.deletion.CASCADE, related_name='logs', editable=False, to='post_office.Email')),
+                ('email', models.ForeignKey(related_name='logs', editable=False, on_delete=models.deletion.CASCADE, to='post_office.Email', )),
             ],
             options={
             },
@@ -81,7 +81,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='email',
             name='template',
-            field=models.ForeignKey(on_delete=models.deletion.CASCADE, blank=True, to='post_office.EmailTemplate', null=True),
+            field=models.ForeignKey(blank=True, on_delete=models.deletion.SET_NULL, to='post_office.EmailTemplate', null=True),
             preserve_default=True,
         ),
         migrations.AddField(

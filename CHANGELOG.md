@@ -130,7 +130,7 @@ Version 0.5.0
 
 Version 0.4.0
 -------------
-* Added support for sending emails with custom headers (you'll need to run 
+* Added support for sending emails with custom headers (you'll need to run
   South when upgrading from earlier versions)
 * Added support for scheduled email sending
 * Backend now properly persist emails with HTML alternatives

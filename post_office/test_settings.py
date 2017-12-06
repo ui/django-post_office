@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 
+import django
+from distutils.version import StrictVersion
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -50,10 +53,16 @@ ROOT_URLCONF = 'post_office.test_urls'
 
 DEFAULT_FROM_EMAIL = 'webmaster@example.com'
 
-MIDDLEWARE_CLASSES = (
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-)
+if StrictVersion(str(django.get_version())) < '1.10':
+    MIDDLEWARE_CLASSES = (
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+    )
+else:
+    MIDDLEWARE = [
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+    ]
 
 TEMPLATES = [
     {

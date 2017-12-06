@@ -40,7 +40,7 @@ class Email(models.Model):
                                   validators=[validate_email_with_name])
     to = CommaSeparatedEmailField(_("Email To"))
     cc = CommaSeparatedEmailField(_("Cc"))
-    bcc = CommaSeparatedEmailField(("Bcc"))
+    bcc = CommaSeparatedEmailField(_("Bcc"))
     subject = models.CharField(_("Subject"), max_length=989, blank=True)
     message = models.TextField(_("Message"), blank=True)
     html_message = models.TextField(_("HTML Message"), blank=True)
@@ -196,6 +196,11 @@ class Log(models.Model):
         return text_type(self.date)
 
 
+class EmailTemplateManager(models.Manager):
+    def get_by_natural_key(self, name, language, default_template):
+        return self.get(name=name, language=language, default_template=default_template)
+
+
 @python_2_unicode_compatible
 class EmailTemplate(models.Model):
     """
@@ -219,6 +224,8 @@ class EmailTemplate(models.Model):
     default_template = models.ForeignKey('self', related_name='translated_templates',
         null=True, default=None, verbose_name=_('Default template'), on_delete=models.CASCADE)
 
+    objects = EmailTemplateManager()
+
     class Meta:
         app_label = 'post_office'
         unique_together = ('name', 'language', 'default_template')
@@ -228,6 +235,9 @@ class EmailTemplate(models.Model):
 
     def __str__(self):
         return u'%s %s' % (self.name, self.language)
+
+    def natural_key(self):
+        return (self.name, self.language, self.default_template)
 
     def save(self, *args, **kwargs):
         # If template is a translation, use default template's name
