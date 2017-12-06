@@ -1,9 +1,11 @@
 import django
+import json
 
 from datetime import datetime, timedelta
 
 from django.conf import settings as django_settings
 from django.core import mail
+from django.core import serializers
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.forms.models import modelform_factory
@@ -310,3 +312,13 @@ class ModelTest(TestCase):
                          '<EmailTemplate: test en>')
         self.assertEqual(repr(Email(to=['test@example.com'])),
                          "<Email: ['test@example.com']>")
+
+    def test_natural_key(self):
+        template = EmailTemplate.objects.create(name='name')
+        self.assertEqual(template, EmailTemplate.objects.get_by_natural_key(*template.natural_key()))
+
+        data = serializers.serialize('json', [template], use_natural_primary_keys=True)
+        self.assertNotIn('pk', json.loads(data)[0])
+        deserialized_objects = serializers.deserialize('json', data, use_natural_primary_keys=True)
+        list(deserialized_objects)[0].save()
+        self.assertEqual(EmailTemplate.objects.count(), 1)
