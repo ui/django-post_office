@@ -586,6 +586,11 @@ or::
 Changelog
 =========
 
+Version 3.0.4
+-------------
+* Added compatibility with Django 2.0. Thanks @PreActionTech and @PetrDlouhy!
+* Added natural key support to `EmailTemplate` model. Thanks @maximlomakin!
+
 Version 3.0.2
 -------------
 - Fixed memory leak when multiprocessing is used.
@@ -604,7 +609,7 @@ Version 3.0.1
 
 Version 3.0.0
 -------------
-* `_send_bulk` now allows each process to use multiple threads to send emails. Allowing 
+* `_send_bulk` now allows each process to use multiple threads to send emails.
 * Added support for mimetypes in email attachments. Thanks @clickonchris!
 * An `EmailTemplate` can now be used as defaults multiple times in one language. Thanks @sac7e!
 * `send_queued_mail` management command will now check whether there are more queued emails to be sent before exiting.
