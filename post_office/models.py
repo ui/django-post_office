@@ -40,7 +40,7 @@ class Email(models.Model):
                                   validators=[validate_email_with_name])
     to = CommaSeparatedEmailField(_("Email To"))
     cc = CommaSeparatedEmailField(_("Cc"))
-    bcc = CommaSeparatedEmailField(("Bcc"))
+    bcc = CommaSeparatedEmailField(_("Bcc"))
     subject = models.CharField(_("Subject"), max_length=989, blank=True)
     message = models.TextField(_("Message"), blank=True)
     html_message = models.TextField(_("HTML Message"), blank=True)
