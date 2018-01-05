@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils.timezone import now
 
-from ..models import Email, STATUS
+from ..models import Email, EmailTemplate, STATUS
 
 
 class CommandTest(TestCase):
@@ -93,3 +93,30 @@ class CommandTest(TestCase):
                                      backend_alias='error')
         call_command('send_queued_mail', log_level=2)
         self.assertEqual(email.logs.count(), 1)
+
+    def test_load_email_template(self):
+        self.assertEqual(EmailTemplate.objects.count(), 0)
+
+        call_command('load_email_template', 'test_email_template')
+        self.assertEqual(EmailTemplate.objects.count(), 1)
+
+        template = EmailTemplate.objects.get()
+        self.assertEqual(template.name, 'test_email_template')
+        self.assertEqual(template.content, 'Content\n')
+        self.assertEqual(template.html_content, '<h1>Content</h1>\n')
+        self.assertEqual(template.subject, 'Subject')
+
+    def test_load_email_template_update(self):
+        EmailTemplate.objects.create(name='test_email_template', subject='foo')
+        call_command('load_email_template', 'test_email_template')
+        self.assertEqual(EmailTemplate.objects.count(), 1)
+
+        template = EmailTemplate.objects.get()
+        self.assertEqual(template.name, 'test_email_template')
+        self.assertEqual(template.content, 'Content\n')
+        self.assertEqual(template.html_content, '<h1>Content</h1>\n')
+        self.assertEqual(template.subject, 'Subject')
+
+    def test_load_email_template_not_found(self):
+        call_command('load_email_template', 'nonexistent')
+        self.assertEqual(EmailTemplate.objects.count(), 0)
