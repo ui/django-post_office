@@ -60,8 +60,8 @@ class Email(models.Model):
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     scheduled_time = models.DateTimeField(_('The scheduled sending time'),
                                           blank=True, null=True, db_index=True)
-    headers = JSONField(_('Headers'),blank=True, null=True)
-    template = models.ForeignKey('post_office.EmailTemplate', blank=True, 
+    headers = JSONField(_('Headers'), blank=True, null=True)
+    template = models.ForeignKey('post_office.EmailTemplate', blank=True,
                                  null=True, verbose_name=_('Email template'),
                                  on_delete=models.CASCADE)
     context = context_field_class(_('Context'), blank=True, null=True)
@@ -183,8 +183,8 @@ class Log(models.Model):
     email = models.ForeignKey(Email, editable=False, related_name='logs',
                               verbose_name=_('Email address'), on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
-    status = models.PositiveSmallIntegerField(_('Status'),choices=STATUS_CHOICES)
-    exception_type = models.CharField(_('Exception type'),max_length=255, blank=True)
+    status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES)
+    exception_type = models.CharField(_('Exception type'), max_length=255, blank=True)
     message = models.TextField(_('Message'))
 
     class Meta:
@@ -206,9 +206,9 @@ class EmailTemplate(models.Model):
     """
     Model to hold template information from db
     """
-    name = models.CharField(_('Name'),max_length=255, help_text=_("e.g: 'welcome_email'"))
+    name = models.CharField(_('Name'), max_length=255, help_text=_("e.g: 'welcome_email'"))
     description = models.TextField(_('Description'), blank=True,
-        help_text=_("Description of this template."))
+                                   help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     subject = models.CharField(max_length=255, blank=True,
@@ -231,6 +231,7 @@ class EmailTemplate(models.Model):
         unique_together = ('name', 'language', 'default_template')
         verbose_name = _("Email Template")
         verbose_name_plural = _("Email Templates")
+        ordering = ['name']
 
     def __str__(self):
         return u'%s %s' % (self.name, self.language)
@@ -264,8 +265,8 @@ class Attachment(models.Model):
     """
     A model describing an email attachment.
     """
-    file = models.FileField(_('File'),upload_to=get_upload_path)
-    name = models.CharField(_('Name'),max_length=255, help_text=_("The original filename"))
+    file = models.FileField(_('File'), upload_to=get_upload_path)
+    name = models.CharField(_('Name'), max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Email addresses'))
     mimetype = models.CharField(max_length=255, default='', blank=True)
