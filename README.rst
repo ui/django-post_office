@@ -34,7 +34,7 @@ Installation
 
 * Add ``post_office`` to your INSTALLED_APPS in django's ``settings.py``:
 
-.. code-block:: python
+  .. code-block:: python
 
     INSTALLED_APPS = (
         # other apps
@@ -45,7 +45,9 @@ Installation
 
     python manage.py migrate
 
-* Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``::
+* Set ``post_office.EmailBackend`` as your ``EMAIL_BACKEND`` in django's ``settings.py``:
+
+  .. code-block:: python
 
     EMAIL_BACKEND = 'post_office.EmailBackend'
 
