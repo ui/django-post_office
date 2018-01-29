@@ -106,3 +106,16 @@ class CommandTest(TestCase):
                                      backend_alias='error')
         call_command('send_queued_mail', log_level=2)
         self.assertEqual(email.logs.count(), 1)
+
+    def test_suspend_resume_email_delivery(self):
+        self.assertFalse(Email.is_suspended())
+
+        call_command('suspend_email_delivery')
+        self.assertTrue(Email.is_suspended())
+        call_command('suspend_email_delivery')
+        self.assertTrue(Email.is_suspended())
+
+        call_command('resume_email_delivery')
+        self.assertFalse(Email.is_suspended())
+        call_command('resume_email_delivery')
+        self.assertFalse(Email.is_suspended())
