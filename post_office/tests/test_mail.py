@@ -398,20 +398,3 @@ class MailTest(TestCase):
         _send_bulk([email], uses_multiprocessing=False)
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.status, STATUS.failed)
-
-    def test_send_bulk_suspended(self):
-        email = Email.objects.create(
-            to=['to@example.com'], from_email='bob@example.com',
-            subject='send bulk', message='Message', status=STATUS.queued,
-            backend_alias='locmem')
-
-        # No email should be sent when suspended
-        Email.suspend()
-        _send_bulk([email], uses_multiprocessing=False)
-        email = Email.objects.get(id=email.id)
-        self.assertEqual(email.status, STATUS.queued)
-
-        Email.resume()
-        _send_bulk([email], uses_multiprocessing=False)
-        email = Email.objects.get(id=email.id)
-        self.assertEqual(email.status, STATUS.sent)

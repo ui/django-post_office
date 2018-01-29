@@ -85,14 +85,15 @@ class Email(models.Model):
 
     @classmethod
     def suspend(self):
-        """ Create a lockfile that suspend background sending of emails.
-            User is responsible for clearing up the suspend lockfile.
+        """
+        Creates a lockfile that suspends background sending of emails.
         """
         open(SUSPEND_FILEPATH, 'a').close()
 
     @classmethod
     def is_suspended(self):
-        """ Check if the suspend lockfile exist or not
+        """
+        Check whether email delivery is currently suspended
         """
         return os.path.isfile(SUSPEND_FILEPATH)
 

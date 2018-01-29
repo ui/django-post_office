@@ -236,15 +236,6 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     logger.info('Process started, sending %s emails' % email_count)
 
-    # If we're suspended, drop all emails before processed
-    if Email.is_suspended():
-        logger.info(
-            'Process finished, %s attempted, %s suspended' % (
-                email_count, email_count
-            )
-        )
-        return
-
     def send(email):
         try:
             email.dispatch(log_level=log_level, commit=False,
