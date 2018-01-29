@@ -212,7 +212,7 @@ class ModelTest(TestCase):
 
         self.assertFalse(form.is_valid())
 
-        self.assertEqual(form.errors['default_template'],  [u'This field is required.'])
+        self.assertEqual(form.errors['default_template'], [u'This field is required.'])
         self.assertEqual(form.errors['content'], [u"Invalid filter: 'titl'"])
         self.assertIn(form.errors['html_content'],
                       [[u'Unclosed tags: endblock '],
@@ -322,3 +322,18 @@ class ModelTest(TestCase):
         deserialized_objects = serializers.deserialize('json', data, use_natural_primary_keys=True)
         list(deserialized_objects)[0].save()
         self.assertEqual(EmailTemplate.objects.count(), 1)
+
+    def test_suspend_resume(self):
+        self.assertEqual(Email.is_suspended(), False)
+
+        # Suspend tests, multiple suspend should not crash
+        Email.suspend()
+        self.assertEqual(Email.is_suspended(), True)
+        Email.suspend()
+        self.assertEqual(Email.is_suspended(), True)
+
+        # So do resuming
+        Email.resume()
+        self.assertEqual(Email.is_suspended(), False)
+        Email.resume()
+        self.assertEqual(Email.is_suspended(), False)
