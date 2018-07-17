@@ -1,5 +1,6 @@
 import django
 import json
+import os
 
 from datetime import datetime, timedelta
 
@@ -10,6 +11,7 @@ from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.forms.models import modelform_factory
 from django.test import TestCase
+from django.utils import timezone
 
 from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from ..mail import send
@@ -212,7 +214,7 @@ class ModelTest(TestCase):
 
         self.assertFalse(form.is_valid())
 
-        self.assertEqual(form.errors['default_template'],  [u'This field is required.'])
+        self.assertEqual(form.errors['default_template'], [u'This field is required.'])
         self.assertEqual(form.errors['content'], [u"Invalid filter: 'titl'"])
         self.assertIn(form.errors['html_content'],
                       [[u'Unclosed tags: endblock '],
@@ -260,6 +262,12 @@ class ModelTest(TestCase):
             save=True
         )
         self.assertEqual(attachment.name, 'test.txt')
+
+        # Test that it is saved to the correct subdirectory
+        date = timezone.now().date()
+        expected_path = os.path.join('post_office_attachments', str(date.year),
+                                     str(date.month), str(date.day))
+        self.assertTrue(expected_path in attachment.file.name)
 
     def test_attachments_email_message(self):
         email = Email.objects.create(to=['to@example.com'],
@@ -322,3 +330,18 @@ class ModelTest(TestCase):
         deserialized_objects = serializers.deserialize('json', data, use_natural_primary_keys=True)
         list(deserialized_objects)[0].save()
         self.assertEqual(EmailTemplate.objects.count(), 1)
+
+    def test_suspend_resume(self):
+        self.assertEqual(Email.is_suspended(), False)
+
+        # Suspend tests, multiple suspend should not crash
+        Email.suspend()
+        self.assertEqual(Email.is_suspended(), True)
+        Email.suspend()
+        self.assertEqual(Email.is_suspended(), True)
+
+        # So do resuming
+        Email.resume()
+        self.assertEqual(Email.is_suspended(), False)
+        Email.resume()
+        self.assertEqual(Email.is_suspended(), False)

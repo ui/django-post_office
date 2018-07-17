@@ -42,6 +42,11 @@ class Command(BaseCommand):
             with FileLock(options['lockfile']):
 
                 while 1:
+
+                    if Email.is_suspended():
+                        logger.info('Email delivery is suspended, terminating now.')
+                        break
+
                     try:
                         send_queued(options['processes'],
                                     options.get('log_level'))

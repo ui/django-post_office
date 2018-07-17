@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 from uuid import uuid4
+import os
+import tempfile
 
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
@@ -10,6 +12,7 @@ from django.template import Context, Template
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 from jsonfield import JSONField
 
 from post_office import cache
@@ -23,6 +26,7 @@ from .validators import validate_email_with_name, validate_template_syntax
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
+SUSPEND_FILEPATH = os.path.join(tempfile.gettempdir(), 'post_office.suspend')
 
 
 @python_2_unicode_compatible
@@ -79,6 +83,29 @@ class Email(models.Model):
 
     def __str__(self):
         return u'%s' % self.to
+
+    @classmethod
+    def suspend(self):
+        """
+        Creates a lockfile that suspends background sending of emails.
+        """
+        open(SUSPEND_FILEPATH, 'a').close()
+
+    @classmethod
+    def is_suspended(self):
+        """
+        Check whether email delivery is currently suspended
+        """
+        return os.path.isfile(SUSPEND_FILEPATH)
+
+    @classmethod
+    def resume(self):
+        """ Delete suspend lockfile. Doesn't matter if it failed.
+        """
+        try:
+            os.remove(SUSPEND_FILEPATH)
+        except OSError:
+            pass
 
     def email_message(self):
         """
@@ -253,11 +280,12 @@ def get_upload_path(instance, filename):
     """Overriding to store the original filename"""
     if not instance.name:
         instance.name = filename  # set original filename
-
+    date = timezone.now().date()
     filename = '{name}.{ext}'.format(name=uuid4().hex,
                                      ext=filename.split('.')[-1])
 
-    return 'post_office_attachments/' + filename
+    return os.path.join('post_office_attachments', str(date.year),
+                        str(date.month), str(date.day), filename)
 
 
 @python_2_unicode_compatible

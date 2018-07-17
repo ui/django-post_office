@@ -53,6 +53,19 @@ class CommandTest(TestCase):
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 2)
         self.assertEqual(Email.objects.filter(status=STATUS.queued).count(), 0)
 
+        # send_queued_mail do nothing on suspended delivery
+        Email.objects.create(from_email='from@example.com',
+                             to=['to@example.com'], status=STATUS.queued)
+        Email.suspend()
+        call_command('send_queued_mail', processes=1)
+        self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 2)
+        self.assertEqual(Email.objects.filter(status=STATUS.queued).count(), 1)
+
+        Email.resume()
+        call_command('send_queued_mail', processes=1)
+        self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 3)
+        self.assertEqual(Email.objects.filter(status=STATUS.queued).count(), 0)
+
     def test_successful_deliveries_logging(self):
         """
         Successful deliveries are only logged when log_level is 2.
@@ -93,3 +106,16 @@ class CommandTest(TestCase):
                                      backend_alias='error')
         call_command('send_queued_mail', log_level=2)
         self.assertEqual(email.logs.count(), 1)
+
+    def test_suspend_resume_email_delivery(self):
+        self.assertFalse(Email.is_suspended())
+
+        call_command('suspend_email_delivery')
+        self.assertTrue(Email.is_suspended())
+        call_command('suspend_email_delivery')
+        self.assertTrue(Email.is_suspended())
+
+        call_command('resume_email_delivery')
+        self.assertFalse(Email.is_suspended())
+        call_command('resume_email_delivery')
+        self.assertFalse(Email.is_suspended())
