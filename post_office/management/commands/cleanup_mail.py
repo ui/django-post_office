@@ -14,10 +14,10 @@ class Command(BaseCommand):
                             type=int, default=90,
                             help="Cleanup mails older than this many days, defaults to 90.")
 
-        parser.add_argument('-a', '--attachments', action='store_true',
-                            help="Cleanup orphaned attachments also.")
+        parser.add_argument('-da', '--delete-attachments', action='store_true',
+                            help="Delete orphaned attachments.")
 
-    def handle(self, verbosity, days, attachments, **options):
+    def handle(self, verbosity, days, delete_attachments, **options):
         # Delete mails and their related logs and queued created before X days
 
         cutoff_date = now() - datetime.timedelta(days)
@@ -25,9 +25,9 @@ class Command(BaseCommand):
         Email.objects.only('id').filter(created__lt=cutoff_date).delete()
         print("Deleted {0} mails created before {1} ".format(count, cutoff_date))
 
-        if attachments:
+        if delete_attachments:
             attachments = Attachment.objects.filter(emails=None)
-            attachments_count = attachments.count()
+            attachments_count = len(attachments)
             for attachment in attachments:
                 # Delete the actual file
                 attachment.file.delete()

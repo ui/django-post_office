@@ -12,7 +12,7 @@ from ..models import Attachment, Email, STATUS
 
 class CommandTest(TestCase):
 
-    def test_cleanup_mail_with_attachments(self):
+    def test_cleanup_mail_with_orphaned_attachments(self):
         self.assertEqual(Email.objects.count(), 0)
         email = Email.objects.create(to=['to@example.com'],
                                      from_email='from@example.com',
@@ -33,8 +33,8 @@ class CommandTest(TestCase):
         self.assertEqual(Email.objects.count(), 0)
         self.assertEqual(Attachment.objects.count(), 1)
 
-        # Actually clean it up
-        call_command('cleanup_mail', '--attachments', days=30)
+        # Actually cleanup orphaned attachments
+        call_command('cleanup_mail', '-da', days=30)
         self.assertEqual(Email.objects.count(), 0)
         self.assertEqual(Attachment.objects.count(), 0)
 
