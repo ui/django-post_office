@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import os
+
 from collections import namedtuple
 from uuid import uuid4
 
@@ -10,6 +12,7 @@ from django.template import Context, Template
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 from jsonfield import JSONField
 
 from post_office import cache
@@ -253,11 +256,12 @@ def get_upload_path(instance, filename):
     """Overriding to store the original filename"""
     if not instance.name:
         instance.name = filename  # set original filename
-
+    date = timezone.now().date()
     filename = '{name}.{ext}'.format(name=uuid4().hex,
                                      ext=filename.split('.')[-1])
 
-    return 'post_office_attachments/' + filename
+    return os.path.join('post_office_attachments', str(date.year),
+                        str(date.month), str(date.day), filename)
 
 
 @python_2_unicode_compatible
