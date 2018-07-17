@@ -256,7 +256,7 @@ def get_upload_path(instance, filename):
     """Overriding to store the original filename"""
     if not instance.name:
         instance.name = filename  # set original filename
-    date = timezone.localdate()
+    date = timezone.now().date()
     filename = '{name}.{ext}'.format(name=uuid4().hex,
                                      ext=filename.split('.')[-1])
 
