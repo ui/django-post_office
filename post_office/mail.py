@@ -285,7 +285,8 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
             )
 
         if logs:
-            Log.objects.bulk_create(logs)
+            for eachlog in logs:
+                eachlog.save()
 
     if log_level == 2:
 
@@ -294,7 +295,8 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
             logs.append(Log(email=email, status=STATUS.sent))
 
         if logs:
-            Log.objects.bulk_create(logs)
+            for eachlog in logs:
+                eachlog.save()
 
     logger.info(
         'Process finished, %s attempted, %s sent, %s failed' % (
