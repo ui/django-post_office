@@ -1,14 +1,45 @@
 import datetime
+import os
 
+from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils.timezone import now
 
-from ..models import Email, STATUS
+from ..models import Attachment, Email, STATUS
 
 
 class CommandTest(TestCase):
+
+    def test_cleanup_mail_with_orphaned_attachments(self):
+        self.assertEqual(Email.objects.count(), 0)
+        email = Email.objects.create(to=['to@example.com'],
+                                     from_email='from@example.com',
+                                     subject='Subject')
+
+        email.created = now() - datetime.timedelta(31)
+        email.save()
+
+        attachment = Attachment()
+        attachment.file.save(
+            'test.txt', content=ContentFile('test file content'), save=True
+        )
+        email.attachments.add(attachment)
+        attachment_path = attachment.file.name
+
+        # We have orphaned attachment now
+        call_command('cleanup_mail', days=30)
+        self.assertEqual(Email.objects.count(), 0)
+        self.assertEqual(Attachment.objects.count(), 1)
+
+        # Actually cleanup orphaned attachments
+        call_command('cleanup_mail', '-da', days=30)
+        self.assertEqual(Email.objects.count(), 0)
+        self.assertEqual(Attachment.objects.count(), 0)
+
+        # Check that the actual file has been deleted as well
+        self.assertFalse(os.path.exists(attachment_path))
 
     def test_cleanup_mail(self):
         """
