@@ -374,9 +374,9 @@ Management Commands
 | ``--days`` or ``-d``      | Email older than this argument will be deleted.  |
 |                           | Defaults to 90                                   |
 +---------------------------+--------------------------------------------------+
-| ``--delete-attachments`` | Flag to delete orphaned attachment records and   |
-|      or ``-da``           | files on disk. If flag does not exist,           |
-|                           | attachments will be ignored by the cleanup.      |
+| ``--delete-attachments`` | Flag to delete orphaned attachment records and    |
+|      or ``-da``           | files on disk. If flag is not set,               |
+|                           | on disk attachments files won't be deleted.      |
 +---------------------------+--------------------------------------------------+
 
 
@@ -600,10 +600,19 @@ or::
 Changelog
 =========
 
+Version 3.1.0 (2018-07-24)
+--------------------------
+* Improvements to attachments are handled. Thanks @SeiryuZ!
+* Added ``--delete-attachments`` flag to ``cleanup_mail`` management command. Thanks @Seiryuz!
+* I18n improvements. Thanks @vsevolod-skripnik and @delneg!
+* Django admin improvements. Thanks @kakulukia!
+
+
 Version 3.0.4
 -------------
 * Added compatibility with Django 2.0. Thanks @PreActionTech and @PetrDlouhy!
 * Added natural key support to `EmailTemplate` model. Thanks @maximlomakin!
+
 
 Version 3.0.2
 -------------
