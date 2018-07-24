@@ -368,10 +368,22 @@ Management Commands
 * ``cleanup_mail`` - delete all emails created before an X number of days
   (defaults to 90).
 
++---------------------------+--------------------------------------------------+
+| Argument                  | Description                                      |
++---------------------------+--------------------------------------------------+
+| ``--days`` or ``-d``      | Email older than this argument will be deleted.  |
+|                           | Defaults to 90                                   |
++---------------------------+--------------------------------------------------+
+| ``--delete-attachments`` | Flag to delete orphaned attachment records and   |
+|      or ``-da``           | files on disk. If flag does not exist,           |
+|                           | attachments will be ignored by the cleanup.      |
++---------------------------+--------------------------------------------------+
+
+
 You may want to set these up via cron to run regularly::
 
     * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
-    0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 >> $PROJECT/cron_mail_cleanup.log 2>&1)
+    0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 --delete-attachments >> $PROJECT/cron_mail_cleanup.log 2>&1)
 
 Settings
 ========
