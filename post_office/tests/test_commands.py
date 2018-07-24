@@ -41,6 +41,30 @@ class CommandTest(TestCase):
         # Check that the actual file has been deleted as well
         self.assertFalse(os.path.exists(attachment_path))
 
+        # Check if the email attachment's actual file have been deleted
+        Email.objects.all().delete()
+        email = Email.objects.create(to=['to@example.com'],
+                                     from_email='from@example.com',
+                                     subject='Subject')
+        email.created = now() - datetime.timedelta(31)
+        email.save()
+
+        attachment = Attachment()
+        attachment.file.save(
+            'test.txt', content=ContentFile('test file content'), save=True
+        )
+        email.attachments.add(attachment)
+        attachment_path = attachment.file.name
+
+        # Simulate that the files have been deleted by accidents
+        os.remove(attachment_path)
+
+        # No exceptions should break the cleanup
+        call_command('cleanup_mail', '-da', days=30)
+        self.assertEqual(Email.objects.count(), 0)
+        self.assertEqual(Attachment.objects.count(), 0)
+
+
     def test_cleanup_mail(self):
         """
         The ``cleanup_mail`` command deletes mails older than a specified
