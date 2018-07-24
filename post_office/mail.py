@@ -269,7 +269,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     email_ids = [email.id for email in sent_emails]
     Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
 
-    email_ids = [email.id for (email, e) in failed_emails]
+    email_ids = [email.id for (email, _) in failed_emails]
     Email.objects.filter(id__in=email_ids).update(status=STATUS.failed)
 
     # If log level is 0, log nothing, 1 logs only sending failures

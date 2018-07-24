@@ -41,6 +41,30 @@ class CommandTest(TestCase):
         # Check that the actual file has been deleted as well
         self.assertFalse(os.path.exists(attachment_path))
 
+        # Check if the email attachment's actual file have been deleted
+        Email.objects.all().delete()
+        email = Email.objects.create(to=['to@example.com'],
+                                     from_email='from@example.com',
+                                     subject='Subject')
+        email.created = now() - datetime.timedelta(31)
+        email.save()
+
+        attachment = Attachment()
+        attachment.file.save(
+            'test.txt', content=ContentFile('test file content'), save=True
+        )
+        email.attachments.add(attachment)
+        attachment_path = attachment.file.name
+
+        # Simulate that the files have been deleted by accidents
+        os.remove(attachment_path)
+
+        # No exceptions should break the cleanup
+        call_command('cleanup_mail', '-da', days=30)
+        self.assertEqual(Email.objects.count(), 0)
+        self.assertEqual(Attachment.objects.count(), 0)
+
+
     def test_cleanup_mail(self):
         """
         The ``cleanup_mail`` command deletes mails older than a specified
@@ -84,6 +108,19 @@ class CommandTest(TestCase):
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 2)
         self.assertEqual(Email.objects.filter(status=STATUS.queued).count(), 0)
 
+        # send_queued_mail do nothing on suspended delivery
+        Email.objects.create(from_email='from@example.com',
+                             to=['to@example.com'], status=STATUS.queued)
+        Email.suspend()
+        call_command('send_queued_mail', processes=1)
+        self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 2)
+        self.assertEqual(Email.objects.filter(status=STATUS.queued).count(), 1)
+
+        Email.resume()
+        call_command('send_queued_mail', processes=1)
+        self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 3)
+        self.assertEqual(Email.objects.filter(status=STATUS.queued).count(), 0)
+
     def test_successful_deliveries_logging(self):
         """
         Successful deliveries are only logged when log_level is 2.
@@ -124,3 +161,16 @@ class CommandTest(TestCase):
                                      backend_alias='error')
         call_command('send_queued_mail', log_level=2)
         self.assertEqual(email.logs.count(), 1)
+
+    def test_suspend_resume_email_delivery(self):
+        self.assertFalse(Email.is_suspended())
+
+        call_command('suspend_email_delivery')
+        self.assertTrue(Email.is_suspended())
+        call_command('suspend_email_delivery')
+        self.assertTrue(Email.is_suspended())
+
+        call_command('resume_email_delivery')
+        self.assertFalse(Email.is_suspended())
+        call_command('resume_email_delivery')
+        self.assertFalse(Email.is_suspended())

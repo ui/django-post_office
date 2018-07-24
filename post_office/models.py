@@ -5,6 +5,8 @@ import os
 
 from collections import namedtuple
 from uuid import uuid4
+import os
+import tempfile
 
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
@@ -26,6 +28,7 @@ from .validators import validate_email_with_name, validate_template_syntax
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
+SUSPEND_FILEPATH = os.path.join(tempfile.gettempdir(), 'post_office.suspend')
 
 
 @python_2_unicode_compatible
@@ -82,6 +85,29 @@ class Email(models.Model):
 
     def __str__(self):
         return u'%s' % self.to
+
+    @classmethod
+    def suspend(self):
+        """
+        Creates a lockfile that suspends background sending of emails.
+        """
+        open(SUSPEND_FILEPATH, 'a').close()
+
+    @classmethod
+    def is_suspended(self):
+        """
+        Check whether email delivery is currently suspended
+        """
+        return os.path.isfile(SUSPEND_FILEPATH)
+
+    @classmethod
+    def resume(self):
+        """ Delete suspend lockfile. Doesn't matter if it failed.
+        """
+        try:
+            os.remove(SUSPEND_FILEPATH)
+        except OSError:
+            pass
 
     def email_message(self):
         """
