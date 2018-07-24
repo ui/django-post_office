@@ -35,5 +35,6 @@ ghostdriver.log
 ## generic files to ignore
 *~
 *.lock
+.mypy_cache
 
 post_office_attachments
