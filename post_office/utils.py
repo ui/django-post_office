@@ -83,6 +83,7 @@ def create_attachments(attachment_files):
         else:
             content = filedata
             mimetype = None
+            headers = None
 
         opened_file = None
 

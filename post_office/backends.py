@@ -49,7 +49,7 @@ class EmailBackend(BaseEmailBackend):
                         'headers': OrderedDict(attachment.items()),
                     }
                 else:
-                    attachment_files[attachment.name] = ContentFile(attachment.content)
+                    attachment_files[attachment[0]] = ContentFile(attachment[1])
 
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
