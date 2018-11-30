@@ -274,6 +274,7 @@ class Attachment(models.Model):
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Email addresses'))
     mimetype = models.CharField(max_length=255, default='', blank=True)
+    headers = JSONField(_('Headers'), blank=True, null=True)
 
     class Meta:
         app_label = 'post_office'
