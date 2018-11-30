@@ -374,9 +374,9 @@ Management Commands
 | ``--days`` or ``-d``      | Email older than this argument will be deleted.  |
 |                           | Defaults to 90                                   |
 +---------------------------+--------------------------------------------------+
-| ``--delete-attachments`` | Flag to delete orphaned attachment records and    |
-|      or ``-da``           | files on disk. If flag is not set,               |
-|                           | on disk attachments files won't be deleted.      |
+| ``--delete-attachments``  | Flag to delete orphaned attachment records and   |
+|      or ``-da``           | files on disk. If flag does not exist,           |
+|                           | attachments will be ignored by the cleanup.      |
 +---------------------------+--------------------------------------------------+
 
 
