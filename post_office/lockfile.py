@@ -48,6 +48,9 @@ class FileLock(object):
             # 2. Symbolic link is not there
             # In either case, we can safely release the lock
             self.release()
+        except ValueError:
+            # most likely an empty or otherwise invalid lock file
+            self.release()
 
     def valid_lock(self):
         """
