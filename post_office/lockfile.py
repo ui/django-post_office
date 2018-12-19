@@ -20,6 +20,7 @@
 
 import os
 import time
+import platform
 
 
 class FileLocked(Exception):
@@ -122,7 +123,7 @@ class FileLock(object):
         os.write(pid_file, str(os.getpid()).encode('utf-8'))
         os.close(pid_file)
 
-        if hasattr(os, 'symlink'):
+        if hasattr(os, 'symlink') and platform.system() != 'Windows':
             os.symlink(self.pid_filename, self.lock_filename)
         else:
             # Windows platforms doesn't support symlinks, at least not through the os API
