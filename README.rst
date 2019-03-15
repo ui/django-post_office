@@ -313,6 +313,94 @@ also similarly easy:
         language='id', # Sends using Indonesian template
     )
 
+
+Inlined Images
+--------------
+
+Often one wants to render images inside a template, which are attached as inlined ``MIMEImage`` to
+the outgoing email. This requires a slightly modified Django Template Engine, keeping a list of
+inlined images, which later will be added to the outgoing message.
+
+First we must add a special Django template backend to our list of template engines:
+
+.. code-block:: python
+
+	TEMPLATES = [
+	    {
+	        …
+	    }, {
+	        'BACKEND': 'post_office.template.backends.html_email.EmailTemplates',
+	        'APP_DIRS': True,
+	        'DIRS': [],
+	        'OPTIONS': {
+	            'context_processors': [
+	                'django.contrib.auth.context_processors.auth',
+	                'django.template.context_processors.debug',
+	                'django.template.context_processors.i18n',
+	                'django.template.context_processors.media',
+	                'django.template.context_processors.static',
+	                'django.template.context_processors.tz',
+	                'django.template.context_processors.request',
+	            ]
+	        }
+	    }
+	]
+
+then we must tell Post-Office to use this template engine:
+
+.. code-block:: python
+
+	POST_OFFICE = {
+	    'TEMPLATE_ENGINE': 'html_email',
+	}
+
+In templates used to render HTML for emails add
+
+.. code-block:: Django
+
+	{% load … html_email %}
+
+This adds one extra templatetag named ``image_src`` which takes a single parameter. This can either
+be the relative path to an image file located in a static directory, or the absolute path to an
+image file, or a file object itself. Templates rendered using this templatetag, render a reference
+ID for each given image, and keep track of those images. Later on, when the rendered template is
+passed to the mailing library, those images must be transferred to the email message object as
+``MIMEImage``-attachments.
+
+To send an email containing both, a plain text body and some HTML with inlined images, use the
+following code snippet:
+
+.. code-block:: python
+
+	from django.core.mail import EmailMultiAlternatives
+
+	subject, body, from_email, to_email = "Hello", "Plain text body", "no-reply@example.com", "john@example.com"
+	context = {…}
+	email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
+	template = get_template('email-template-name.html', using='html_email')
+	html = template.render(context)
+	email_message.attach_alternative(html, 'text/html')
+	template.attach_related(email_message)
+	email_message.send()
+
+To send an email containing HTML with inlined images, but without a plain text body, use this
+code snippet:
+
+.. code-block:: python
+
+	from django.core.mail import EmailMultiAlternatives
+
+	subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
+	context = {…}
+	template = get_template('email-template-name.html', using='html_email')
+	html = template.render(context)
+	email_message = EmailMultiAlternatives(subject, html, from_email, [to_email])
+	email_message.content_subtype = 'html'
+	template.attach_related(email_message)
+	email_message.send()
+
+
+
 Custom Email Backends
 ---------------------
 
