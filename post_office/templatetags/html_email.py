@@ -5,6 +5,7 @@ from email.mime.image import MIMEImage
 import hashlib
 import os
 from django import template
+from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.core.files import File
 from django.core.files.images import ImageFile
@@ -21,9 +22,14 @@ def image_src(context, file):
     elif os.path.isabs(file) and os.path.exists(file):
         fileobj = File(open(file, 'rb'), name=file)
     else:
-        absfilename = finders.find(file)
-        if absfilename is None:
-            raise FileNotFoundError("No such file: {}".format(file))
+        try:
+            absfilename = finders.find(file)
+            if absfilename is None:
+                raise FileNotFoundError("No such file: {}".format(file))
+        except Exception:
+            if settings.DEBUG:
+                raise
+            return ''
         fileobj = File(open(absfilename, 'rb'), name=file)
     raw_data = fileobj.read()
     image = MIMEImage(raw_data)
