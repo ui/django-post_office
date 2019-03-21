@@ -360,11 +360,15 @@ In templates used to render HTML for emails add
 
 	{% load … html_email %}
 
-This adds one extra templatetag named ``image_src`` which takes a single parameter. This can either
-be the relative path to an image file located in a static directory, or the absolute path to an
-image file, or a file object itself. Templates rendered using this templatetag, render a reference
-ID for each given image, and keep track of those images. Later on, when the rendered template is
-passed to the mailing library, those images must be transferred to the email message object as
+	<p>… somewhere in the body …</p>
+	<img src="{% image_src 'path/to/image.png' %}" />
+
+Here the templatetag named ``image_src`` is used to keep track of inlined images. It takes a single
+parameter. This can either be the relative path to an image file located in one of the ``static``
+directories, or the absolute path to an image file, or an image-file object itself. Templates
+rendered using this templatetag, render a reference ID for each given image, and store these images
+inside the context of the adopted template engine. Later on, when the rendered template is passed
+to the mailing library, those images will be transferred to the email message object as
 ``MIMEImage``-attachments.
 
 To send an email containing both, a plain text body and some HTML with inlined images, use the
@@ -375,9 +379,9 @@ following code snippet:
 	from django.core.mail import EmailMultiAlternatives
 
 	subject, body, from_email, to_email = "Hello", "Plain text body", "no-reply@example.com", "john@example.com"
-	context = {…}
 	email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
 	template = get_template('email-template-name.html', using='html_email')
+	context = {…}
 	html = template.render(context)
 	email_message.attach_alternative(html, 'text/html')
 	template.attach_related(email_message)
@@ -391,8 +395,8 @@ code snippet:
 	from django.core.mail import EmailMultiAlternatives
 
 	subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
-	context = {…}
 	template = get_template('email-template-name.html', using='html_email')
+	context = {…}
 	html = template.render(context)
 	email_message = EmailMultiAlternatives(subject, html, from_email, [to_email])
 	email_message.content_subtype = 'html'
