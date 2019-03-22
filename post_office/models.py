@@ -10,7 +10,7 @@ from email.mime.nonmultipart import MIMENonMultipart
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
-from django.utils.translation import pgettext_lazy, ugettext_lazy as _, override as translation_override
+from django.utils.translation import pgettext_lazy, ugettext_lazy as _
 from django.utils import timezone
 from jsonfield import JSONField
 
