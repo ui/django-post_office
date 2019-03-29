@@ -600,10 +600,19 @@ or::
 Changelog
 =========
 
+Version 3.1.0 (2018-07-24)
+--------------------------
+* Improvements to attachments are handled. Thanks @SeiryuZ!
+* Added ``--delete-attachments`` flag to ``cleanup_mail`` management command. Thanks @Seiryuz!
+* I18n improvements. Thanks @vsevolod-skripnik and @delneg!
+* Django admin improvements. Thanks @kakulukia!
+
+
 Version 3.0.4
 -------------
 * Added compatibility with Django 2.0. Thanks @PreActionTech and @PetrDlouhy!
 * Added natural key support to `EmailTemplate` model. Thanks @maximlomakin!
+
 
 Version 3.0.2
 -------------

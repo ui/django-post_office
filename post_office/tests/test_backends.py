@@ -1,4 +1,7 @@
+import os
+from email.mime.image import MIMEImage
 from django.conf import settings
+from django.core.files.images import File
 from django.core.mail import EmailMultiAlternatives, send_mail, EmailMessage
 from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase
@@ -98,6 +101,26 @@ class BackendTest(TestCase):
         self.assertEqual(email.attachments.count(), 1)
         self.assertEqual(email.attachments.all()[0].name, 'attachment.txt')
         self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_backend_image_attachments(self):
+        message = EmailMessage('subject', 'body', 'from@example.com',
+                               ['recipient@example.com'])
+
+        filename = os.path.join(os.path.dirname(__file__), 'dummy.png')
+        fileobj = File(open(filename, 'rb'), name='dummy.png')
+        image = MIMEImage(fileobj.read())
+        image.add_header('Content-Disposition', 'inline', filename='dummy.png')
+        image.add_header('Content-ID', '<{dummy.png}>')
+        message.attach(image)
+        message.send()
+
+        email = Email.objects.latest('id')
+        self.assertEqual(email.attachments.count(), 1)
+        self.assertEqual(email.attachments.all()[0].name, 'dummy.png')
+        self.assertEqual(email.attachments.all()[0].file.read(), image.get_payload().encode())
+        self.assertEqual(email.attachments.all()[0].headers.get('Content-ID'), '<{dummy.png}>')
+        self.assertEqual(email.attachments.all()[0].headers.get('Content-Disposition'), 'inline; filename="dummy.png"')
 
     @override_settings(
         EMAIL_BACKEND='post_office.EmailBackend',

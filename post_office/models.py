@@ -6,6 +6,7 @@ import os
 from collections import namedtuple
 from uuid import uuid4
 
+from email.mime.nonmultipart import MIMENonMultipart
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.template import Context, Template
@@ -125,7 +126,17 @@ class Email(models.Model):
                 headers=self.headers, connection=connection)
 
         for attachment in self.attachments.all():
-            msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype or None)
+            if attachment.headers:
+                mime_part = MIMENonMultipart(*attachment.mimetype.split('/'))
+                mime_part.set_payload(attachment.file.read())
+                for key, val in attachment.headers.items():
+                    try:
+                        mime_part.replace_header(key, val)
+                    except KeyError:
+                        mime_part.add_header(key, val)
+                msg.attach(mime_part)
+            else:
+                msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype or None)
             attachment.file.close()
 
         self._cached_email_message = msg
@@ -274,6 +285,7 @@ class Attachment(models.Model):
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Email addresses'))
     mimetype = models.CharField(max_length=255, default='', blank=True)
+    headers = JSONField(_('Headers'), blank=True, null=True)
 
     class Meta:
         app_label = 'post_office'
