@@ -119,7 +119,7 @@ class HTMLMailTest(TestCase):
             name="Test Inlined Images",
             subject="[django-SHOP unit tests] attached image",
             html_content="""
-{% load html_email %}
+{% load post_office %}
 <h3>Testing image attachments</h3>
 <img src="{% image_src imgsrc %}" width="200" />"""
         )

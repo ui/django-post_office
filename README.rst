@@ -358,7 +358,7 @@ In templates used to render HTML for emails add
 
 .. code-block:: Django
 
-	{% load … html_email %}
+	{% load … post_office %}
 
 	<p>… somewhere in the body …</p>
 	<img src="{% image_src 'path/to/image.png' %}" />
