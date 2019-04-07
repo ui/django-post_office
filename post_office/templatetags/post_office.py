@@ -14,9 +14,9 @@ register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def image_src(context, file):
+def inline_image(context, file):
     assert hasattr(context.template, '_attached_images'), \
-        "You must use template engine 'html_email' when rendering images using templatetag 'image_src'."
+        "You must use template engine 'html_email' when rendering images using templatetag 'inline_image'."
     if isinstance(file, ImageFile):
         fileobj = file
     elif os.path.isabs(file) and os.path.exists(file):

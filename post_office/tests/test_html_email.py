@@ -121,7 +121,7 @@ class HTMLMailTest(TestCase):
             html_content="""
 {% load post_office %}
 <h3>Testing image attachments</h3>
-<img src="{% image_src imgsrc %}" width="200" />"""
+<img src="{% inline_image imgsrc %}" width="200" />"""
         )
         filename = os.path.join(os.path.dirname(__file__), 'static/dummy.png')
         context = {'imgsrc': filename}

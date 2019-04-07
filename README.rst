@@ -361,9 +361,9 @@ In templates used to render HTML for emails add
 	{% load … post_office %}
 
 	<p>… somewhere in the body …</p>
-	<img src="{% image_src 'path/to/image.png' %}" />
+	<img src="{% inline_image 'path/to/image.png' %}" />
 
-Here the templatetag named ``image_src`` is used to keep track of inlined images. It takes a single
+Here the templatetag named ``inline_image`` is used to keep track of inlined images. It takes a single
 parameter. This can either be the relative path to an image file located in one of the ``static``
 directories, or the absolute path to an image file, or an image-file object itself. Templates
 rendered using this templatetag, render a reference ID for each given image, and store these images
