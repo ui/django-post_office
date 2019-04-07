@@ -99,22 +99,22 @@ class Email(models.Model):
         if self.template is not None:
             engine = get_template_engine()
             subject = engine.from_string(self.template.subject).render(self.context)
-            plain_message = engine.from_string(self.template.content).render(self.context)
+            plaintext_message = engine.from_string(self.template.content).render(self.context)
             multipart_template = engine.from_string(self.template.html_content)
             html_message = multipart_template.render(self.context)
 
         else:
             subject = smart_text(self.subject)
-            plain_message = self.message
+            plaintext_message = self.message
             multipart_template = None
             html_message = self.html_message
 
         connection = connections[self.backend_alias or 'default']
 
         if html_message:
-            if plain_message:
+            if plaintext_message:
                 msg = EmailMultiAlternatives(
-                    subject=subject, body=plain_message, from_email=self.from_email,
+                    subject=subject, body=plaintext_message, from_email=self.from_email,
                     to=self.to, bcc=self.bcc, cc=self.cc,
                     headers=self.headers, connection=connection)
                 msg.attach_alternative(html_message, "text/html")
@@ -129,7 +129,7 @@ class Email(models.Model):
 
         else:
             msg = EmailMessage(
-                subject=subject, body=plain_message, from_email=self.from_email,
+                subject=subject, body=plaintext_message, from_email=self.from_email,
                 to=self.to, bcc=self.bcc, cc=self.cc,
                 headers=self.headers, connection=connection)
 
