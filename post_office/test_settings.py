@@ -84,7 +84,7 @@ TEMPLATES = [
             ],
         },
     }, {
-        'BACKEND': 'post_office.template.backends.html_email.EmailTemplates',
+        'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
         'APP_DIRS': True,
         'DIRS': [os.path.join(BASE_DIR, 'tests/templates')],
         'OPTIONS': {

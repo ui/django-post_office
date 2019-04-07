@@ -329,7 +329,7 @@ First we must add a special Django template backend to our list of template engi
 	    {
 	        …
 	    }, {
-	        'BACKEND': 'post_office.template.backends.html_email.EmailTemplates',
+	        'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
 	        'APP_DIRS': True,
 	        'DIRS': [],
 	        'OPTIONS': {
@@ -351,7 +351,7 @@ then we must tell Post-Office to use this template engine:
 .. code-block:: python
 
 	POST_OFFICE = {
-	    'TEMPLATE_ENGINE': 'html_email',
+	    'TEMPLATE_ENGINE': 'post_office',
 	}
 
 In templates used to render HTML for emails add
@@ -380,7 +380,7 @@ following code snippet:
 
 	subject, body, from_email, to_email = "Hello", "Plain text body", "no-reply@example.com", "john@example.com"
 	email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
-	template = get_template('email-template-name.html', using='html_email')
+	template = get_template('email-template-name.html', using='post_office')
 	context = {…}
 	html = template.render(context)
 	email_message.attach_alternative(html, 'text/html')
@@ -395,7 +395,7 @@ code snippet:
 	from django.core.mail import EmailMultiAlternatives
 
 	subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
-	template = get_template('email-template-name.html', using='html_email')
+	template = get_template('email-template-name.html', using='post_office')
 	context = {…}
 	html = template.render(context)
 	email_message = EmailMultiAlternatives(subject, html, from_email, [to_email])

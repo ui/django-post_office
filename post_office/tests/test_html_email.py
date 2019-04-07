@@ -13,21 +13,21 @@ from django.utils import six
 
 from post_office.models import Email, EmailTemplate, STATUS
 from post_office.template import render_to_string
-from post_office.template.backends.html_email import EmailTemplates
+from post_office.template.backends.post_office import PostOfficeTemplates
 from post_office.mail import send, send_queued
 
 
 class HTMLMailTest(TestCase):
 
     def test_text(self):
-        template = get_template('hello.html', using='html_email')
-        self.assertIsInstance(template.backend, EmailTemplates)
+        template = get_template('hello.html', using='post_office')
+        self.assertIsInstance(template.backend, PostOfficeTemplates)
         context = {'foo': "Bar"}
         content = template.render(context)
         self.assertHTMLEqual(content, '<h1>Bar</h1>')
 
     def test_html(self):
-        template = get_template('image.html', using='html_email')
+        template = get_template('image.html', using='post_office')
         body = template.render({'imgsrc': 'dummy.png'})
         self.assertHTMLEqual(body, """
 <h3>Testing image attachments</h3>
@@ -56,7 +56,7 @@ class HTMLMailTest(TestCase):
 
     def test_mixed(self):
         body = "Testing mixed text and html attachments"
-        html, attached_images = render_to_string('image.html', {'imgsrc': 'dummy.png'}, using='html_email')
+        html, attached_images = render_to_string('image.html', {'imgsrc': 'dummy.png'}, using='post_office')
         subject = "[django-SHOP unit tests] attached image"
         msg = EmailMultiAlternatives(subject, body, to=['john@example.com'])
         msg.attach_alternative(html, 'text/html')
@@ -85,7 +85,7 @@ class HTMLMailTest(TestCase):
         relfilename = 'static/dummy.png'
         filename = os.path.join(os.path.dirname(__file__), relfilename)
         imagefile = ImageFile(open(filename, 'rb'), name=relfilename)
-        template = get_template('image.html', using='html_email')
+        template = get_template('image.html', using='post_office')
         body = template.render({'imgsrc': imagefile})
         self.assertHTMLEqual(body, """
 <h3>Testing image attachments</h3>
@@ -112,7 +112,7 @@ class HTMLMailTest(TestCase):
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend', POST_OFFICE={
         'BACKENDS': {'locmem': 'django.core.mail.backends.locmem.EmailBackend'},
-        'TEMPLATE_ENGINE': 'html_email',
+        'TEMPLATE_ENGINE': 'post_office',
     })
     def test_send_with_html_template(self):
         template = EmailTemplate.objects.create(

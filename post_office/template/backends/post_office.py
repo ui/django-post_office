@@ -20,7 +20,7 @@ class Template(DjangoTemplate):
             email_message.attach(attachment)
 
 
-class EmailTemplates(BaseEngine):
+class PostOfficeTemplates(BaseEngine):
     """
     Customized Template Engine which keeps track on referenced images and stores them as attachments
     to be used in multipart email messages.
@@ -35,7 +35,7 @@ class EmailTemplates(BaseEngine):
         options.setdefault('file_charset', settings.FILE_CHARSET)
         libraries = options.get('libraries', {})
         options['libraries'] = self.get_templatetag_libraries(libraries)
-        super(EmailTemplates, self).__init__(params)
+        super(PostOfficeTemplates, self).__init__(params)
         self.engine = Engine(self.dirs, self.app_dirs, **options)
 
     def from_string(self, template_code):
