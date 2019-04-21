@@ -2,7 +2,10 @@
 
 
 import django
+import os
 from distutils.version import StrictVersion
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATABASES = {
     'default': {
@@ -35,7 +38,7 @@ POST_OFFICE = {
         'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
         'smtp': 'django.core.mail.backends.smtp.EmailBackend',
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
-    }
+    },
 }
 
 
@@ -80,5 +83,22 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
         },
-    },
+    }, {
+        'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
+        'APP_DIRS': True,
+        'DIRS': [os.path.join(BASE_DIR, 'tests/templates')],
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.template.context_processors.request',
+            ]
+        }
+    }
 ]
+
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'tests/static')]

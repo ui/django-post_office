@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 3.2.0
+-------------
+* Drop support for Python-3.3.
+* Drop support for Django-1.8 and 1.9.
+* Add functionality to attach images as inlines to email body.
+* Add special template engine to render HTML emails with inlined images.
+
 Version 2.0.8
 -------------
 * Django 1.10 compatibility fixes. Thanks @hockeybuggy!

@@ -9,10 +9,8 @@ from uuid import uuid4
 from email.mime.nonmultipart import MIMENonMultipart
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
-from django.template import Context, Template
 from django.utils.encoding import python_2_unicode_compatible
-from django.utils.translation import pgettext_lazy
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import pgettext_lazy, ugettext_lazy as _
 from django.utils import timezone
 from jsonfield import JSONField
 
@@ -21,7 +19,7 @@ from post_office.fields import CommaSeparatedEmailField
 
 from .compat import text_type, smart_text
 from .connections import connections
-from .settings import context_field_class, get_log_level
+from .settings import context_field_class, get_log_level, get_template_engine
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -98,30 +96,40 @@ class Email(models.Model):
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object,
         depending on whether html_message is empty.
         """
-        subject = smart_text(self.subject)
-
         if self.template is not None:
-            _context = Context(self.context)
-            subject = Template(self.template.subject).render(_context)
-            message = Template(self.template.content).render(_context)
-            html_message = Template(self.template.html_content).render(_context)
+            engine = get_template_engine()
+            subject = engine.from_string(self.template.subject).render(self.context)
+            plaintext_message = engine.from_string(self.template.content).render(self.context)
+            multipart_template = engine.from_string(self.template.html_content)
+            html_message = multipart_template.render(self.context)
 
         else:
-            subject = self.subject
-            message = self.message
+            subject = smart_text(self.subject)
+            plaintext_message = self.message
+            multipart_template = None
             html_message = self.html_message
 
         connection = connections[self.backend_alias or 'default']
 
         if html_message:
-            msg = EmailMultiAlternatives(
-                subject=subject, body=message, from_email=self.from_email,
-                to=self.to, bcc=self.bcc, cc=self.cc,
-                headers=self.headers, connection=connection)
-            msg.attach_alternative(html_message, "text/html")
+            if plaintext_message:
+                msg = EmailMultiAlternatives(
+                    subject=subject, body=plaintext_message, from_email=self.from_email,
+                    to=self.to, bcc=self.bcc, cc=self.cc,
+                    headers=self.headers, connection=connection)
+                msg.attach_alternative(html_message, "text/html")
+            else:
+                msg = EmailMultiAlternatives(
+                    subject=subject, body=html_message, from_email=self.from_email,
+                    to=self.to, bcc=self.bcc, cc=self.cc,
+                    headers=self.headers, connection=connection)
+                msg.content_subtype = 'html'
+            if hasattr(multipart_template, 'attach_related'):
+                multipart_template.attach_related(msg)
+
         else:
             msg = EmailMessage(
-                subject=subject, body=message, from_email=self.from_email,
+                subject=subject, body=plaintext_message, from_email=self.from_email,
                 to=self.to, bcc=self.bcc, cc=self.cc,
                 headers=self.headers, connection=connection)
 

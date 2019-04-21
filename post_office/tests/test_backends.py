@@ -107,7 +107,7 @@ class BackendTest(TestCase):
         message = EmailMessage('subject', 'body', 'from@example.com',
                                ['recipient@example.com'])
 
-        filename = os.path.join(os.path.dirname(__file__), 'dummy.png')
+        filename = os.path.join(os.path.dirname(__file__), 'static/dummy.png')
         fileobj = File(open(filename, 'rb'), name='dummy.png')
         image = MIMEImage(fileobj.read())
         image.add_header('Content-Disposition', 'inline', filename='dummy.png')
