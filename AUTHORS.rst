@@ -11,3 +11,4 @@ Contributors:
 * Ștefan Daniel Mihăilă (@stefan-mihaila)
 * Wojciech Banaś (@fizista)
 * Maestro Health
+* Jacob Rief (@jacobrief)

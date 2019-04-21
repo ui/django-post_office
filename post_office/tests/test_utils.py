@@ -41,6 +41,7 @@ class UtilsTest(TestCase):
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_email_with_name, 'invalid')
         self.assertRaises(ValidationError, validate_email_with_name, 'Al <ab>')
+        self.assertRaises(ValidationError, validate_email_with_name, 'Al <>')
 
     def test_comma_separated_email_list_validator(self):
         # These should validate

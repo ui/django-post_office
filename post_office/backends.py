@@ -1,3 +1,5 @@
+from collections import OrderedDict
+from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
 
@@ -38,8 +40,16 @@ class EmailBackend(BaseEmailBackend):
             else:
                 html_message = ''
 
-            attachment_files = dict([(name, ContentFile(content))
-                                    for name, content, _ in email_message.attachments])
+            attachment_files = {}
+            for attachment in email_message.attachments:
+                if isinstance(attachment, MIMEBase):
+                    attachment_files[attachment.get_filename()] = {
+                        'file': ContentFile(attachment.get_payload()),
+                        'mimetype': attachment.get_content_type(),
+                        'headers': OrderedDict(attachment.items()),
+                    }
+                else:
+                    attachment_files[attachment[0]] = ContentFile(attachment[1])
 
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
