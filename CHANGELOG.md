@@ -7,6 +7,40 @@ Version 3.2.0
 * Drop support for Django-1.8 and 1.9.
 * Add functionality to attach images as inlines to email body.
 * Add special template engine to render HTML emails with inlined images.
+* Update German translation strings.
+
+Version 3.1.0 (2018-07-24)
+--------------------------
+* Improvements to attachments are handled. Thanks @SeiryuZ!
+* Added `--delete-attachments` flag to `cleanup_mail` management command. Thanks @Seiryuz!
+* I18n improvements. Thanks @vsevolod-skripnik and @delneg!
+* Django admin improvements. Thanks @kakulukia!
+
+Version 3.0.4
+-------------
+* Added compatibility with Django 2.0. Thanks @PreActionTech and @PetrDlouhy!
+* Added natural key support to `EmailTemplate` model. Thanks @maximlomakin!
+
+Version 3.0.3
+-------------
+* Fixed memory leak when multiprocessing is used.
+* Fixed a possible error when adding a new email from Django admin. Thanks @ivlevdenis!
+
+Version 3.0.2
+-------------
+* `_send_bulk` now properly catches exceptions when preparing email messages.
+
+Version 3.0.1
+-------------
+* Fixed an infinite loop bug in `send_queued_mail` management command.
+
+Version 3.0.0
+-------------
+* `_send_bulk` now allows each process to use multiple threads to send emails.
+* Added support for mimetypes in email attachments. Thanks @clickonchris!
+* An `EmailTemplate` can now be used as defaults multiple times in one language. Thanks @sac7e!
+* `send_queued_mail` management command will now check whether there are more queued emails to be sent before exiting.
+* Drop support for Django < 1.8. Thanks @fendyh!
 
 Version 2.0.8
 -------------
