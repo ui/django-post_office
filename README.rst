@@ -26,7 +26,8 @@ Installation
 ============
 
 |Build Status|
-
+|PyPI version|
+|Software license|
 
 * Install from PyPI (or you `manually download from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
 
@@ -701,5 +702,10 @@ Indonesia's most elegant CRM/loyalty platform.
 
 .. |Build Status| image:: https://travis-ci.org/ui/django-post_office.png?branch=master
    :target: https://travis-ci.org/ui/django-post_office
+
+.. |PyPI version| image:: https://img.shields.io/pypi/v/django-post_office.svg
+   :target: https://pypi.org/project/django-post_office/
+
+.. |Software license| image:: https://img.shields.io/pypi/l/django-post_office.svg
 
 .. _uWSGI: https://uwsgi-docs.readthedocs.org/en/latest/
