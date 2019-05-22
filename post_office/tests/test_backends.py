@@ -23,7 +23,7 @@ class ErrorRaisingBackend(BaseEmailBackend):
 
 class BackendTest(TestCase):
 
-    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    @override_settings(EMAIL_BACKEND='post_office.backends.EmailBackend')
     def test_email_backend(self):
         """
         Ensure that email backend properly queue email messages.
@@ -51,7 +51,7 @@ class BackendTest(TestCase):
         self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If EMAIL_BACKEND is set to PostOfficeBackend, use SMTP to send by default
-        setattr(settings, 'EMAIL_BACKEND', 'post_office.EmailBackend')
+        setattr(settings, 'EMAIL_BACKEND', 'post_office.backends.EmailBackend')
         self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
 
         # If EMAIL_BACKEND is set on new dictionary-styled settings, use that
@@ -65,7 +65,7 @@ class BackendTest(TestCase):
             delattr(settings, 'EMAIL_BACKEND')
         setattr(settings, 'POST_OFFICE', previous_settings)
 
-    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    @override_settings(EMAIL_BACKEND='post_office.backends.EmailBackend')
     def test_sending_html_email(self):
         """
         "text/html" attachments to Email should be persisted into the database
@@ -77,7 +77,7 @@ class BackendTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.html_message, 'html')
 
-    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    @override_settings(EMAIL_BACKEND='post_office.backends.EmailBackend')
     def test_headers_sent(self):
         """
         Test that headers are correctly set on the outgoing emails.
@@ -89,7 +89,7 @@ class BackendTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.headers, {'Reply-To': 'reply@example.com'})
 
-    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    @override_settings(EMAIL_BACKEND='post_office.backends.EmailBackend')
     def test_backend_attachments(self):
         message = EmailMessage('subject', 'body', 'from@example.com',
                                ['recipient@example.com'])
@@ -102,7 +102,7 @@ class BackendTest(TestCase):
         self.assertEqual(email.attachments.all()[0].name, 'attachment.txt')
         self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')
 
-    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    @override_settings(EMAIL_BACKEND='post_office.backends.EmailBackend')
     def test_backend_image_attachments(self):
         message = EmailMessage('subject', 'body', 'from@example.com',
                                ['recipient@example.com'])
@@ -123,7 +123,7 @@ class BackendTest(TestCase):
         self.assertEqual(email.attachments.all()[0].headers.get('Content-Disposition'), 'inline; filename="dummy.png"')
 
     @override_settings(
-        EMAIL_BACKEND='post_office.EmailBackend',
+        EMAIL_BACKEND='post_office.backends.EmailBackend',
         POST_OFFICE={
             'DEFAULT_PRIORITY': 'now',
             'BACKENDS': {'default': 'django.core.mail.backends.dummy.EmailBackend'}

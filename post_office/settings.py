@@ -42,7 +42,7 @@ def get_available_backends():
 
     # If EMAIL_BACKEND is set to use PostOfficeBackend
     # and POST_OFFICE_BACKEND is not set, fall back to SMTP
-    if 'post_office.EmailBackend' in backends['default']:
+    if 'post_office.backends.EmailBackend' in backends['default']:
         backends['default'] = 'django.core.mail.backends.smtp.EmailBackend'
 
     return backends

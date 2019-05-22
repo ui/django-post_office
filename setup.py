@@ -2,6 +2,7 @@
 import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
+from post_office import VERSION
 
 
 class Tox(TestCommand):
@@ -31,7 +32,7 @@ TESTS_REQUIRE = ['tox >= 2.3']
 
 setup(
     name='django-post_office',
-    version='3.2.0',
+    version='.'.join(str(v) for v in VERSION),
     author='Selwin Ong',
     author_email='selwin.ong@gmail.com',
     packages=['post_office'],
