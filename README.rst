@@ -328,7 +328,7 @@ First we must add a special Django template backend to our list of template engi
 
 	TEMPLATES = [
 	    {
-	        …
+	        ...
 	    }, {
 	        'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
 	        'APP_DIRS': True,
@@ -359,9 +359,9 @@ In templates used to render HTML for emails add
 
 .. code-block:: Django
 
-	{% load … post_office %}
+	{% load ... post_office %}
 
-	<p>… somewhere in the body …</p>
+	<p>... somewhere in the body ...</p>
 	<img src="{% inline_image 'path/to/image.png' %}" />
 
 Here the templatetag named ``inline_image`` is used to keep track of inlined images. It takes a single
@@ -382,7 +382,7 @@ following code snippet:
 	subject, body, from_email, to_email = "Hello", "Plain text body", "no-reply@example.com", "john@example.com"
 	email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
 	template = get_template('email-template-name.html', using='post_office')
-	context = {…}
+	context = {...}
 	html = template.render(context)
 	email_message.attach_alternative(html, 'text/html')
 	template.attach_related(email_message)
@@ -397,7 +397,7 @@ code snippet:
 
 	subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
 	template = get_template('email-template-name.html', using='post_office')
-	context = {…}
+	context = {...}
 	html = template.render(context)
 	email_message = EmailMultiAlternatives(subject, html, from_email, [to_email])
 	email_message.content_subtype = 'html'
