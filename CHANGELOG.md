@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 3.2.1
+-------------
+* Fix #264: Replace unicode elipsis against 3 dots.
+
 Version 3.2.0
 -------------
 * Drop support for Python-3.3.
