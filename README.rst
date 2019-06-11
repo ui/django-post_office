@@ -8,11 +8,12 @@ Some awesome features are:
 * Allows you to send email asynchronously
 * Multi backend support
 * Supports HTML email
+* Supports inlined images in HTML email
 * Supports database based email templates
+* Supports multilingual email templates (i18n)
 * Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
 * Uses multiprocessing (and threading) to send a large number of emails in parallel
-* Supports multilingual email templates (i18n)
 
 
 Dependencies
