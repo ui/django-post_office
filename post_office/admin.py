@@ -54,7 +54,7 @@ class EmailAdmin(admin.ModelAdmin):
     search_fields = ['to', 'subject']
     date_hierarchy = 'last_updated'
     inlines = [LogInline]
-    list_filter = ['status']
+    list_filter = ['status', 'template__language', 'template__name']
     formfield_overrides = {
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
     }
