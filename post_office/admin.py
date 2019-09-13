@@ -20,6 +20,11 @@ def get_message_preview(instance):
 get_message_preview.short_description = 'Message'
 
 
+class AttachmentInline(admin.StackedInline):
+    model = Attachment.emails.through
+    extra = 0
+
+
 class LogInline(admin.StackedInline):
     model = Log
     extra = 0
@@ -53,7 +58,7 @@ class EmailAdmin(admin.ModelAdmin):
                     'status', 'last_updated')
     search_fields = ['to', 'subject']
     date_hierarchy = 'last_updated'
-    inlines = [LogInline]
+    inlines = [AttachmentInline, LogInline]
     list_filter = ['status', 'template__language', 'template__name']
     formfield_overrides = {
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
