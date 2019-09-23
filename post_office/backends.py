@@ -55,7 +55,7 @@ class EmailBackend(BaseEmailBackend):
             # If EMAIL_TEST_MODE is in settings.py all email are redirect
             test_email = getattr(settings, 'EMAIL_TEST_MODE', False)
             if test_email:
-                email_message.to = email
+                email_message.to = test_email
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
                            bcc=email_message.bcc, subject=subject,
