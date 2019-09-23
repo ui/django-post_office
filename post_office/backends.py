@@ -2,6 +2,7 @@ from collections import OrderedDict
 from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
+from django.conf import settings
 
 from .settings import get_default_priority
 
@@ -51,6 +52,10 @@ class EmailBackend(BaseEmailBackend):
                 else:
                     attachment_files[attachment[0]] = ContentFile(attachment[1])
 
+            # If EMAIL_TEST_MODE is in settings.py all email are redirect
+            test_email = getattr(settings, 'EMAIL_TEST_MODE', False)
+            if test_email:
+                email_message.to = email
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
                            bcc=email_message.bcc, subject=subject,
