@@ -17,11 +17,14 @@ class Command(BaseCommand):
 
     def handle(self, verbosity, max_retries, **options):
         # Put failed mail in queue
-        email_failed = Email.object.filter(status=STATUS.failed)
+        numbers_mails_get_back_in_queue = 0
+        email_failed = Email.objects.filter(status=STATUS.failed)
         for email in email_failed:
             # Count number of log for retries
-            logs_count = Log.object.filter(status=STATUS.failed, email=email).count()
-            if logs_count < max_retries:
+            logs_count = Log.objects.filter(status=STATUS.failed, email=email).count()
+            if logs_count <= max_retries:
                 email.status = STATUS.queued
                 email.save()
+                numbers_mails_get_back_in_queue += 1
+        self.stdout.write("Retry to send {} mails".format(numbers_mails_get_back_in_queue))
 
