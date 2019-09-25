@@ -1,9 +1,5 @@
-import datetime
-
 from django.core.management.base import BaseCommand
-from django.utils.timezone import now
-
-from ...models import Attachment, Email, Log, STATUS
+from ...models import Email, Log, STATUS
 
 
 class Command(BaseCommand):
