@@ -473,11 +473,24 @@ Management Commands
 |                           | attachments will be ignored by the cleanup.      |
 +---------------------------+--------------------------------------------------+
 
+* ``rey_failed`` - delete all emails created before an X number of days
+  (defaults to 90).
+
++---------------------------+--------------------------------------------------+
+| Argument                  | Description                                      |
++---------------------------+--------------------------------------------------+
+|``--max_retries`` or ``-m``| Put Email who are failed to sent in queue        |
+|                           | Defaults to 3                                    |
++---------------------------+--------------------------------------------------+
+
+
 
 You may want to set these up via cron to run regularly::
 
     * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 --delete-attachments >> $PROJECT/cron_mail_cleanup.log 2>&1)
+    0,20,40 * * * * (cd $PROJECT; python manage.py retry_failed --max_retries=3 >> $PROJECT/retry_failed.log 2>&1)
+
 
 Settings
 ========
