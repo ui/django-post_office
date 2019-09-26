@@ -11,11 +11,12 @@ from django.utils.timezone import now
 from .connections import connections
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
 from .settings import (get_available_backends, get_batch_size,
-                       get_log_level, get_sending_order, get_threads_per_process)
+                       get_log_level, get_sending_order, get_threads_per_process, get_max_retry,
+                       get_time_delta_to_retry)
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
-
+import datetime
 
 logger = setup_loghandlers("INFO")
 
@@ -89,7 +90,6 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
          priority=None, attachments=None, render_on_delivery=False,
          log_level=None, commit=True, cc=None, bcc=None, language='',
          backend=''):
-
     try:
         recipients = parse_emails(recipients)
     except ValidationError as e:
@@ -172,10 +172,10 @@ def get_queued():
      - Status is queued
      - Has scheduled_time lower than the current time or None
     """
-    return Email.objects.filter(status=STATUS.queued) \
-        .select_related('template') \
-        .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
-        .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
+    return Email.objects.filter(Q(status=STATUS.queued) | Q(status=STATUS.requeued)) \
+               .select_related('template') \
+               .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
+               .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
 
 
 def send_queued(processes=1, log_level=None):
@@ -269,8 +269,20 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     email_ids = [email.id for email in sent_emails]
     Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
 
-    email_ids = [email.id for (email, e) in failed_emails]
-    Email.objects.filter(id__in=email_ids).update(status=STATUS.failed)
+    # Retry is enabled
+    if get_max_retry() > 0:
+        email_ids = [email.id for (email, e) in failed_emails]
+        emails_failed = Email.objects.filter(id__in=email_ids)
+        for email in emails_failed:
+            # Count number of log for retries
+            logs_count = Log.objects.filter(status=STATUS.failed, email=email).count()
+            if logs_count <= get_max_retry():
+                email.status = STATUS.requeued
+                email.scheduled_time = datetime.datetime.now() + get_time_delta_to_retry()
+                email.save()
+    else:
+        email_ids = [email.id for (email, e) in failed_emails]
+        Email.objects.filter(id__in=email_ids).update(status=STATUS.failed)
 
     # If log level is 0, log nothing, 1 logs only sending failures
     # and 2 means log both successes and failures
