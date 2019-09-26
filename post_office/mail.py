@@ -18,6 +18,7 @@ from .utils import (get_email_template, parse_emails, parse_priority,
 from .logutils import setup_loghandlers
 import datetime
 
+
 logger = setup_loghandlers("INFO")
 
 
@@ -183,7 +184,7 @@ def send_queued(processes=1, log_level=None):
     Sends out all queued mails that has scheduled_time less than now or None
     """
     queued_emails = get_queued()
-    total_sent, total_failed = 0, 0
+    total_sent, total_failed, total_requeued = 0, 0, 0
     total_email = len(queued_emails)
 
     logger.info('Started sending %s emails with %s processes.' %
@@ -199,7 +200,7 @@ def send_queued(processes=1, log_level=None):
             processes = total_email
 
         if processes == 1:
-            total_sent, total_failed = _send_bulk(queued_emails,
+            total_sent, total_failed, total_requeued = _send_bulk(queued_emails,
                                                   uses_multiprocessing=False,
                                                   log_level=log_level)
         else:
@@ -211,10 +212,12 @@ def send_queued(processes=1, log_level=None):
 
             total_sent = sum([result[0] for result in results])
             total_failed = sum([result[1] for result in results])
-    message = '%s emails attempted, %s sent, %s failed' % (
+            total_requeued = [result[2] for result in results]
+    message = '%s emails attempted, %s sent, %s failed, %s requeued' % (
         total_email,
         total_sent,
-        total_failed
+        total_failed,
+        total_requeued
     )
     logger.info(message)
     return (total_sent, total_failed)
@@ -269,19 +272,22 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     email_ids = [email.id for email in sent_emails]
     Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
 
+    email_ids = [email.id for (email, e) in failed_emails]
     # Retry is enabled
+    numbers_mails_get_back_in_queue = 0
     if get_max_retry() > 0:
-        email_ids = [email.id for (email, e) in failed_emails]
+
         emails_failed = Email.objects.filter(id__in=email_ids)
+
         for email in emails_failed:
             # Count number of log for retries
             logs_count = Log.objects.filter(status=STATUS.failed, email=email).count()
             if logs_count <= get_max_retry():
                 email.status = STATUS.requeued
-                email.scheduled_time = datetime.datetime.now() + get_time_delta_to_retry()
+                email.scheduled_time = now() + get_time_delta_to_retry()
                 email.save()
+                numbers_mails_get_back_in_queue += 1
     else:
-        email_ids = [email.id for (email, e) in failed_emails]
         Email.objects.filter(id__in=email_ids).update(status=STATUS.failed)
 
     # If log level is 0, log nothing, 1 logs only sending failures
@@ -309,9 +315,9 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
             Log.objects.bulk_create(logs)
 
     logger.info(
-        'Process finished, %s attempted, %s sent, %s failed' % (
-            email_count, len(sent_emails), len(failed_emails)
+        'Process finished, %s attempted, %s sent, %s failed, %s requeued' % (
+            email_count, len(sent_emails), len(failed_emails), numbers_mails_get_back_in_queue
         )
     )
 
-    return len(sent_emails), len(failed_emails)
+    return len(sent_emails), len(failed_emails), numbers_mails_get_back_in_queue
