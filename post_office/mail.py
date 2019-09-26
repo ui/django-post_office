@@ -16,7 +16,6 @@ from .settings import (get_available_backends, get_batch_size,
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
-import datetime
 
 
 logger = setup_loghandlers("INFO")
