@@ -76,17 +76,10 @@ class ModelTest(TestCase):
 
     def test_dispatch_with_override_recipients(self):
         previous_settings = settings.POST_OFFICE
+        setattr(settings, 'POST_OFFICE', {'OVERRIDE_RECIPIENTS': 'override@gmail.com'})
         email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test dispatch', message='Message', backend_alias='locmem')
         email.dispatch()
-        self.assertEqual(mail.outbox[0].to, ['to@example.com'])
-        print("mail.outbox[0].to", mail.outbox[0].to)
-
-        setattr(settings, 'POST_OFFICE', {'OVERRIDE_RECIPIENTS': 'override@gmail.com'})
-        print(settings.POST_OFFICE)
-        email2 = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
-                                     subject='Test dispatch', message='Message', backend_alias='locmem')
-        email2.dispatch()
         self.assertEqual(mail.outbox[0].to, ['override@gmail.com'])
         settings.POST_OFFICE = previous_settings
 
