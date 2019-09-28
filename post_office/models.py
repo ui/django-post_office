@@ -97,8 +97,7 @@ class Email(models.Model):
         depending on whether html_message is empty.
         """
         if get_override_recipients():
-            self.to = [get_override_recipients()]
-            self.save(update_fields=['to'])
+            self.to = get_override_recipients()
 
         if self.template is not None:
             engine = get_template_engine()

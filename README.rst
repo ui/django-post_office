@@ -521,7 +521,7 @@ The default is disabled. If you went redirect all sended mails, for testing mail
 
     # Put this in settings.py
     POST_OFFICE = {
-        'OVERRIDE_RECIPIENTS': 'to@exemple.com'
+        'OVERRIDE_RECIPIENTS': ['to@exemple.com'] or ['to@exemple.com', 'to2@exemple.com']
     }
 
 Log Level
