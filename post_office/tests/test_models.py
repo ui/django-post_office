@@ -76,7 +76,7 @@ class ModelTest(TestCase):
 
     def test_dispatch_with_override_recipients(self):
         previous_settings = settings.POST_OFFICE
-        setattr(settings, 'POST_OFFICE', {'OVERRIDE_RECIPIENTS': 'override@gmail.com'})
+        setattr(settings, 'POST_OFFICE', {'OVERRIDE_RECIPIENTS': ['override@gmail.com']})
         email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
                                      subject='Test dispatch', message='Message', backend_alias='locmem')
         email.dispatch()
