@@ -512,16 +512,16 @@ setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
         'DEFAULT_PRIORITY': 'now'
     }
 
-Override recipient
-----------------
+Override Recipients
+-------------------
 
-The default is disabled. If you went redirect all sended mails, for testing mail rendering in developpement period
+Defaults to ``None``. This option is useful if you want to redirect all emails to specified a few email for development purposes.
 
 .. code-block:: python
 
     # Put this in settings.py
     POST_OFFICE = {
-        'OVERRIDE_RECIPIENTS': ['to@exemple.com'] or ['to@exemple.com', 'to2@exemple.com']
+        'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
     }
 
 Log Level
