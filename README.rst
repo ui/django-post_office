@@ -512,6 +512,18 @@ setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
         'DEFAULT_PRIORITY': 'now'
     }
 
+Override recipient
+----------------
+
+The default is disabled. If you went redirect all sended mails, for testing mail rendering in developpement period
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'OVERRIDE_RECIPIENTS': ['to@exemple.com'] or ['to@exemple.com', 'to2@exemple.com']
+    }
+
 Log Level
 ---------
 

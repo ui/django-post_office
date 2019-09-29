@@ -19,7 +19,7 @@ from post_office.fields import CommaSeparatedEmailField
 
 from .compat import text_type, smart_text
 from .connections import connections
-from .settings import context_field_class, get_log_level, get_template_engine
+from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -96,6 +96,9 @@ class Email(models.Model):
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object,
         depending on whether html_message is empty.
         """
+        if get_override_recipients():
+            self.to = get_override_recipients()
+
         if self.template is not None:
             engine = get_template_engine()
             subject = engine.from_string(self.template.subject).render(self.context)

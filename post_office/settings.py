@@ -96,6 +96,10 @@ def get_template_engine():
     return template_engines[using]
 
 
+def get_override_recipients():
+    return get_config().get('OVERRIDE_RECIPIENTS', None)
+
+
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
                                        'jsonfield.JSONField')
 context_field_class = import_attribute(CONTEXT_FIELD_CLASS)
