@@ -20,6 +20,11 @@ def get_message_preview(instance):
 get_message_preview.short_description = 'Message'
 
 
+class AttachmentInline(admin.StackedInline):
+    model = Attachment.emails.through
+    extra = 0
+
+
 class LogInline(admin.StackedInline):
     model = Log
     extra = 0
@@ -31,7 +36,7 @@ class CommaSeparatedEmailWidget(TextInput):
         super(CommaSeparatedEmailWidget, self).__init__(*args, **kwargs)
         self.attrs.update({'class': 'vTextField'})
 
-    def _format_value(self, value):
+    def format_value(self, value):
         # If the value is a string wrap it in a list so it does not get sliced.
         if not value:
             return ''
@@ -53,8 +58,8 @@ class EmailAdmin(admin.ModelAdmin):
                     'status', 'last_updated')
     search_fields = ['to', 'subject']
     date_hierarchy = 'last_updated'
-    inlines = [LogInline]
-    list_filter = ['status']
+    inlines = [AttachmentInline, LogInline]
+    list_filter = ['status', 'template__language', 'template__name']
     formfield_overrides = {
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
     }

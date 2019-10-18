@@ -1,38 +1,33 @@
 language: python
+dist: xenial
 
 python:
   - "2.7"
-  - "3.3"
-  - "3.4"
   - "3.5"
   - "3.6"
+  - "3.7"
 
 env:
-  - DJANGO=1.8
-  - DJANGO=1.9
-  - DJANGO=1.10
   - DJANGO=1.11
   - DJANGO=2.0
+  - DJANGO=2.1.8
+  - DJANGO=2.2
 
 matrix:
   exclude:
     - python: "2.7"
       env: DJANGO=2.0
-    - python: "3.3"
-      env: DJANGO=1.9
-    - python: "3.3"
-      env: DJANGO=1.10
-    - python: "3.3"
-      env: DJANGO=1.11
-    - python: "3.3"
-      env: DJANGO=2.0
+    - python: "2.7"
+      env: DJANGO=2.1.8
+    - python: "2.7"
+      env: DJANGO=2.2
 
 before_install:
   # Workaround for a permissions issue with Travis virtual machine images
   # that breaks Python's multiprocessing:
   # https://github.com/travis-ci/travis-cookbooks/issues/155
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
+  # - sudo rm -rf /dev/shm
+  # - sudo ln -s /run/shm /dev/shm
 
 install:
   - pip install "Django>=$DJANGO,<${DJANGO}.99" jsonfield

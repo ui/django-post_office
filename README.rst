@@ -8,17 +8,18 @@ Some awesome features are:
 * Allows you to send email asynchronously
 * Multi backend support
 * Supports HTML email
+* Supports inlined images in HTML email
 * Supports database based email templates
+* Supports multilingual email templates (i18n)
 * Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
 * Uses multiprocessing (and threading) to send a large number of emails in parallel
-* Supports multilingual email templates (i18n)
 
 
 Dependencies
 ============
 
-* `django >= 1.8 <http://djangoproject.com/>`_
+* `django >= 1.10 <http://djangoproject.com/>`_
 * `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
 
 
@@ -26,7 +27,8 @@ Installation
 ============
 
 |Build Status|
-
+|PyPI version|
+|Software license|
 
 * Install from PyPI (or you `manually download from PyPI <http://pypi.python.org/pypi/django-post_office>`_)::
 
@@ -313,6 +315,98 @@ also similarly easy:
         language='id', # Sends using Indonesian template
     )
 
+
+Inlined Images
+--------------
+
+Often one wants to render images inside a template, which are attached as inlined ``MIMEImage`` to
+the outgoing email. This requires a slightly modified Django Template Engine, keeping a list of
+inlined images, which later will be added to the outgoing message.
+
+First we must add a special Django template backend to our list of template engines:
+
+.. code-block:: python
+
+	TEMPLATES = [
+	    {
+	        ...
+	    }, {
+	        'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
+	        'APP_DIRS': True,
+	        'DIRS': [],
+	        'OPTIONS': {
+	            'context_processors': [
+	                'django.contrib.auth.context_processors.auth',
+	                'django.template.context_processors.debug',
+	                'django.template.context_processors.i18n',
+	                'django.template.context_processors.media',
+	                'django.template.context_processors.static',
+	                'django.template.context_processors.tz',
+	                'django.template.context_processors.request',
+	            ]
+	        }
+	    }
+	]
+
+then we must tell Post-Office to use this template engine:
+
+.. code-block:: python
+
+	POST_OFFICE = {
+	    'TEMPLATE_ENGINE': 'post_office',
+	}
+
+In templates used to render HTML for emails add
+
+.. code-block:: Django
+
+	{% load ... post_office %}
+
+	<p>... somewhere in the body ...</p>
+	<img src="{% inline_image 'path/to/image.png' %}" />
+
+Here the templatetag named ``inline_image`` is used to keep track of inlined images. It takes a single
+parameter. This can either be the relative path to an image file located in one of the ``static``
+directories, or the absolute path to an image file, or an image-file object itself. Templates
+rendered using this templatetag, render a reference ID for each given image, and store these images
+inside the context of the adopted template engine. Later on, when the rendered template is passed
+to the mailing library, those images will be transferred to the email message object as
+``MIMEImage``-attachments.
+
+To send an email containing both, a plain text body and some HTML with inlined images, use the
+following code snippet:
+
+.. code-block:: python
+
+	from django.core.mail import EmailMultiAlternatives
+
+	subject, body, from_email, to_email = "Hello", "Plain text body", "no-reply@example.com", "john@example.com"
+	email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
+	template = get_template('email-template-name.html', using='post_office')
+	context = {...}
+	html = template.render(context)
+	email_message.attach_alternative(html, 'text/html')
+	template.attach_related(email_message)
+	email_message.send()
+
+To send an email containing HTML with inlined images, but without a plain text body, use this
+code snippet:
+
+.. code-block:: python
+
+	from django.core.mail import EmailMultiAlternatives
+
+	subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
+	template = get_template('email-template-name.html', using='post_office')
+	context = {...}
+	html = template.render(context)
+	email_message = EmailMultiAlternatives(subject, html, from_email, [to_email])
+	email_message.content_subtype = 'html'
+	template.attach_related(email_message)
+	email_message.send()
+
+
+
 Custom Email Backends
 ---------------------
 
@@ -416,6 +510,18 @@ setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
     # Put this in settings.py
     POST_OFFICE = {
         'DEFAULT_PRIORITY': 'now'
+    }
+
+Override Recipients
+-------------------
+
+Defaults to ``None``. This option is useful if you want to redirect all emails to specified a few email for development purposes.
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
     }
 
 Log Level
@@ -600,36 +706,6 @@ or::
 Changelog
 =========
 
-Version 3.0.4
--------------
-* Added compatibility with Django 2.0. Thanks @PreActionTech and @PetrDlouhy!
-* Added natural key support to `EmailTemplate` model. Thanks @maximlomakin!
-
-Version 3.0.2
--------------
-- Fixed memory leak when multiprocessing is used.
-- Fixed a possible error when adding a new email from Django admin. Thanks @ivlevdenis!
-
-
-Version 3.0.2
--------------
-- `_send_bulk` now properly catches exceptions when preparing email messages.
-
-
-Version 3.0.1
--------------
-- Fixed an infinite loop bug in `send_queued_mail` management command.
-
-
-Version 3.0.0
--------------
-* `_send_bulk` now allows each process to use multiple threads to send emails.
-* Added support for mimetypes in email attachments. Thanks @clickonchris!
-* An `EmailTemplate` can now be used as defaults multiple times in one language. Thanks @sac7e!
-* `send_queued_mail` management command will now check whether there are more queued emails to be sent before exiting.
-* Drop support for Django < 1.8. Thanks @fendyh!
-
-
 Full changelog can be found `here <https://github.com/ui/django-post_office/blob/master/CHANGELOG.md>`_.
 
 
@@ -639,5 +715,10 @@ Indonesia's most elegant CRM/loyalty platform.
 
 .. |Build Status| image:: https://travis-ci.org/ui/django-post_office.png?branch=master
    :target: https://travis-ci.org/ui/django-post_office
+
+.. |PyPI version| image:: https://img.shields.io/pypi/v/django-post_office.svg
+   :target: https://pypi.org/project/django-post_office/
+
+.. |Software license| image:: https://img.shields.io/pypi/l/django-post_office.svg
 
 .. _uWSGI: https://uwsgi-docs.readthedocs.org/en/latest/

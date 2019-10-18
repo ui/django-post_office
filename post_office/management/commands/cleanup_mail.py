@@ -23,7 +23,7 @@ class Command(BaseCommand):
         cutoff_date = now() - datetime.timedelta(days)
         count = Email.objects.filter(created__lt=cutoff_date).count()
         Email.objects.only('id').filter(created__lt=cutoff_date).delete()
-        print("Deleted {0} mails created before {1} ".format(count, cutoff_date))
+        self.stdout.write("Deleted {0} mails created before {1} ".format(count, cutoff_date))
 
         if delete_attachments:
             attachments = Attachment.objects.filter(emails=None)
@@ -32,4 +32,4 @@ class Command(BaseCommand):
                 # Delete the actual file
                 attachment.file.delete()
             attachments.delete()
-            print("Deleted {0} attachments".format(attachments_count))
+            self.stdout.write("Deleted {0} attachments".format(attachments_count))

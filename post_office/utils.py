@@ -79,9 +79,11 @@ def create_attachments(attachment_files):
         if isinstance(filedata, dict):
             content = filedata.get('file', None)
             mimetype = filedata.get('mimetype', None)
+            headers = filedata.get('headers', None)
         else:
             content = filedata
             mimetype = None
+            headers = None
 
         opened_file = None
 
@@ -93,6 +95,7 @@ def create_attachments(attachment_files):
         attachment = Attachment()
         if mimetype:
             attachment.mimetype = mimetype
+        attachment.headers = headers
         attachment.file.save(filename, content=content, save=True)
 
         attachments.append(attachment)

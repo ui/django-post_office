@@ -4,7 +4,7 @@ import os
 
 from datetime import datetime, timedelta
 
-from django.conf import settings as django_settings
+from django.conf import settings as django_settings, settings
 from django.core import mail
 from django.core import serializers
 from django.core.files.base import ContentFile
@@ -73,6 +73,15 @@ class ModelTest(TestCase):
                                      subject='Test dispatch', message='Message', backend_alias='locmem')
         email.dispatch()
         self.assertEqual(mail.outbox[0].subject, 'Test dispatch')
+
+    def test_dispatch_with_override_recipients(self):
+        previous_settings = settings.POST_OFFICE
+        setattr(settings, 'POST_OFFICE', {'OVERRIDE_RECIPIENTS': ['override@gmail.com']})
+        email = Email.objects.create(to=['to@example.com'], from_email='from@example.com',
+                                     subject='Test dispatch', message='Message', backend_alias='locmem')
+        email.dispatch()
+        self.assertEqual(mail.outbox[0].to, ['override@gmail.com'])
+        settings.POST_OFFICE = previous_settings
 
     def test_status_and_log(self):
         """

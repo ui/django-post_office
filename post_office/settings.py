@@ -2,6 +2,7 @@ import warnings
 
 from django.conf import settings
 from django.core.cache.backends.base import InvalidCacheBackendError
+from django.template import engines as template_engines
 
 from .compat import import_attribute, get_cache
 
@@ -88,6 +89,15 @@ def get_log_level():
 
 def get_sending_order():
     return get_config().get('SENDING_ORDER', ['-priority'])
+
+
+def get_template_engine():
+    using = get_config().get('TEMPLATE_ENGINE', 'django')
+    return template_engines[using]
+
+
+def get_override_recipients():
+    return get_config().get('OVERRIDE_RECIPIENTS', None)
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
