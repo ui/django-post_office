@@ -9,11 +9,11 @@ from uuid import uuid4
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.template import Context, Template
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import pgettext_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 from jsonfield import JSONField
+from six import python_2_unicode_compatible
 
 from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
