@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import six
 from django import forms
 from django.db import models
 from django.contrib import admin
 from django.conf import settings
 from django.forms.widgets import TextInput
-from django.utils import six
 from django.utils.text import Truncator
 from django.utils.translation import ugettext_lazy as _
 
