@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import django
 import os
 from distutils.version import StrictVersion

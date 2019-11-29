@@ -1,10 +1,10 @@
 import warnings
 
 from django.conf import settings
+from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
 from django.template import engines as template_engines
-
-from .compat import import_attribute, get_cache
+from django.utils.module_loading import import_string
 
 
 def get_backend(alias='default'):
@@ -51,11 +51,11 @@ def get_available_backends():
 def get_cache_backend():
     if hasattr(settings, 'CACHES'):
         if "post_office" in settings.CACHES:
-            return get_cache("post_office")
+            return caches["post_office"]
         else:
             # Sometimes this raises InvalidCacheBackendError, which is ok too
             try:
-                return get_cache("default")
+                return caches["default"]
             except InvalidCacheBackendError:
                 pass
     return None
@@ -102,4 +102,4 @@ def get_override_recipients():
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
                                        'jsonfield.JSONField')
-context_field_class = import_attribute(CONTEXT_FIELD_CLASS)
+context_field_class = import_string(CONTEXT_FIELD_CLASS)

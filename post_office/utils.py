@@ -4,7 +4,6 @@ from django.core.files import File
 from django.utils.encoding import force_text
 
 from post_office import cache
-from .compat import string_types
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_default_priority
 from .validators import validate_email_with_name
@@ -87,7 +86,7 @@ def create_attachments(attachment_files):
 
         opened_file = None
 
-        if isinstance(content, string_types):
+        if isinstance(content, str):
             # `content` is a filename - try to open the file
             opened_file = open(content, 'rb')
             content = File(opened_file)
@@ -110,7 +109,7 @@ def parse_priority(priority):
     if priority is None:
         priority = get_default_priority()
     # If priority is given as a string, returns the enum representation
-    if isinstance(priority, string_types):
+    if isinstance(priority, str):
         priority = getattr(PRIORITY, priority, None)
 
         if priority is None:
@@ -127,7 +126,7 @@ def parse_emails(emails):
     None value is also converted into an empty list.
     """
 
-    if isinstance(emails, string_types):
+    if isinstance(emails, str):
         emails = [emails]
     elif emails is None:
         emails = []

@@ -100,7 +100,7 @@ class BackendTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.attachments.count(), 1)
         self.assertEqual(email.attachments.all()[0].name, 'attachment.txt')
-        self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')
+        self.assertEqual(email.attachments.all()[0].file.read(), 'attachment content')
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_backend_image_attachments(self):

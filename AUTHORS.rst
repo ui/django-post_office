@@ -12,3 +12,4 @@ Contributors:
 * Wojciech Banaś (@fizista)
 * Maestro Health
 * Jacob Rief (@jacobrief)
+* Alexnadr Artemyev (@mogost)
