@@ -45,7 +45,7 @@ class HTMLMailTest(TestCase):
         self.assertIsInstance(part, MIMEImage)
         self.assertEqual(part.get_content_type(), 'image/png')
         self.assertEqual(part['Content-Disposition'], 'inline; filename="f5c66340b8af7dc946cd25d84fdf8c90"')
-        # self.assertEqual(part.get_content_disposition(), 'inline') uncomment after dropping support for Python-3.4
+        self.assertEqual(part.get_content_disposition(), 'inline')
         self.assertEqual(part.get_filename(), 'f5c66340b8af7dc946cd25d84fdf8c90')
         self.assertEqual(part['Content-ID'], '<f5c66340b8af7dc946cd25d84fdf8c90>')
 
@@ -100,7 +100,7 @@ class HTMLMailTest(TestCase):
         self.assertIsInstance(part, MIMEImage)
         self.assertEqual(part.get_content_type(), 'image/png')
         self.assertEqual(part['Content-Disposition'], 'inline; filename="f5c66340b8af7dc946cd25d84fdf8c90"')
-        # self.assertEqual(part.get_content_disposition(), 'inline') uncomment after dropping support for Python-3.4
+        self.assertEqual(part.get_content_disposition(), 'inline')
         self.assertEqual(part.get_filename(), 'f5c66340b8af7dc946cd25d84fdf8c90')
         self.assertEqual(part['Content-ID'], '<f5c66340b8af7dc946cd25d84fdf8c90>')
 
