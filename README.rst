@@ -19,8 +19,8 @@ Some awesome features are:
 Dependencies
 ============
 
-* `django >= 1.11 <http://djangoproject.com/>`_
-* `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
+* `django >= 1.11 <https://djangoproject.com/>`_
+* `jsonfield2 <https://github.com/rpkilby/jsonfield2>`_
 
 
 Installation
