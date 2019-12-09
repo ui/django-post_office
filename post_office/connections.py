@@ -6,7 +6,7 @@ from .settings import get_backend
 
 
 # Copied from Django 1.8's django.core.cache.CacheHandler
-class ConnectionHandler(object):
+class ConnectionHandler:
     """
     A Cache Handler to manage access to Cache instances.
 

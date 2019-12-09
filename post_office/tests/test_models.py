@@ -223,13 +223,13 @@ class ModelTest(TestCase):
 
         self.assertFalse(form.is_valid())
 
-        self.assertEqual(form.errors['default_template'],  [u'This field is required.'])
-        self.assertEqual(form.errors['content'], [u"Invalid filter: 'titl'"])
+        self.assertEqual(form.errors['default_template'],  ['This field is required.'])
+        self.assertEqual(form.errors['content'], ["Invalid filter: 'titl'"])
         self.assertIn(form.errors['html_content'],
-                      [[u'Unclosed tags: endblock '],
-                       [u"Unclosed tag on line 1: 'block'. Looking for one of: endblock."]])
+                      [['Unclosed tags: endblock '],
+                       ["Unclosed tag on line 1: 'block'. Looking for one of: endblock."]])
         self.assertIn(form.errors['subject'],
-                      [[u'Empty variable tag'], [u'Empty variable tag on line 1']])
+                      [['Empty variable tag'], ['Empty variable tag on line 1']])
 
     def test_string_priority(self):
         """
@@ -290,13 +290,8 @@ class ModelTest(TestCase):
         email.attachments.add(attachment)
         message = email.email_message()
 
-        # https://docs.djangoproject.com/en/1.11/releases/1.11/#email
-        if django.VERSION >= (1, 11,):
-            self.assertEqual(message.attachments,
-                             [('test.txt', 'test file content', 'text/plain')])
-        else:
-            self.assertEqual(message.attachments,
-                             [('test.txt', b'test file content', None)])
+        self.assertEqual(message.attachments,
+                         [('test.txt', 'test file content', 'text/plain')])
 
     def test_attachments_email_message_with_mimetype(self):
         email = Email.objects.create(to=['to@example.com'],
@@ -312,12 +307,8 @@ class ModelTest(TestCase):
         email.attachments.add(attachment)
         message = email.email_message()
 
-        if django.VERSION >= (1, 11,):
-            self.assertEqual(message.attachments,
-                             [('test.txt', 'test file content', 'text/plain')])
-        else:
-            self.assertEqual(message.attachments,
-                             [('test.txt', b'test file content', 'text/plain')])
+        self.assertEqual(message.attachments,
+                         [('test.txt', 'test file content', 'text/plain')])
 
     def test_translated_template_uses_default_templates_name(self):
         template = EmailTemplate.objects.create(name='name')

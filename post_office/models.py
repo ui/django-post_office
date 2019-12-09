@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 
 from collections import namedtuple
@@ -9,7 +6,7 @@ from uuid import uuid4
 from email.mime.nonmultipart import MIMENonMultipart
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
+from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, ugettext_lazy as _
 from django.utils import timezone
 from jsonfield import JSONField
@@ -17,7 +14,6 @@ from jsonfield import JSONField
 from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
 
-from .compat import text_type, smart_text
 from .connections import connections
 from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
@@ -27,7 +23,6 @@ PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued')._make(range(3))
 
 
-@python_2_unicode_compatible
 class Email(models.Model):
     """
     A model to hold email information.
@@ -76,11 +71,11 @@ class Email(models.Model):
         verbose_name_plural = pgettext_lazy("Email addresses", "Emails")
 
     def __init__(self, *args, **kwargs):
-        super(Email, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._cached_email_message = None
 
     def __str__(self):
-        return u'%s' % self.to
+        return '%s' % self.to
 
     def email_message(self):
         """
@@ -107,7 +102,7 @@ class Email(models.Model):
             html_message = multipart_template.render(self.context)
 
         else:
-            subject = smart_text(self.subject)
+            subject = smart_str(self.subject)
             plaintext_message = self.message
             multipart_template = None
             html_message = self.html_message
@@ -194,10 +189,9 @@ class Email(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        return super(Email, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
 
-@python_2_unicode_compatible
 class Log(models.Model):
     """
     A model to record sending email sending activities.
@@ -218,7 +212,7 @@ class Log(models.Model):
         verbose_name_plural = _("Logs")
 
     def __str__(self):
-        return text_type(self.date)
+        return str(self.date)
 
 
 class EmailTemplateManager(models.Manager):
@@ -226,7 +220,6 @@ class EmailTemplateManager(models.Manager):
         return self.get(name=name, language=language, default_template=default_template)
 
 
-@python_2_unicode_compatible
 class EmailTemplate(models.Model):
     """
     Model to hold template information from db
@@ -259,7 +252,7 @@ class EmailTemplate(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return u'%s %s' % (self.name, self.language)
+        return '%s %s' % (self.name, self.language)
 
     def natural_key(self):
         return (self.name, self.language, self.default_template)
@@ -269,7 +262,7 @@ class EmailTemplate(models.Model):
         if self.default_template and not self.name:
             self.name = self.default_template.name
 
-        template = super(EmailTemplate, self).save(*args, **kwargs)
+        template = super().save(*args, **kwargs)
         cache.delete(self.name)
         return template
 
@@ -286,7 +279,6 @@ def get_upload_path(instance, filename):
                         str(date.month), str(date.day), filename)
 
 
-@python_2_unicode_compatible
 class Attachment(models.Model):
     """
     A model describing an email attachment.

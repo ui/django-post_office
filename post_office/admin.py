@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from django import forms
 from django.db import models
 from django.contrib import admin
 from django.conf import settings
 from django.forms.widgets import TextInput
-from django.utils import six
 from django.utils.text import Truncator
 from django.utils.translation import ugettext_lazy as _
 
@@ -14,7 +11,7 @@ from .models import Attachment, Log, Email, EmailTemplate, STATUS
 
 
 def get_message_preview(instance):
-    return (u'{0}...'.format(instance.message[:25]) if len(instance.message) > 25
+    return ('{0}...'.format(instance.message[:25]) if len(instance.message) > 25
             else instance.message)
 
 get_message_preview.short_description = 'Message'
@@ -33,14 +30,14 @@ class LogInline(admin.StackedInline):
 class CommaSeparatedEmailWidget(TextInput):
 
     def __init__(self, *args, **kwargs):
-        super(CommaSeparatedEmailWidget, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.attrs.update({'class': 'vTextField'})
 
     def format_value(self, value):
         # If the value is a string wrap it in a list so it does not get sliced.
         if not value:
             return ''
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = [value, ]
         return ','.join([item for item in value])
 
@@ -66,7 +63,7 @@ class EmailAdmin(admin.ModelAdmin):
     actions = [requeue]
 
     def get_queryset(self, request):
-        return super(EmailAdmin, self).get_queryset(request).select_related('template')
+        return super().get_queryset(request).select_related('template')
 
     def to_display(self, instance):
         return ', '.join(instance.to)
@@ -81,7 +78,7 @@ class LogAdmin(admin.ModelAdmin):
 
 class SubjectField(TextInput):
     def __init__(self, *args, **kwargs):
-        super(SubjectField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.attrs.update({'style': 'width: 610px;'})
 
 

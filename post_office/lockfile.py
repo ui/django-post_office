@@ -27,7 +27,7 @@ class FileLocked(Exception):
     pass
 
 
-class FileLock(object):
+class FileLock:
 
     def __init__(self, lock_filename, timeout=None, force=False):
         self.lock_filename = '%s.lock' % lock_filename
@@ -128,7 +128,6 @@ class FileLock(object):
         else:
             # Windows platforms doesn't support symlinks, at least not through the os API
             self.lock_filename = self.pid_filename
-
 
     def release(self):
         """Try to delete the lock files. Doesn't matter if we fail"""

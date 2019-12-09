@@ -94,7 +94,7 @@ class BackendTest(TestCase):
         message = EmailMessage('subject', 'body', 'from@example.com',
                                ['recipient@example.com'])
 
-        message.attach('attachment.txt', 'attachment content')
+        message.attach('attachment.txt', b'attachment content')
         message.send()
 
         email = Email.objects.latest('id')

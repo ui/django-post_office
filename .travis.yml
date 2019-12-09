@@ -1,28 +1,42 @@
 language: python
-dist: xenial
-
-python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
-  - "3.7"
-
-env:
-  - DJANGO=1.11
-  - DJANGO=2.0
-  - DJANGO=2.1.8
-  - DJANGO=2.2
+dist: bionic
 
 matrix:
-  exclude:
-    - python: "2.7"
-      env: DJANGO=2.0
-    - python: "2.7"
-      env: DJANGO=2.1.8
-    - python: "2.7"
-      env: DJANGO=2.2
+  fast_finish: true
+  include:
+    # Python 3.5
+    - python: 3.5
+      env: TOXENV=py35-django111,py35-django20,py35-django21,py35-django22
 
-before_install:
+    # Python 3.6
+    - python: 3.6
+      env: TOXENV=py36-django111,py36-django20,py36-django21,py36-django22
+
+    # Python 3.7
+    - python: 3.7
+      env: TOXENV=py37-django20,py37-django21,py37-django22
+
+    # Python 3.8
+    - python: 3.8
+      env: TOXENV=py38-django20,py38-django21,py38-django22
+
+    # Django Master
+    - python: 3.6
+      env: TOXENV=py36-djangomaster
+    - python: 3.7
+      env: TOXENV=py37-djangomaster
+    - python: 3.8
+      env: TOXENV=py38-djangomaster
+
+  allow_failures:
+    - python: 3.6
+      env: TOXENV=py36-djangomaster
+    - python: 3.7
+      env: TOXENV=py37-djangomaster
+    - python: 3.8
+      env: TOXENV=py38-djangomaster
+
+# before_install:
   # Workaround for a permissions issue with Travis virtual machine images
   # that breaks Python's multiprocessing:
   # https://github.com/travis-ci/travis-cookbooks/issues/155
@@ -30,7 +44,7 @@ before_install:
   # - sudo ln -s /run/shm /dev/shm
 
 install:
-  - pip install "Django>=$DJANGO,<${DJANGO}.99" jsonfield
+  - pip install tox-travis
 
 script:
-  - "`which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=."
+  - tox
