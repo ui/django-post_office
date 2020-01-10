@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from django.db import models, migrations
 import jsonfield.fields
 import post_office.fields
@@ -52,7 +49,7 @@ class Migration(migrations.Migration):
             name='EmailTemplate',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(help_text=b"e.g: 'welcome_email'", max_length=255)),
+                ('name', models.CharField(help_text="e.g: 'welcome_email'", max_length=255)),
                 ('description', models.TextField(help_text='Description of this template.', blank=True)),
                 ('subject', models.CharField(blank=True, max_length=255, validators=[post_office.validators.validate_template_syntax])),
                 ('content', models.TextField(blank=True, validators=[post_office.validators.validate_template_syntax])),

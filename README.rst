@@ -8,17 +8,18 @@ Some awesome features are:
 * Allows you to send email asynchronously
 * Multi backend support
 * Supports HTML email
+* Supports inlined images in HTML email
 * Supports database based email templates
+* Supports multilingual email templates (i18n)
 * Built in scheduling support
 * Works well with task queues like `RQ <http://python-rq.org>`_ or `Celery <http://www.celeryproject.org>`_
 * Uses multiprocessing (and threading) to send a large number of emails in parallel
-* Supports multilingual email templates (i18n)
 
 
 Dependencies
 ============
 
-* `django >= 1.8 <http://djangoproject.com/>`_
+* `django >= 1.11 <http://djangoproject.com/>`_
 * `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
 
 
@@ -509,6 +510,18 @@ setting ``DEFAULT_PRIORITY``. Integration with asynchronous email backends
     # Put this in settings.py
     POST_OFFICE = {
         'DEFAULT_PRIORITY': 'now'
+    }
+
+Override Recipients
+-------------------
+
+Defaults to ``None``. This option is useful if you want to redirect all emails to specified a few email for development purposes.
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
     }
 
 Log Level

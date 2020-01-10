@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 from email.mime.image import MIMEImage
 from django.core.mail import EmailMultiAlternatives
@@ -9,7 +6,6 @@ from django.core.files.images import ImageFile
 from django.template.loader import get_template
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils import six
 
 from post_office.models import Email, EmailTemplate, STATUS
 from post_office.template import render_to_string
@@ -49,9 +45,8 @@ class HTMLMailTest(TestCase):
         self.assertIsInstance(part, MIMEImage)
         self.assertEqual(part.get_content_type(), 'image/png')
         self.assertEqual(part['Content-Disposition'], 'inline; filename="f5c66340b8af7dc946cd25d84fdf8c90"')
-        if six.PY3:
-            # self.assertEqual(part.get_content_disposition(), 'inline') uncomment after dropping support for Python-3.4
-            self.assertEqual(part.get_filename(), 'f5c66340b8af7dc946cd25d84fdf8c90')
+        self.assertEqual(part.get_content_disposition(), 'inline')
+        self.assertEqual(part.get_filename(), 'f5c66340b8af7dc946cd25d84fdf8c90')
         self.assertEqual(part['Content-ID'], '<f5c66340b8af7dc946cd25d84fdf8c90>')
 
     def test_mixed(self):
@@ -105,9 +100,8 @@ class HTMLMailTest(TestCase):
         self.assertIsInstance(part, MIMEImage)
         self.assertEqual(part.get_content_type(), 'image/png')
         self.assertEqual(part['Content-Disposition'], 'inline; filename="f5c66340b8af7dc946cd25d84fdf8c90"')
-        if six.PY3:
-            # self.assertEqual(part.get_content_disposition(), 'inline') uncomment after dropping support for Python-3.4
-            self.assertEqual(part.get_filename(), 'f5c66340b8af7dc946cd25d84fdf8c90')
+        self.assertEqual(part.get_content_disposition(), 'inline')
+        self.assertEqual(part.get_filename(), 'f5c66340b8af7dc946cd25d84fdf8c90')
         self.assertEqual(part['Content-ID'], '<f5c66340b8af7dc946cd25d84fdf8c90>')
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend', POST_OFFICE={
