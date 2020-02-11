@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version X.X.X
+-------------
+* Drop support for Django < 1.11 and Python < 3.5.
+* Replace unsupported dependency ``jsonfield`` with supported fork ``jsonfield2``.
+
 Version 3.2.1
 -------------
 * Fix #264: Replace unicode elipsis against 3 dots.
