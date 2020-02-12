@@ -34,6 +34,11 @@ class Command(BaseCommand):
             type=int,
             help='"0" to log nothing, "1" to only log errors',
         )
+        parser.add_argument(
+            '-x', '--exit-after-batch',
+            action='store_true',
+            help='Exit script after sending one batch of emails',
+        )
 
     def handle(self, *args, **options):
         logger.info('Acquiring lock for sending queued emails at %s.lock' %
@@ -52,6 +57,9 @@ class Command(BaseCommand):
 
                     # Close DB connection to avoid multiprocessing errors
                     connection.close()
+
+                    if options.get('exit_after_batch'):
+                        break
 
                     if not Email.objects.filter(status=STATUS.queued) \
                             .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)).exists():
