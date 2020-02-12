@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version X.X.X
+Version 3.3.0
 -------------
 * Drop support for Django < 1.11 and Python < 3.5.
 * Replace unsupported dependency ``jsonfield`` with supported fork ``jsonfield2``.
