@@ -20,7 +20,7 @@ Dependencies
 ============
 
 * `django >= 1.11 <https://djangoproject.com/>`_
-* `jsonfield2 <https://github.com/rpkilby/jsonfield2>`_
+* `jsonfield <https://github.com/rpkilby/jsonfield>`_
 
 
 Installation

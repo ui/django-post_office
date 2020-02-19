@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version X.X.X
+-------------
+
+* Revert ``jsonfield2`` back to ``jsonfield``, now that it's maintained.
+
 Version 3.3.0
 -------------
 * Support for Django 3.0. Thanks @Mogost!
