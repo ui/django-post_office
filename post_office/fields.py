@@ -1,4 +1,3 @@
-import django
 from django.db.models import TextField
 from django.utils.translation import ugettext_lazy as _
 
@@ -22,12 +21,8 @@ class CommaSeparatedEmailField(TextField):
         defaults.update(kwargs)
         return super().formfield(**defaults)
 
-    if django.VERSION < (2, 0):
-        def from_db_value(self, value, expression, connection, context):
-            return self.to_python(value)
-    else:
-        def from_db_value(self, value, expression, connection):
-            return self.to_python(value)
+    def from_db_value(self, value, expression, connection):
+        return self.to_python(value)
 
     def get_prep_value(self, value):
         """
