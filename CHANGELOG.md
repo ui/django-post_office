@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Version 3.3.1
--------------
+Version 3.3.1 (2020-02-28)
+--------------------------
 * Drop support for Django < 2.2.
 * Revert ``jsonfield2`` back to ``jsonfield`` to make upgrade from < 3.3.0 smoother. Thanks @rpkilby!
 
