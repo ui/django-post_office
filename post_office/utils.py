@@ -146,7 +146,7 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True):
     Optionally also delete pending attachments.
     Return the number of deleted emails and attachments.
     """
-    expired_emails = Email.only('id').objects.filter(created__lt=cutoff_date)
+    expired_emails = Email.objects.only('id').filter(created__lt=cutoff_date)
     emails_count, _ = expired_emails.delete()
 
     if delete_attachments:
