@@ -544,6 +544,25 @@ don't have a running cron-daemon.
 .. _uWSGI: https://uwsgi-docs.readthedocs.org/en/latest/
 
 
+Signals
+=======
+
+Each time an email is added to the mail queue, Post Office emits a special `Django signal`_.
+Whenever a third party application wants to be informed about this event, it shall connect a
+callback funtion to the signal handler :class:`post_office.signals.email_queued`, for instance:
+
+.. code-block:: python
+
+	from django.dispatch import receiver
+	from post_office.signals import email_queued
+
+	@receiver(email_queued)
+	def my_callback(sender, **kwargs):
+	    print("You are sending mail!")
+
+.. _Django signal: https://docs.djangoproject.com/en/stable/topics/signals/
+
+
 Settings
 ========
 
