@@ -138,3 +138,24 @@ def parse_emails(emails):
             raise ValidationError('%s is not a valid email address' % email)
 
     return emails
+
+
+def cleanup_expired_mails(cutoff_date, delete_attachments=True):
+    """
+    Delete all emails before the given cutoff date.
+    Optionally also delete pending attachments.
+    Return the number of deleted emails and attachments.
+    """
+    expired_emails = Email.only('id').objects.filter(created__lt=cutoff_date)
+    emails_count, _ = expired_emails.delete()
+
+    if delete_attachments:
+        attachments = Attachment.objects.filter(emails=None)
+        for attachment in attachments:
+            # Delete the actual file
+            attachment.file.delete()
+        attachments_count, _ = attachments.delete()
+    else:
+        attachments_count = 0
+
+    return emails_count, attachments_count
