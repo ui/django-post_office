@@ -509,7 +509,7 @@ Integration with uWSGI
 ======================
 
 If setting up Celery is too daunting and you use uWSGI_ as application server, then uWSGI decorators
-can act as a poor mens scheduler. Just add this short snipped  to the project's ``wsgi.py`` file:
+can act as a poor men's scheduler. Just add this short snipped  to the project's ``wsgi.py`` file:
 
 .. code-block:: python
 
@@ -549,7 +549,7 @@ Signals
 
 Each time an email is added to the mail queue, Post Office emits a special `Django signal`_.
 Whenever a third party application wants to be informed about this event, it shall connect a
-callback funtion to the signal handler :class:`post_office.signals.email_queued`, for instance:
+callback funtion to the Post Office's signal handler ``email_queued``, for instance:
 
 .. code-block:: python
 
