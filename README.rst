@@ -450,9 +450,10 @@ Integration with Celery
 =======================
 
 If your Django project runs in a Celery enabled configuration, you can use its worker to send out
-queued emails. Compared to the two solutions above, this setup has the big advantage that queued
-emails are send *immediatly* after they have been added to the mail queue. The delivery is still
-performed in a separate and asynchronous task, which makes it suitable for slow SMTP relay hosts.
+queued emails. Compared to the solution with cron (see above), or the solution with uWSGI timers
+(see below) this setup has the big advantage that queued emails are send *immediatly* after they
+have been added to the mail queue. The delivery is still performed in a separate and asynchronous
+task, which prevents sending emails during the request/response-cycle.
 
 If you `configured Celery`_ in your project and started the `Celery worker`_,  you should see
 something such as:
@@ -476,11 +477,10 @@ something such as:
 	. post_office.tasks.send_queued_mail
 
 
-Emails should now be delivered by the worker immediatly after they have been queued, but outside
-the request/response cycle. In order to make this happen, there is no need to otherwise configure
-Post Office. However, in case of a temporary delivery failure, we might want to retry to send those
-emails by a periodic task. This can be done by a simple `Celery beat configuration`_, for instance
-through
+Emails are now beeing delivered by the Celery worker immediatly after they have been queued. In
+order to make this happen, there is no need to otherwise configure Post Office. However, in case
+of a temporary delivery failure, we might want to retry to send those emails by a periodic task.
+This can be done by a simple `Celery beat configuration`_, for instance through
 
 .. code-block:: python
 
@@ -493,11 +493,11 @@ through
 
 This will (re-)send queued emails every 10 minutes, which is handy in case the first (and immediate)
 delivery has failed. If you are using `Django Celery Beat`_ (which I highly recommend), then use the
-Django admin backend and add a Periodic taks for ``post_office.tasks.send_queued_mail``.
+Django-Admin backend and add a Periodic taks for ``post_office.tasks.send_queued_mail``.
 
 Depending on your policy, you may also want to remove expired emails from the queue. This can be done
-by adding another Periodic taks for ``post_office.tasks.cleanup_mail``, which may run only
-once a week or event month.
+by adding another Periodic taks for ``post_office.tasks.cleanup_mail``, which may run once a week or
+month.
 
 .. _configured Celery: https://docs.celeryproject.org/en/latest/userguide/application.html
 .. _Celery worker: https://docs.celeryproject.org/en/latest/userguide/workers.html
