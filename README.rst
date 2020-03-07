@@ -477,10 +477,10 @@ something such as:
 	. post_office.tasks.send_queued_mail
 
 
-Emails are now beeing delivered by the Celery worker immediatly after they have been queued. In
-order to make this happen, the project's ``celery.py`` setup shall invoke the autodiscover_tasks_
+Emails will now be delivered by the Celery worker, immediatly after they have been queued. In order
+to make this happen, the project's ``celery.py`` setup shall invoke the autodiscover_tasks_
 function. There is no need to otherwise configure Post Office for integrating with Celery. However,
-in case of a temporary delivery failure, we might want to retry to send those emails by a periodic
+in case of a temporary delivery failure, we might want retrying to send those emails by a periodic
 task. This can be done by a simple `Celery beat configuration`_, for instance through
 
 .. code-block:: python
@@ -505,6 +505,7 @@ month.
 .. _Celery beat configuration: https://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html#entries
 .. _Django Celery Beat: https://django-celery-beat.readthedocs.io/en/latest/
 .. _autodiscover_tasks: https://docs.celeryproject.org/en/latest/reference/celery.html#celery.Celery.autodiscover_tasks
+
 
 Integration with uWSGI
 ======================
