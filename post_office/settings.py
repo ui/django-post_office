@@ -4,7 +4,11 @@ from django.conf import settings
 from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
 from django.template import engines as template_engines
+
 from django.utils.module_loading import import_string
+
+import datetime
+
 
 
 def get_backend(alias='default'):
@@ -98,6 +102,14 @@ def get_template_engine():
 
 def get_override_recipients():
     return get_config().get('OVERRIDE_RECIPIENTS', None)
+
+
+def get_max_retry():
+    return get_config().get('MAIL_MAX_RETRY', 0)
+
+
+def get_time_delta_to_retry():
+    return get_config().get('MAIL_RETRY_TIME_DELTA', datetime.timedelta(minutes=15))
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
