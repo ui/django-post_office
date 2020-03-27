@@ -551,7 +551,7 @@ Signals
 
 Each time an email is added to the mail queue, Post Office emits a special `Django signal`_.
 Whenever a third party application wants to be informed about this event, it shall connect a
-callback funtion to the Post Office's signal handler ``email_queued``, for instance:
+callback function to the Post Office's signal handler ``email_queued``, for instance:
 
 .. code-block:: python
 
