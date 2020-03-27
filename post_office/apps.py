@@ -8,14 +8,10 @@ class PostOfficeConfig(AppConfig):
     verbose_name = _("Post Office")
 
     def ready(self):
-        from post_office.signals import email_queued
-
         try:
             self.send_queued_mail_task = import_string('post_office.tasks.send_queued_mail')
-        except ImportError:
-            pass  # Celery is not installed
-        else:
-            email_queued.connect(self.send_queued_mail)
+        except ImportError:  # Celery is not installed
+            self.send_queued_mail_task = type('task', (), {'delay': lambda *args: None})
 
-    def send_queued_mail(self, **kwargs):
+    def send_queued_mail(self):
         self.send_queued_mail_task.delay()

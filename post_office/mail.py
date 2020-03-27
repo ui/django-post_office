@@ -1,6 +1,7 @@
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
+from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
@@ -151,7 +152,8 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
     if priority == PRIORITY.now:
         email.dispatch(log_level=log_level)
     else:
-        email_queued.send(sender=Email, email=email)
+        apps.get_app_config('post_office').send_queued_mail()
+    email_queued.send(sender=Email, email=email)
 
     return email
 
@@ -167,6 +169,7 @@ def send_many(kwargs_list):
         emails.append(send(commit=False, **kwargs))
     if len(emails) > 0:
         Email.objects.bulk_create(emails)
+        apps.get_app_config('post_office').send_queued_mail()
         email_queued.send(sender=Email, email=emails[0])
 
 
