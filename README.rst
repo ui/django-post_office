@@ -93,6 +93,7 @@ You can schedule this management command to run regularly via cron::
 
     * * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
 
+
 Usage
 =====
 
