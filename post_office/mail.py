@@ -272,16 +272,13 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
 
     email_ids = [email.id for (email, e) in failed_emails]
-    # Retry is enabled
+
     numbers_mails_get_back_in_queue = 0
+    # Retry is enabled
     if get_max_retry() > 0:
-
         emails_failed = Email.objects.filter(id__in=email_ids)
-
         for email in emails_failed:
-            # Count number of log for retries
-            logs_count = Log.objects.filter(status=STATUS.failed, email=email).count()
-            if logs_count <= get_max_retry():
+            if email.number_of_retries <= get_max_retry():
                 email.status = STATUS.requeued
                 email.scheduled_time = now() + get_time_delta_to_retry()
                 email.save()
