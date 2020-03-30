@@ -109,7 +109,7 @@ def get_max_retry():
 
 
 def get_time_delta_to_retry():
-    return get_config().get('MAIL_RETRY_TIME_DELTA', datetime.timedelta(minutes=15))
+    return get_config().get('RETRY_INTERVAL', datetime.timedelta(minutes=15))
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
