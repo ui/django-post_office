@@ -9,9 +9,6 @@ class PostOfficeConfig(AppConfig):
 
     def ready(self):
         try:
-            self.send_queued_mail_task = import_string('post_office.tasks.send_queued_mail')
+            self.send_queued_mail = import_string('post_office.tasks.send_queued_mail')
         except ImportError:  # Celery is not installed
-            self.send_queued_mail_task = type('task', (), {'delay': lambda *args: None})
-
-    def send_queued_mail(self):
-        self.send_queued_mail_task.delay()
+            self.send_queued_mail = type('task', (), {'delay': lambda *args: None})
