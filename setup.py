@@ -1,4 +1,5 @@
 import sys
+from os.path import dirname, join
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
@@ -25,12 +26,15 @@ class Tox(TestCommand):
         sys.exit(errno)
 
 
+with open(join(dirname(__file__), 'post_office/version.txt'), 'r') as fh:
+    VERSION = '.'.join(map(str, eval(fh.read())))
+
 TESTS_REQUIRE = ['tox >= 2.3']
 
 
 setup(
     name='django-post_office',
-    version='3.2.1',
+    version=VERSION,
     author='Selwin Ong',
     author_email='selwin.ong@gmail.com',
     packages=['post_office'],
