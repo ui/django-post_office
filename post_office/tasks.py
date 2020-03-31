@@ -16,6 +16,13 @@ def send_queued_mail(*args, **kwargs):
     send_queued()
 
 
+def queued_mail_handler(sender, **kwargs):
+    """
+    To be called by post_office.signals.email_queued.send()
+    """
+    send_queued_mail.delay()
+
+
 @shared_task(ignore_result=True)
 def cleanup_mail(*args, **kwargs):
     days = kwargs.get('days', 90)
