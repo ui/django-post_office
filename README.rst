@@ -19,8 +19,8 @@ Some awesome features are:
 Dependencies
 ============
 
-* `django >= 1.11 <http://djangoproject.com/>`_
-* `django-jsonfield <https://github.com/bradjasper/django-jsonfield>`_
+* `django >= 2.2 <https://djangoproject.com/>`_
+* `jsonfield <https://github.com/rpkilby/jsonfield>`_
 
 
 Installation
@@ -120,7 +120,7 @@ This will schedule a task at specific times. Use ``-1`` to signal any time, it c
 in cron.
 
 Please note that ``uwsgidecorators`` are available only, if the application has been started
-with **uWSGI**. However, Django's internal ``./manange.py runserver`` also access this file,
+with **uWSGI**. However, Django's internal ``./manage.py runserver`` also access this file,
 therefore wrap the block into an exception handler as shown above.
 
 This configuration is very useful in environments, such as Docker containers, where you

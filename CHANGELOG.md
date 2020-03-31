@@ -1,6 +1,19 @@
 Changelog
 =========
 
+Version 3.3.1 (2020-02-28)
+--------------------------
+* Drop support for Django < 2.2.
+* Revert ``jsonfield2`` back to ``jsonfield`` to make upgrade from < 3.3.0 smoother. Thanks @rpkilby!
+
+Version 3.3.0
+-------------
+* Support for Django 3.0. Thanks @Mogost!
+* Drop support for Django < 1.11 and Python < 3.5. Thanks @Mogost!
+* Replace unsupported dependency ``jsonfield`` with supported fork ``jsonfield2``. Thanks @Mogost!
+* Added `OVERRIDE_RECIPIENTS` for testing purposes. Thanks @Houtmann!
+* Improved admin interface. Thanks @ilikerobots and @cwuebbels!
+
 Version 3.2.1
 -------------
 * Fix #264: Replace unicode elipsis against 3 dots.
