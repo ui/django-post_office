@@ -347,7 +347,8 @@ following code snippet:
 
 	from django.core.mail import EmailMultiAlternatives
 
-	subject, body, from_email, to_email = "Hello", "Plain text body", "no-reply@example.com", "john@example.com"
+	subject, body = "Hello", "Plain text body"
+	from_email, to_email = "no-reply@example.com", "john@example.com"
 	email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
 	template = get_template('email-template-name.html', using='post_office')
 	context = {...}
@@ -493,13 +494,13 @@ task. This can be done by a simple `Celery beat configuration`_, for instance th
 	    },
 	}
 
-This will (re-)send queued emails every 10 minutes, which is handy in case the first (and immediate)
-delivery has failed. If you are using `Django Celery Beat`_ (which I highly recommend), then use the
-Django-Admin backend and add a Periodic taks for ``post_office.tasks.send_queued_mail``.
+This will send queued emails every 10 minutes. If you are using `Django Celery Beat`_ (which I
+highly recommend), then use the Django-Admin backend and add a periodic taks for
+``post_office.tasks.send_queued_mail``.
 
-Depending on your policy, you may also want to remove expired emails from the queue. This can be done
-by adding another Periodic taks for ``post_office.tasks.cleanup_mail``, which may run once a week or
-month.
+Depending on your policy, you may also want to remove expired emails from the queue. This can be
+done by adding another Periodic taks for ``post_office.tasks.cleanup_mail``, which may run once a
+week or month.
 
 .. _configured Celery: https://docs.celeryproject.org/en/latest/userguide/application.html
 .. _Celery worker: https://docs.celeryproject.org/en/latest/userguide/workers.html
