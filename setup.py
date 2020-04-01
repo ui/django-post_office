@@ -1,3 +1,4 @@
+from ast import literal_eval
 import sys
 from os.path import dirname, join
 from setuptools import setup
@@ -27,7 +28,7 @@ class Tox(TestCommand):
 
 
 with open(join(dirname(__file__), 'post_office/version.txt'), 'r') as fh:
-    VERSION = '.'.join(map(str, eval(fh.read())))
+    VERSION = '.'.join(map(str, literal_eval(fh.read())))
 
 TESTS_REQUIRE = ['tox >= 2.3']
 
