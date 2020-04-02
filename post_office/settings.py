@@ -104,8 +104,8 @@ def get_override_recipients():
     return get_config().get('OVERRIDE_RECIPIENTS', None)
 
 
-def get_max_retry():
-    return get_config().get('MAIL_MAX_RETRY', 0)
+def get_max_retries():
+    return get_config().get('MAX_RETRIES', 0)
 
 
 def get_time_delta_to_retry():

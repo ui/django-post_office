@@ -533,7 +533,7 @@ Defaults to Not Activated. Auto requeue failed email with time interval
 
     # Put this in settings.py
     POST_OFFICE = {
-     'MAIL_MAX_RETRY': 4
+     'MAX_RETRIES': 4
      'RETRY_INTERVAL': datetime.timedelta(minutes=15)
 }
 

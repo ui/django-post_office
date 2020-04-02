@@ -11,7 +11,7 @@ from django.utils.timezone import now
 from .connections import connections
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
 from .settings import (get_available_backends, get_batch_size,
-                       get_log_level, get_sending_order, get_threads_per_process, get_max_retry,
+                       get_log_level, get_sending_order, get_threads_per_process, get_max_retries,
                        get_time_delta_to_retry)
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
@@ -273,23 +273,32 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     email_ids = [email.id for (email, e) in failed_emails]
 
-    numbers_mails_get_back_in_queue = 0
+    requeued_emails = 0
     # Retry is enabled
-    if get_max_retry() > 0:
+    if get_max_retries():
+        max_retries = get_max_retries()
         emails_failed = Email.objects.filter(id__in=email_ids)
+
+        emails_max_retries_exceeded = []  # emails status will change to failed
+        emails_to_requeue = []  # emails status will change to requeued
+
         for email in emails_failed:
-            if email.number_of_retries < get_max_retry():
+            if email.number_of_retries < max_retries:
                 email.status = STATUS.requeued
                 email.scheduled_time = now() + get_time_delta_to_retry()
                 if email.number_of_retries is None:
                     email.number_of_retries = 1
                 else:
                     email.number_of_retries = email.number_of_retries + 1
-                numbers_mails_get_back_in_queue += 1
+                requeued_emails += 1
+                emails_to_requeue.append(email)
             else:
                 email.status = STATUS.failed
+                emails_max_retries_exceeded.append(email)
 
-            email.save()
+            Email.objects.bulk_update(emails_to_requeue, ['status', 'scheduled_time', 'number_of_retries'])
+            Email.objects.bulk_update(emails_max_retries_exceeded, ['status'])
+
     else:
         Email.objects.filter(id__in=email_ids).update(status=STATUS.failed)
 
@@ -319,8 +328,8 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     logger.info(
         'Process finished, %s attempted, %s sent, %s failed, %s requeued' % (
-            email_count, len(sent_emails), len(failed_emails), numbers_mails_get_back_in_queue
+            email_count, len(sent_emails), len(failed_emails), requeued_emails
         )
     )
 
-    return len(sent_emails), len(failed_emails), numbers_mails_get_back_in_queue
+    return len(sent_emails), len(failed_emails), requeued_emails
