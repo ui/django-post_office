@@ -406,4 +406,4 @@ class MailTest(TestCase):
         email = send(recipients=['a@example.com'],
                      sender='from@example.com', message='message',
                      subject='subject')
-        mock.assert_called_once_with(sender=Email, email=email)
+        mock.assert_called_once_with(sender=Email, emails=[email])

@@ -560,10 +560,12 @@ callback function to the Post Office's signal handler ``email_queued``, for inst
 	from post_office.signals import email_queued
 
 	@receiver(email_queued)
-	def my_callback(sender, **kwargs):
-	    print("You are sending mail!")
+	def my_callback(sender, emails, **kwargs):
+	    print("Added {} mails to the sending queue".format(len(emails)))
 
 .. _Django signal: https://docs.djangoproject.com/en/stable/topics/signals/
+
+The Emails objects added to the queue are passed as list to the callback handler.
 
 
 Settings

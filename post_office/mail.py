@@ -150,7 +150,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
     if priority == PRIORITY.now:
         email.dispatch(log_level=log_level)
-    email_queued.send(sender=Email, email=email)
+    email_queued.send(sender=Email, emails=[email])
 
     return email
 
