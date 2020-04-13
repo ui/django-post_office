@@ -3,7 +3,7 @@ import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 
-from ...models import Attachment, Email
+from ...utils import cleanup_expired_mails
 
 
 class Command(BaseCommand):
@@ -19,17 +19,7 @@ class Command(BaseCommand):
 
     def handle(self, verbosity, days, delete_attachments, **options):
         # Delete mails and their related logs and queued created before X days
-
         cutoff_date = now() - datetime.timedelta(days)
-        count = Email.objects.filter(created__lt=cutoff_date).count()
-        Email.objects.only('id').filter(created__lt=cutoff_date).delete()
-        self.stdout.write("Deleted {0} mails created before {1} ".format(count, cutoff_date))
-
-        if delete_attachments:
-            attachments = Attachment.objects.filter(emails=None)
-            attachments_count = len(attachments)
-            for attachment in attachments:
-                # Delete the actual file
-                attachment.file.delete()
-            attachments.delete()
-            self.stdout.write("Deleted {0} attachments".format(attachments_count))
+        num_emails, num_attachments = cleanup_expired_mails(cutoff_date, delete_attachments)
+        msg = "Deleted {0} mails created before {1} and {2} attachments."
+        self.stdout.write(msg.format(num_emails, cutoff_date, num_attachments))
