@@ -21,7 +21,7 @@ class CommaSeparatedEmailField(TextField):
         defaults.update(kwargs)
         return super().formfield(**defaults)
 
-    def from_db_value(self, value, *args, **kwargs):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
 
     def get_prep_value(self, value):
