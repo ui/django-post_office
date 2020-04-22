@@ -2,6 +2,7 @@ from django import forms
 from django.db import models
 from django.contrib import admin
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.forms.widgets import TextInput
 from django.utils.text import Truncator
 from django.utils.translation import ugettext_lazy as _
@@ -92,6 +93,21 @@ class EmailTemplateAdminForm(forms.ModelForm):
         model = EmailTemplate
         fields = ('name', 'description', 'subject',
                   'content', 'html_content', 'language', 'default_template')
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        super().__init__(*args, **kwargs)
+        if instance and instance.language:
+            self.fields['language'].disabled = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.instance.default_template:
+            siblings = EmailTemplate.objects.filter(default_template=self.instance.default_template)
+            if siblings.exclude(id=self.instance.id).filter(language=cleaned_data['language']).exists():
+                msg = _("Duplicate template for language '{language}'")
+                raise ValidationError(msg.format(**cleaned_data))
+        return cleaned_data
 
 
 class EmailTemplateInline(admin.StackedInline):
