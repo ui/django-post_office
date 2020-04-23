@@ -453,7 +453,7 @@ Integration with Celery
 
 If your Django project runs in a Celery enabled configuration, you can use its worker to send out
 queued emails. Compared to the solution with cron (see above), or the solution with uWSGI timers
-(see below) this setup has the big advantage that queued emails are send *immediatly* after they
+(see below) this setup has the big advantage that queued emails are send *immediately* after they
 have been added to the mail queue. The delivery is still performed in a separate and asynchronous
 task, which prevents sending emails during the request/response-cycle.
 
@@ -479,7 +479,7 @@ something such as:
 	. post_office.tasks.send_queued_mail
 
 
-Emails will now be delivered by the Celery worker, immediatly after they have been queued. In order
+Emails will now be delivered by the Celery worker, immediately after they have been queued. In order
 to make this happen, the project's ``celery.py`` setup shall invoke the autodiscover_tasks_
 function. There is no need to otherwise configure Post Office for integrating with Celery. However,
 in case of a temporary delivery failure, we might want retrying to send those emails by a periodic
