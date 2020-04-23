@@ -104,8 +104,9 @@ class EmailTemplateAdminForm(forms.ModelForm):
         cleaned_data = super().clean()
         if self.instance.default_template:
             siblings = EmailTemplate.objects.filter(default_template=self.instance.default_template)
-            if siblings.exclude(id=self.instance.id).filter(language=cleaned_data['language']).exists():
-                msg = _("Duplicate template for language '{language}'")
+            language = cleaned_data['language']
+            if siblings.exclude(id=self.instance.id).filter(language=language).exists():
+                msg = _("Duplicate template for language '{language}'.")
                 raise ValidationError(msg.format(**cleaned_data))
         return cleaned_data
 
