@@ -277,21 +277,23 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     # Retry is enabled
     if get_max_retries():
         max_retries = get_max_retries()
+        time_delta_to_retry = get_time_delta_to_retry()
         emails_failed = Email.objects.filter(id__in=email_ids)
 
         emails_max_retries_exceeded = []  # emails status will change to failed
         emails_to_requeue = []  # emails status will change to requeued
 
         for email in emails_failed:
+            if email.number_of_retries is None:
+                email.number_of_retries = 1
+            else:
+                email.number_of_retries = email.number_of_retries + 1
+            requeued_emails += 1
+            emails_to_requeue.append(email)
+
             if email.number_of_retries < max_retries:
                 email.status = STATUS.requeued
-                email.scheduled_time = now() + get_time_delta_to_retry()
-                if email.number_of_retries is None:
-                    email.number_of_retries = 1
-                else:
-                    email.number_of_retries = email.number_of_retries + 1
-                requeued_emails += 1
-                emails_to_requeue.append(email)
+                email.scheduled_time = now() + time_delta_to_retry
             else:
                 email.status = STATUS.failed
                 emails_max_retries_exceeded.append(email)

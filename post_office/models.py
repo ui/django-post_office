@@ -57,7 +57,7 @@ class Email(models.Model):
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     scheduled_time = models.DateTimeField(_('The scheduled sending time'),
                                           blank=True, null=True, db_index=True)
-    number_of_retries = models.PositiveIntegerField(default=0)
+    number_of_retries = models.PositiveIntegerField(null=True, blank=True)
     headers = JSONField(_('Headers'), blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True,
                                  null=True, verbose_name=_('Email template'),

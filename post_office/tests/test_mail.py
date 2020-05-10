@@ -408,7 +408,7 @@ class MailTest(TestCase):
 
         email = Email.objects.create(to='to@example.com', from_email='from@example.com', status=STATUS.queued, backend_alias='error')
         _send_bulk([email], uses_multiprocessing=False)
-        email = Email.objects.get(id=email.id)
+        email.refresh_from_db()
 
         self.assertEqual(int(email.scheduled_time.timestamp()), int(now().__add__(timedelta(minutes=15)).timestamp()))
         self.assertEqual(email.status, STATUS.requeued)
@@ -424,4 +424,7 @@ class MailTest(TestCase):
         _send_bulk([email], uses_multiprocessing=False)
         self.assertEqual(email.status, STATUS.requeued)
 
+        _send_bulk([email], uses_multiprocessing=False)
+        email.refresh_from_db()
+        self.assertEqual(email.status, STATUS.failed)
         settings.POST_OFFICE = previous_settings
