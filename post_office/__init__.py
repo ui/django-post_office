@@ -1,4 +1,8 @@
-VERSION = (3, 3, 1)
+from ast import literal_eval
+from os.path import dirname, join
+
+with open(join(dirname(__file__), 'version.txt'), 'r') as fh:
+    VERSION = literal_eval(fh.read())
 
 from .backends import EmailBackend
 

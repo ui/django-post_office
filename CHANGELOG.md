@@ -1,6 +1,15 @@
 Changelog
 =========
 
+* Allow `tasks.py` to be imported when Celery is not installed. This allows
+  auto-discovery by other task systems such as Huey to succeed.
+
+Version 3.4.0 (2020-04-13)
+--------------------------
+* Signals that emails have been put into the queue.
+* [Celery](http://www.celeryproject.org/) integration for immediate asynchronous delivery.
+* Changed version handling.
+
 Version 3.3.1 (2020-02-28)
 --------------------------
 * Drop support for Django < 2.2.
