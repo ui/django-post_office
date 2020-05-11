@@ -16,21 +16,103 @@ from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
 from .signals import email_queued
-
+from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
+from .connections import connections
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.utils.encoding import smart_str
 logger = setup_loghandlers("INFO")
+
+
+def prority_email_message(from_email, to=None, cc=None, bcc=None, subject='', message='',
+           html_message='', context=None,  headers=None,
+           template=None, attachments=None,commit=True,log_level=None,
+           backend=''):
+    """
+    Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object,
+    depending on whether html_message is empty.
+    """
+    if get_override_recipients():
+        self.to = get_override_recipients()
+    if template is not None:
+        engine = get_template_engine()
+        subject = engine.from_string(template.subject).render(context)
+        plaintext_message = engine.from_string(template.content).render(context)
+        multipart_template = engine.from_string(template.html_content)
+        html_message = multipart_template.render(context)
+
+    else:
+        subject = smart_str(subject)
+        plaintext_message = message
+        multipart_template = None
+        html_message = html_message
+
+    connection = connections[backend or 'default']
+
+    if html_message:
+        if plaintext_message:
+            msg = EmailMultiAlternatives(
+                subject=subject, body=plaintext_message, from_email=from_email,
+                to=to, bcc=bcc, cc=cc,
+                headers=headers, connection=connection)
+            msg.attach_alternative(html_message, "text/html")
+        else:
+            msg = EmailMultiAlternatives(
+                subject=subject, body=html_message, from_email=from_email,
+                to=to, bcc=bcc, cc=cc,
+                headers=headers, connection=connection)
+            msg.content_subtype = 'html'
+        if hasattr(multipart_template, 'attach_related'):
+            multipart_template.attach_related(msg)
+
+
+    else:
+        msg = EmailMessage(
+            subject=subject, body=plaintext_message, from_email=from_email,
+            to=to, bcc=bcc, cc=cc,
+            headers=headers, connection=connection)
+    if attachments:
+        attachments = create_attachments(attachments)
+        for attachment in attachments:
+            if attachment.headers:
+                mime_part = MIMENonMultipart(*attachment.mimetype.split('/'))
+                mime_part.set_payload(attachment.file.read())
+                for key, val in attachment.headers.items():
+                    try:
+                        mime_part.replace_header(key, val)
+                    except KeyError:
+                        mime_part.add_header(key, val)
+                msg.attach(mime_part)
+            else:
+                msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype or None)
+            attachment.file.close()
+    msg.send()
+    try:
+        status = STATUS.sent
+        message = ''
+        exception_type = ''
+
+    except Exception as e:
+        status = STATUS.failed
+        message = str(e)
+        exception_type = type(e).__name__
+
+        # If run in a bulk sending mode, reraise and let the outer
+        # layer handle the exception
+        if not commit:
+            raise
+    return {"status": status, "message": message, "exeception_type": exception_type}
 
 
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, headers=None,
            template=None, priority=None, render_on_delivery=False, commit=True,
-           backend=''):
+           backend='',attachments=None,log_level=None):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
     """
     priority = parse_priority(priority)
     status = None if priority == PRIORITY.now else STATUS.queued
-
     if recipients is None:
         recipients = []
     if cc is None:
@@ -39,6 +121,10 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         bcc = []
     if context is None:
         context = ''
+    if not status :
+        result = prority_email_message(sender, recipients, cc, bcc, subject, message, html_message,
+                       context, headers, template,attachments=attachments,log_level=log_level, backend=backend)
+        status = result["status"]
 
     # If email is to be rendered during delivery, save all necessary
     # information
@@ -80,6 +166,9 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
 
     if commit:
         email.save()
+    if priority == PRIORITY.now:
+        email.save()
+        email.prority_mail_log_update(log_level=log_level, log_message=result["message"], exception_type=result["exeception_type"])
 
     return email
 
@@ -139,17 +228,16 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
     if backend and backend not in get_available_backends().keys():
         raise ValueError('%s is not a valid backend alias' % backend)
-
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, headers, template, priority,
-                   render_on_delivery, commit=commit, backend=backend)
+                   render_on_delivery, attachments=attachments, log_level=log_level,backend=backend,)
 
     if attachments:
         attachments = create_attachments(attachments)
         email.attachments.add(*attachments)
 
-    if priority == PRIORITY.now:
-        email.dispatch(log_level=log_level)
+    # if priority == PRIORITY.now:
+    #     email.dispatch(log_level=log_level)
     email_queued.send(sender=Email, emails=[email])
 
     return email

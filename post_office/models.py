@@ -2,7 +2,6 @@ import os
 
 from collections import namedtuple
 from uuid import uuid4
-
 from email.mime.nonmultipart import MIMENonMultipart
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
@@ -10,10 +9,8 @@ from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, ugettext_lazy as _
 from django.utils import timezone
 from jsonfield import JSONField
-
 from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
-
 from .connections import connections
 from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
@@ -148,6 +145,26 @@ class Email(models.Model):
         self._cached_email_message = msg
         return msg
 
+    def prority_mail_log_update(self, log_level=None,log_message=None,exception_type=None,
+                 disconnect_after_delivery=True, commit=True):
+        """
+        Sends email and log the result.
+        """
+        if commit:
+            if log_level is None:
+                log_level = get_log_level()
+            # If log level is 0, log nothing, 1 logs only sending failures
+            # and 2 means log both successes and failures
+            if log_level == 1:
+                if self.status == STATUS.failed:
+                    self.logs.create(status=self.status, message=log_message,
+                                     exception_type=exception_type)
+            elif log_level == 2:
+                self.logs.create(status=self.status, message=log_message,
+                                 exception_type=exception_type)
+
+        return self.status
+
     def dispatch(self, log_level=None,
                  disconnect_after_delivery=True, commit=True):
         """
@@ -190,6 +207,7 @@ class Email(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
 
 
 class Log(models.Model):
