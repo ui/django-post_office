@@ -44,5 +44,5 @@ class EmailTemplateFormTest(TestCase):
         add_template_url = reverse('admin:post_office_emailtemplate_add')
 
         response = self.client.post(add_template_url, email_template, follow=True)
-        self.assertContains(response, 'Email templates must have distinct default_template, name and language.',
+        self.assertContains(response, "Duplicate template for language &#39;Spanish&#39;.",
                             html=True)
