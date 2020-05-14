@@ -94,11 +94,11 @@ class EmailTemplateAdminFormSet(BaseInlineFormSet):
         for form in self.forms:
             default_template = form.cleaned_data['default_template']
             language = form.cleaned_data['language']
-            if (default_template, language) in data:
+            if (default_template.id, language) in data:
                 msg = _("Duplicate template for language '{language}'.")
                 language = dict(form.fields['language'].choices)[language]
                 raise ValidationError(msg.format(language=language))
-            data.add((default_template, language))
+            data.add((default_template.id, language))
 
 
 class EmailTemplateAdminForm(forms.ModelForm):
