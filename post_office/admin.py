@@ -2,6 +2,8 @@ from django import forms
 from django.db import models
 from django.contrib import admin
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
 from django.utils.text import Truncator
 from django.utils.translation import ugettext_lazy as _
@@ -82,20 +84,46 @@ class SubjectField(TextInput):
         self.attrs.update({'style': 'width: 610px;'})
 
 
-class EmailTemplateAdminForm(forms.ModelForm):
+class EmailTemplateAdminFormSet(BaseInlineFormSet):
+    def clean(self):
+        """
+        Check that no two Email templates have the same default_template and language.
+        """
+        super().clean()
+        data = set()
+        for form in self.forms:
+            default_template = form.cleaned_data['default_template']
+            language = form.cleaned_data['language']
+            if (default_template.id, language) in data:
+                msg = _("Duplicate template for language '{language}'.")
+                language = dict(form.fields['language'].choices)[language]
+                raise ValidationError(msg.format(language=language))
+            data.add((default_template.id, language))
 
-    language = forms.ChoiceField(choices=settings.LANGUAGES, required=False,
-                                 help_text=_("Render template in alternative language"),
-                                 label=_("Language"))
+
+class EmailTemplateAdminForm(forms.ModelForm):
+    language = forms.ChoiceField(
+        choices=settings.LANGUAGES,
+        required=False,
+        label=_("Language"),
+        help_text=_("Render template in alternative language"),
+    )
 
     class Meta:
         model = EmailTemplate
-        fields = ('name', 'description', 'subject',
-                  'content', 'html_content', 'language', 'default_template')
+        fields = ['name', 'description', 'subject', 'content', 'html_content', 'language',
+                  'default_template']
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        super().__init__(*args, **kwargs)
+        if instance and instance.language:
+            self.fields['language'].disabled = True
 
 
 class EmailTemplateInline(admin.StackedInline):
     form = EmailTemplateAdminForm
+    formset = EmailTemplateAdminFormSet
     model = EmailTemplate
     extra = 0
     fields = ('language', 'subject', 'content', 'html_content',)
