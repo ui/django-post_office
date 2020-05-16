@@ -61,6 +61,16 @@ class EmailAdmin(admin.ModelAdmin):
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
     }
     actions = [requeue]
+    fieldsets = [
+        (None, {
+            'fields': ['from_email', 'to', 'cc', 'bcc', 'subject', 'message', 'html_message',
+                       'status', 'priority', 'scheduled_time', 'backend_alias'],
+        }),
+        (_("Template based email"), {
+            'classes': ['collapse'],
+            'fields': ['template', 'context'],
+        }),
+    ]
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('template')
