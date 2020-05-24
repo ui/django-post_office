@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 from django.core import mail
@@ -7,8 +7,9 @@ from django.conf import settings
 
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.utils.timezone import now
 
-from ..settings import get_batch_size, get_log_level, get_threads_per_process
+from ..settings import get_batch_size, get_log_level, get_threads_per_process, get_max_retries, get_time_delta_to_retry
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
 from ..mail import (create, get_queued,
                     send, send_many, send_queued, _send_bulk)
@@ -398,6 +399,37 @@ class MailTest(TestCase):
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.status, STATUS.failed)
 
+    def test_retry_failed(self):
+        previous_settings = settings.POST_OFFICE
+        setattr(settings, 'POST_OFFICE', {'MAX_RETRIES': 2})
+
+        self.assertEqual(get_max_retries(), 2)
+        self.assertEqual(get_time_delta_to_retry(), timedelta(minutes=15))
+
+
+        email = Email.objects.create(to='to@example.com', from_email='from@example.com', status=STATUS.queued, backend_alias='error')
+        _send_bulk([email], uses_multiprocessing=False)
+        email.refresh_from_db()
+
+        self.assertEqual(int(email.scheduled_time.timestamp()), int(now().__add__(timedelta(minutes=15)).timestamp()))
+        self.assertEqual(email.status, STATUS.requeued)
+
+        email.scheduled_time = now()
+        email.save()
+        _send_bulk([email], uses_multiprocessing=False)
+        self.assertEqual(email.status, STATUS.requeued)
+
+        email.scheduled_time = now()
+        email.save()
+
+        _send_bulk([email], uses_multiprocessing=False)
+        self.assertEqual(email.status, STATUS.requeued)
+
+        _send_bulk([email], uses_multiprocessing=False)
+        email.refresh_from_db()
+        self.assertEqual(email.status, STATUS.failed)
+        settings.POST_OFFICE = previous_settings
+
     @patch('post_office.signals.email_queued.send')
     def test_backend_signal(self, mock):
         """
@@ -407,3 +439,4 @@ class MailTest(TestCase):
                      sender='from@example.com', message='message',
                      subject='subject')
         mock.assert_called_once_with(sender=Email, emails=[email])
+

@@ -617,6 +617,19 @@ Defaults to ``None``. This option is useful if you want to redirect all emails t
         'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
     }
 
+Mail Retry
+-------------------
+
+Defaults to Not Activated. Auto requeue failed email with time interval
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+     'MAX_RETRIES': 4
+     'RETRY_INTERVAL': datetime.timedelta(minutes=15)
+}
+
 
 Log Level
 ---------
