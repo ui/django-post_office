@@ -4,7 +4,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
-from django.db.models import Q
+from django.db.models import F, Q, Case, Value, When
 from django.template import Context, Template
 from django.utils.timezone import now
 
@@ -270,42 +270,25 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     connections.close()
 
-    # Update statuses of sent and failed emails
+    # Update statuses of sent emails
     email_ids = [email.id for email in sent_emails]
     Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
 
+    # Conditionally update statuses of failed emails
     email_ids = [email.id for (email, e) in failed_emails]
-
-    requeued_emails = 0
-    # Retry is enabled
-    if get_max_retries():
-        max_retries = get_max_retries()
-        time_delta_to_retry = get_time_delta_to_retry()
-        emails_failed = Email.objects.filter(id__in=email_ids)
-
-        emails_max_retries_exceeded = []  # emails status will change to failed
-        emails_to_requeue = []  # emails status will change to requeued
-
-        for email in emails_failed:
-            if email.number_of_retries is None:
-                email.number_of_retries = 1
-            else:
-                email.number_of_retries = email.number_of_retries + 1
-            requeued_emails += 1
-            emails_to_requeue.append(email)
-
-            if email.number_of_retries < max_retries:
-                email.status = STATUS.requeued
-                email.scheduled_time = now() + time_delta_to_retry
-            else:
-                email.status = STATUS.failed
-                emails_max_retries_exceeded.append(email)
-
-            Email.objects.bulk_update(emails_to_requeue, ['status', 'scheduled_time', 'number_of_retries'])
-            Email.objects.bulk_update(emails_max_retries_exceeded, ['status'])
-
-    else:
-        Email.objects.filter(id__in=email_ids).update(status=STATUS.failed)
+    emails_failed = Email.objects.filter(id__in=email_ids).annotate(
+        retry_counter=Case(
+            When(number_of_retries__isnull=True, then=Value(1)),
+            default=F('number_of_retries') + 1
+        )
+    )
+    query = Q(retry_counter__lte=get_max_retries())
+    num_requeued = emails_failed.filter(query).update(
+        number_of_retries=F('retry_counter'),
+        status=STATUS.requeued,
+        scheduled_time=now() + get_time_delta_to_retry(),
+    )
+    num_failed = emails_failed.exclude(query).update(status=STATUS.failed)
 
     # If log level is 0, log nothing, 1 logs only sending failures
     # and 2 means log both successes and failures
@@ -333,8 +316,8 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     logger.info(
         'Process finished, %s attempted, %s sent, %s failed, %s requeued' % (
-            email_count, len(sent_emails), len(failed_emails), requeued_emails
+            email_count, len(sent_emails), num_failed, num_requeued
         )
     )
 
-    return len(sent_emails), len(failed_emails), requeued_emails
+    return len(sent_emails), num_failed, num_requeued
