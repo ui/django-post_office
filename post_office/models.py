@@ -4,6 +4,7 @@ from collections import namedtuple
 from uuid import uuid4
 
 from email.mime.nonmultipart import MIMENonMultipart
+
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.utils.encoding import smart_str
@@ -55,8 +56,9 @@ class Email(models.Model):
                                                 blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
-    scheduled_time = models.DateTimeField(_('The scheduled sending time'),
-                                          blank=True, null=True, db_index=True)
+    scheduled_time = models.DateTimeField(_("Scheduled Time"),
+                                          blank=True, null=True, db_index=True,
+                                          help_text=_("The scheduled sending time"))
     headers = JSONField(_('Headers'), blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True,
                                  null=True, verbose_name=_('Email template'),

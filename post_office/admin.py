@@ -1,8 +1,16 @@
+import re
+
 from django import forms
 from django.db import models
 from django.contrib import admin
 from django.conf import settings
+from django.conf.urls import re_path
+from django.core.mail.message import SafeMIMEText
 from django.forms.widgets import TextInput
+from django.http.response import HttpResponse, HttpResponseNotFound
+from django.template import Context, Template
+from django.urls import reverse
+from django.utils.html import format_html, mark_safe
 from django.utils.text import Truncator
 from django.utils.translation import ugettext_lazy as _
 
@@ -17,14 +25,17 @@ def get_message_preview(instance):
 get_message_preview.short_description = 'Message'
 
 
-class AttachmentInline(admin.StackedInline):
-    model = Attachment.emails.through
-    extra = 0
-
-
 class LogInline(admin.StackedInline):
     model = Log
-    extra = 0
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class CommaSeparatedEmailWidget(TextInput):
@@ -46,31 +57,28 @@ def requeue(modeladmin, request, queryset):
     """An admin action to requeue emails."""
     queryset.update(status=STATUS.queued)
 
-
 requeue.short_description = 'Requeue selected emails'
 
 
+@admin.register(Email)
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ('id', 'to_display', 'subject', 'template',
-                    'status', 'last_updated')
+    list_display = ['id', 'to_display', 'subject_shortened', 'status', 'last_updated', 'scheduled_time', 'use_template']
     search_fields = ['to', 'subject']
+    readonly_fields = ['subject_rendered', 'render_body_plain',  'render_body_html']
     date_hierarchy = 'last_updated'
-    inlines = [AttachmentInline, LogInline]
+    inlines = [LogInline]
     list_filter = ['status', 'template__language', 'template__name']
     formfield_overrides = {
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
     }
     actions = [requeue]
-    fieldsets = [
-        (None, {
-            'fields': ['from_email', 'to', 'cc', 'bcc', 'subject', 'message', 'html_message',
-                       'status', 'priority', 'scheduled_time', 'backend_alias'],
-        }),
-        (_("Template based email"), {
-            'classes': ['collapse'],
-            'fields': ['template', 'context'],
-        }),
-    ]
+
+    def get_urls(self):
+        urls = [
+            re_path(r'^(?P<pk>\d+)/image/(?P<content_id>[0-9a-f]{32})$', self.get_email_image, name='email_image'),
+        ]
+        urls.extend(super().get_urls())
+        return urls
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('template')
@@ -78,10 +86,99 @@ class EmailAdmin(admin.ModelAdmin):
     def to_display(self, instance):
         return ', '.join(instance.to)
 
-    to_display.short_description = 'to'
+    to_display.short_description = _("To")
     to_display.admin_order_field = 'to'
 
+    def has_add_permission(self, request):
+        return False
 
+    def subject_shortened(self, instance):
+        if instance.template:
+            template_cache_key = '_subject_template_' + str(instance.template_id)
+            template = getattr(self, template_cache_key, None)
+            if template is None:
+                # cache compiled template to speed up rendering of list view
+                template = Template(instance.template.subject)
+                setattr(self, template_cache_key, template)
+            subject = template.render(Context(instance.context))
+        else:
+            subject = instance.subject
+        return Truncator(subject).chars(100)
+
+    subject_shortened.short_description = _("Subject")
+    subject_shortened.admin_order_field = 'subject'
+
+    def use_template(self, instance):
+        return bool(instance.template)
+
+    use_template.short_description = _("Use Template")
+    use_template.boolean = True
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = [
+            (None, {
+                'fields': ['from_email', 'to', 'cc', 'bcc',
+                           ('status', 'scheduled_time'), 'priority'],
+            }),
+        ]
+        email_plain, email_html = False, False
+        for message in obj.email_message().message().walk():
+            if not isinstance(message, SafeMIMEText):
+                continue
+            content_type = message.get_content_type()
+            if content_type == 'text/plain':
+                email_plain = True
+            elif content_type == 'text/html':
+                email_html = True
+
+        if email_html:
+            fieldsets.append(
+                (_("HTML Email"), {'fields': ['subject_rendered', 'render_body_html']})
+            )
+            if email_plain:
+                fieldsets.append(
+                    (_("Text Email"), {'classes': ['collapse'], 'fields': ['render_body_plain']})
+                )
+        elif email_plain:
+            fieldsets.append(
+                (_("Text Email"), {'fields': ['subject_rendered', 'render_body_plain']})
+             )
+        return fieldsets
+
+    def subject_rendered(self, instance):
+        message = instance.email_message()
+        return format_html('<strong>{}</strong>', message.subject)
+
+    subject_rendered.short_description = _("Subject")
+
+    def render_body_plain(self, instance):
+        for message in instance.email_message().message().walk():
+            if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/plain':
+                return format_html('<pre>{}</pre>', message.get_payload())
+
+    render_body_plain.short_description = _("Mail Body")
+
+    def render_body_html(self, instance):
+        pattern = re.compile('cid:([0-9a-f]{32})')
+        url = reverse('admin:email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
+        url = url.replace(32 * '0', r'\1')
+        for message in instance.email_message().message().walk():
+            if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/html':
+                payload = message.get_payload(decode=True).decode('utf-8')
+                body = mark_safe(pattern.sub(url, payload))
+                return format_html('<div>{}</div>', body)
+
+    render_body_html.short_description = _("Mail Body")
+
+    def get_email_image(self, request, pk, content_id):
+        instance = self.get_object(request, pk)
+        for message in instance.email_message().message().walk():
+            if message.get_content_maintype() == 'image' and message.get('Content-Id')[1:33] == content_id:
+                return HttpResponse(message.get_payload(decode=True), content_type=message.get_content_type())
+        return HttpResponseNotFound()
+
+
+@admin.register(Log)
 class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
 
@@ -117,6 +214,7 @@ class EmailTemplateInline(admin.StackedInline):
         return len(settings.LANGUAGES)
 
 
+@admin.register(EmailTemplate)
 class EmailTemplateAdmin(admin.ModelAdmin):
     form = EmailTemplateAdminForm
     list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
@@ -158,8 +256,4 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ('name', 'file', )
 
-
-admin.site.register(Email, EmailAdmin)
-admin.site.register(Log, LogAdmin)
-admin.site.register(EmailTemplate, EmailTemplateAdmin)
-admin.site.register(Attachment, AttachmentAdmin)
+# is left up to the client: admin.site.register(Attachment, AttachmentAdmin)
