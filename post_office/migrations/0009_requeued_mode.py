@@ -20,4 +20,9 @@ class Migration(migrations.Migration):
             name='status',
             field=models.PositiveSmallIntegerField(blank=True, choices=[(0, 'sent'), (1, 'failed'), (2, 'queued'), (3, 'requeued')], db_index=True, null=True, verbose_name='Status'),
         ),
+        migrations.AddField(
+            model_name='email',
+            name='expires_at',
+            field=models.DateTimeField(blank=True, null=True, verbose_name='Expires timestamp for email'),
+        ),
     ]

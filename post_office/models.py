@@ -57,6 +57,8 @@ class Email(models.Model):
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     scheduled_time = models.DateTimeField(_('The scheduled sending time'),
                                           blank=True, null=True, db_index=True)
+    expires_at = models.DateTimeField(_('Expires timestamp for email'),
+                                      blank=True, null=True)
     number_of_retries = models.PositiveIntegerField(null=True, blank=True)
     headers = JSONField(_('Headers'), blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True,
@@ -109,19 +111,25 @@ class Email(models.Model):
             html_message = self.html_message
 
         connection = connections[self.backend_alias or 'default']
+        if isinstance(self.headers, dict) or self.expires_at:
+            headers = dict(self.headers or {})
+            if self.expires_at:
+                headers.update({'Expires': self.expires_at.strftime("%a, %-d %b %H:%M:%S %z")})
+        else:
+            headers = None
 
         if html_message:
             if plaintext_message:
                 msg = EmailMultiAlternatives(
                     subject=subject, body=plaintext_message, from_email=self.from_email,
                     to=self.to, bcc=self.bcc, cc=self.cc,
-                    headers=self.headers, connection=connection)
+                    headers=headers, connection=connection)
                 msg.attach_alternative(html_message, "text/html")
             else:
                 msg = EmailMultiAlternatives(
                     subject=subject, body=html_message, from_email=self.from_email,
                     to=self.to, bcc=self.bcc, cc=self.cc,
-                    headers=self.headers, connection=connection)
+                    headers=headers, connection=connection)
                 msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
                 multipart_template.attach_related(msg)
@@ -130,7 +138,7 @@ class Email(models.Model):
             msg = EmailMessage(
                 subject=subject, body=plaintext_message, from_email=self.from_email,
                 to=self.to, bcc=self.bcc, cc=self.cc,
-                headers=self.headers, connection=connection)
+                headers=headers, connection=connection)
 
         for attachment in self.attachments.all():
             if attachment.headers:

@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
 from django.db.models import F, Q, Case, Value, When
 from django.template import Context, Template
-from django.utils.timezone import now
+from django.utils import timezone
 
 from .connections import connections
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
@@ -22,7 +22,7 @@ logger = setup_loghandlers("INFO")
 
 
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
-           html_message='', context=None, scheduled_time=None, headers=None,
+           html_message='', context=None, scheduled_time=None, expires_at=None, headers=None,
            template=None, priority=None, render_on_delivery=False, commit=True,
            backend=''):
     """
@@ -50,6 +50,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             cc=cc,
             bcc=bcc,
             scheduled_time=scheduled_time,
+            expires_at=expires_at,
             headers=headers, priority=priority, status=status,
             context=context, template=template, backend_alias=backend
         )
@@ -75,6 +76,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             message=message,
             html_message=html_message,
             scheduled_time=scheduled_time,
+            expires_at=expires_at,
             headers=headers, priority=priority, status=status,
             backend_alias=backend
         )
@@ -86,7 +88,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
 
 
 def send(recipients=None, sender=None, template=None, context=None, subject='',
-         message='', html_message='', scheduled_time=None, headers=None,
+         message='', html_message='', scheduled_time=None, expires_at=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
          log_level=None, commit=True, cc=None, bcc=None, language='',
          backend=''):
@@ -141,7 +143,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         raise ValueError('%s is not a valid backend alias' % backend)
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
-                   context, scheduled_time, headers, template, priority,
+                   context, scheduled_time, expires_at, headers, template, priority,
                    render_on_delivery, commit=commit, backend=backend)
 
     if attachments:
@@ -171,14 +173,20 @@ def send_many(kwargs_list):
 
 def get_queued():
     """
-    Returns a list of emails that should be sent:
-     - Status is queued
-     - Has scheduled_time lower than the current time or None
+    Returns a list of emails that should be sent fulfilling these conditions:
+     - Status is queued or requeued
+     - Has scheduled_time before the current time or is None
+     - Has expires_at after the current time or is None
     """
-    return Email.objects.filter(Q(status=STATUS.queued) | Q(status=STATUS.requeued)) \
-               .select_related('template') \
-               .filter(Q(scheduled_time__lte=now()) | Q(scheduled_time=None)) \
-               .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
+    now = timezone.now()
+    query = (
+        (Q(status=STATUS.queued) | Q(status=STATUS.requeued)) &
+        (Q(scheduled_time__lte=now) | Q(scheduled_time__isnull=True)) &
+        (Q(expires_at__gt=now) | Q(expires_at__isnull=True))
+    )
+    return Email.objects.filter(query) \
+                .select_related('template') \
+                .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
 
 
 def send_queued(processes=1, log_level=None):
@@ -222,7 +230,7 @@ def send_queued(processes=1, log_level=None):
         total_requeued
     )
     logger.info(message)
-    return (total_sent, total_failed)
+    return total_sent, total_failed, total_requeued
 
 
 def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
@@ -275,7 +283,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
 
     # Conditionally update statuses of failed emails
-    email_ids = [email.id for (email, e) in failed_emails]
+    email_ids = [email.id for email, _ in failed_emails]
     emails_failed = Email.objects.filter(id__in=email_ids).annotate(
         retry_counter=Case(
             When(number_of_retries__isnull=True, then=Value(1)),
@@ -283,12 +291,14 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
         )
     )
     query = Q(retry_counter__lte=get_max_retries())
+    num_failed = emails_failed.exclude(query).update(
+        status=STATUS.failed
+    )
     num_requeued = emails_failed.filter(query).update(
         number_of_retries=F('retry_counter'),
         status=STATUS.requeued,
-        scheduled_time=now() + get_time_delta_to_retry(),
+        scheduled_time=timezone.now() + get_time_delta_to_retry(),
     )
-    num_failed = emails_failed.exclude(query).update(status=STATUS.failed)
 
     # If log level is 0, log nothing, 1 logs only sending failures
     # and 2 means log both successes and failures

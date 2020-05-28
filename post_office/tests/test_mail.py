@@ -1,5 +1,4 @@
-from datetime import date, datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from django.core import mail
 from django.core.files.base import ContentFile
@@ -7,7 +6,7 @@ from django.conf import settings
 
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils.timezone import now
+from django.utils import timezone
 
 from ..settings import get_batch_size, get_log_level, get_threads_per_process, get_max_retries, get_time_delta_to_retry
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
@@ -71,7 +70,7 @@ class MailTest(TestCase):
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 0)
         for i in range(3):
             Email.objects.create(**kwargs)
-        total_sent, total_failed = send_queued(processes=2)
+        total_sent, total_failed, total_requeued = send_queued(processes=2)
         self.assertEqual(total_sent, 3)
 
     def test_send_bulk(self):
@@ -129,12 +128,12 @@ class MailTest(TestCase):
 
         # Email scheduled for the future should not be included
         Email.objects.create(status=STATUS.queued,
-                             scheduled_time=date(2020, 12, 13), **kwargs)
+                             scheduled_time=timezone.datetime(2020, 12, 13), **kwargs)
         self.assertEqual(list(get_queued()), [queued_email])
 
         # Email scheduled in the past should be included
         past_email = Email.objects.create(status=STATUS.queued,
-                                          scheduled_time=date(2010, 12, 13), **kwargs)
+                                          scheduled_time=timezone.datetime(2010, 12, 13), **kwargs)
         self.assertEqual(list(get_queued()), [queued_email, past_email])
 
     def test_get_batch_size(self):
@@ -204,19 +203,19 @@ class MailTest(TestCase):
             'message': 'My message',
             'html': 'My html',
         }
-        now = datetime.now()
+        scheduled_time = timezone.now()
         email = create(
             sender='from@example.com', recipients=['to@example.com'],
             subject='Test {{ subject }}', message='Test {{ message }}',
             html_message='Test {{ html }}', context=context,
-            scheduled_time=now, headers={'header': 'Test header'},
+            scheduled_time=scheduled_time, headers={'header': 'Test header'},
         )
         self.assertEqual(email.from_email, 'from@example.com')
         self.assertEqual(email.to, ['to@example.com'])
         self.assertEqual(email.subject, 'Test My subject')
         self.assertEqual(email.message, 'Test My message')
         self.assertEqual(email.html_message, 'Test My html')
-        self.assertEqual(email.scheduled_time, now)
+        self.assertEqual(email.scheduled_time, scheduled_time)
         self.assertEqual(email.headers, {'header': 'Test header'})
 
     def test_send_many(self):
@@ -312,7 +311,7 @@ class MailTest(TestCase):
             sender='from@example.com', recipients=['to@example.com'],
             template=template, context=context
         )
-        today = date.today()
+        today = timezone.datetime.today()
         current_year = today.year
         self.assertEqual(email.subject, 'Subject %d' % current_year)
         self.assertEqual(email.message, 'Content %d' % current_year)
@@ -397,38 +396,75 @@ class MailTest(TestCase):
                                      template=template, status=STATUS.queued)
         _send_bulk([email], uses_multiprocessing=False)
         email = Email.objects.get(id=email.id)
-        self.assertEqual(email.status, STATUS.failed)
+        self.assertEqual(email.status, STATUS.requeued)
 
     def test_retry_failed(self):
-        previous_settings = settings.POST_OFFICE
-        setattr(settings, 'POST_OFFICE', {'MAX_RETRIES': 2})
-
+        self.assertEqual(get_time_delta_to_retry(), timezone.timedelta(minutes=15))
         self.assertEqual(get_max_retries(), 2)
-        self.assertEqual(get_time_delta_to_retry(), timedelta(minutes=15))
 
+        # attempt to send email for the first time
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 8, 0, 0)):
+            email = create('from@example.com', recipients=['to@example.com'], subject='subject', message='message',
+                           backend='error')
+            self.assertIsNotNone(email.pk)
+            self.assertEqual(email.created, timezone.datetime(2020, 5, 18, 8, 0, 0))
+            self.assertEqual(email.status, STATUS.queued)
+            self.assertIsNone(email.number_of_retries)
+            result = send_queued()
+            self.assertTupleEqual(result, (0, 0, 1))
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.requeued)
+            self.assertEqual(email.number_of_retries, 1)
+            self.assertEqual(email.scheduled_time, timezone.datetime(2020, 5, 18, 8, 15, 0))
 
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com', status=STATUS.queued, backend_alias='error')
-        _send_bulk([email], uses_multiprocessing=False)
-        email.refresh_from_db()
+        # check that resending before the new scheduled time doesn't do anything
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 8, 14, 59)):
+            result = send_queued()
+            self.assertTupleEqual(result, (0, 0, 0))
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.requeued)
+            self.assertEqual(email.number_of_retries, 1)
+            self.assertEqual(email.scheduled_time, timezone.datetime(2020, 5, 18, 8, 15, 0))
 
-        self.assertEqual(int(email.scheduled_time.timestamp()), int(now().__add__(timedelta(minutes=15)).timestamp()))
-        self.assertEqual(email.status, STATUS.requeued)
+        # check that sending after the new scheduled time retries again
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 8, 15, 1)):
+            result = send_queued()
+            self.assertTupleEqual(result, (0, 0, 1))
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.requeued)
+            self.assertEqual(email.number_of_retries, 2)
+            self.assertEqual(email.scheduled_time, timezone.datetime(2020, 5, 18, 8, 30, 1))
 
-        email.scheduled_time = now()
-        email.save()
-        _send_bulk([email], uses_multiprocessing=False)
-        self.assertEqual(email.status, STATUS.requeued)
+        # check that any further failed attempt marks the delivery as failed
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 8, 30, 2)):
+            result = send_queued()
+            self.assertTupleEqual(result, (0, 1, 0))
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.failed)
+            self.assertEqual(email.number_of_retries, 2)
+            self.assertEqual(email.scheduled_time, timezone.datetime(2020, 5, 18, 8, 30, 1))
 
-        email.scheduled_time = now()
-        email.save()
+    def test_expired(self):
+        # check that email is sent before its expire_at date
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 0)):
+            email = create('from@example.com', recipients=['to@example.com'], subject='subject',
+                           message='message', expires_at=timezone.datetime(2020, 5, 18, 9, 0, 1))
+            self.assertIsNotNone(email.pk)
+            self.assertEqual(email.status, STATUS.queued)
+            self.assertEqual(email.expires_at, timezone.datetime(2020, 5, 18, 9, 0, 1))
+            result = send_queued()
+            self.assertTupleEqual(result, (1, 0, 0))
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.sent)
 
-        _send_bulk([email], uses_multiprocessing=False)
-        self.assertEqual(email.status, STATUS.requeued)
-
-        _send_bulk([email], uses_multiprocessing=False)
-        email.refresh_from_db()
-        self.assertEqual(email.status, STATUS.failed)
-        settings.POST_OFFICE = previous_settings
+        # check that email is not sent after its expire_at date
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 1)):
+            email = create('from@example.com', recipients=['to@example.com'], subject='subject',
+                           message='message', expires_at=timezone.datetime(2020, 5, 18, 9, 0, 0))
+            result = send_queued()
+            self.assertTupleEqual(result, (0, 0, 0))
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.queued)
 
     @patch('post_office.signals.email_queued.send')
     def test_backend_signal(self, mock):
@@ -439,4 +475,3 @@ class MailTest(TestCase):
                      sender='from@example.com', message='message',
                      subject='subject')
         mock.assert_called_once_with(sender=Email, emails=[email])
-
