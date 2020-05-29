@@ -288,7 +288,7 @@ class Attachment(models.Model):
     file = models.FileField(_('File'), upload_to=get_upload_path)
     name = models.CharField(_('Name'), max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments',
-                                    verbose_name=_('Email addresses'))
+                                    verbose_name=_('Emails'))
     mimetype = models.CharField(max_length=255, default='', blank=True)
     headers = JSONField(_('Headers'), blank=True, null=True)
 

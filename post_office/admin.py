@@ -17,7 +17,7 @@ from django.utils.text import Truncator
 from django.utils.translation import ugettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
-from .models import Log, Email, EmailTemplate, STATUS
+from .models import Attachment, Log, Email, EmailTemplate, STATUS
 
 
 def get_message_preview(instance):
@@ -27,16 +27,31 @@ def get_message_preview(instance):
 get_message_preview.short_description = 'Message'
 
 
-class LogInline(admin.StackedInline):
+class AttachmentInline(admin.StackedInline):
+    model = Attachment.emails.through
+    extra = 0
+
+    def get_queryset(self, request):
+        """
+        Exclude inlined attachments from queryset, because they usually have meaningless names and
+        are displayed anyway.
+        """
+        queryset = super().get_queryset(request)
+        inlined_attachments = [
+            a.id for a in queryset if a.attachment.headers.get('Content-Disposition').startswith('inline')
+        ]
+        return queryset.exclude(id__in=inlined_attachments)
+
+
+class LogInline(admin.TabularInline):
     model = Log
+    readonly_fields = fields = ['date', 'status', 'exception_type', 'message']
+    can_delete = False
 
     def has_add_permission(self, request, obj=None):
         return False
 
     def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
         return False
 
 
@@ -68,7 +83,7 @@ class EmailAdmin(admin.ModelAdmin):
     search_fields = ['to', 'subject']
     readonly_fields = ['subject_rendered', 'render_body_plain',  'render_body_html']
     date_hierarchy = 'last_updated'
-    inlines = [LogInline]
+    inlines = [AttachmentInline, LogInline]
     list_filter = ['status', 'template__language', 'template__name']
     formfield_overrides = {
         CommaSeparatedEmailField: {'widget': CommaSeparatedEmailWidget}
@@ -120,7 +135,7 @@ class EmailAdmin(admin.ModelAdmin):
         fieldsets = [
             (None, {
                 'fields': ['from_email', 'to', 'cc', 'bcc',
-                           ('status', 'scheduled_time'), 'priority'],
+                           'priority', ('status', 'scheduled_time')],
             }),
         ]
         email_plain, email_html = False, False
@@ -145,6 +160,7 @@ class EmailAdmin(admin.ModelAdmin):
             fieldsets.append(
                 (_("Text Email"), {'fields': ['subject_rendered', 'render_body_plain']})
              )
+
         return fieldsets
 
     def subject_rendered(self, instance):
@@ -281,8 +297,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
             obj.translated_templates.update(name=obj.name)
 
 
+@admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'file', )
-
-# is left up to the client: from .models import Attachment
-# admin.site.register(Attachment, AttachmentAdmin)
+    list_display = ['name', 'file']
+    filter_horizontal = ['emails']
