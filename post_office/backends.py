@@ -28,14 +28,20 @@ class EmailBackend(BaseEmailBackend):
         for email_message in email_messages:
             subject = email_message.subject
             from_email = email_message.from_email
-            message = email_message.body
             headers = email_message.extra_headers
 
-            # Check whether email has 'text/html' alternative
-            alternatives = getattr(email_message, 'alternatives', ())
-            for alternative in alternatives:
-                if alternative[1].startswith('text/html'):
-                    html_message = alternative[0]
+            # Look for first 'text/plain' alternative in email
+            for part in email_message.message().walk():
+                if part.get_content_type() == 'text/plain':
+                    message = part.get_payload()
+                    break
+            else:
+                message = ''
+
+            # Look for first 'text/html' alternative in email
+            for part in email_message.message().walk():
+                if part.get_content_type() == 'text/html':
+                    html_message = part.get_payload()
                     break
             else:
                 html_message = ''
