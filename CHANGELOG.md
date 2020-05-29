@@ -1,8 +1,11 @@
 Changelog
 =========
 
+Version 3.4.1 (2020-05-16)
+--------------------------
 * Allow `tasks.py` to be imported when Celery is not installed. This allows
   auto-discovery by other task systems such as Huey to succeed.
+* Fix duplicate key problem in template editor in Django admin. 
 
 Version 3.4.0 (2020-04-13)
 --------------------------
