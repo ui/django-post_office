@@ -92,7 +92,7 @@ class EmailAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         urls = [
-            re_path(r'^(?P<pk>\d+)/image/(?P<content_id>[0-9a-f]{32})$', self.get_email_image, name='email_image'),
+            re_path(r'^(?P<pk>\d+)/image/(?P<content_id>[0-9a-f]{32})$', self.fetch_email_image, name='post_office_email_image'),
         ]
         urls.extend(super().get_urls())
         return urls
@@ -178,7 +178,7 @@ class EmailAdmin(admin.ModelAdmin):
 
     def render_body_html(self, instance):
         pattern = re.compile('cid:([0-9a-f]{32})')
-        url = reverse('admin:email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
+        url = reverse('admin:post_office_email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
         url = url.replace(32 * '0', r'\1')
         for message in instance.email_message().message().walk():
             if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/html':
@@ -188,7 +188,7 @@ class EmailAdmin(admin.ModelAdmin):
 
     render_body_html.short_description = _("Mail Body")
 
-    def get_email_image(self, request, pk, content_id):
+    def fetch_email_image(self, request, pk, content_id):
         instance = self.get_object(request, pk)
         for message in instance.email_message().message().walk():
             if message.get_content_maintype() == 'image' and message.get('Content-Id')[1:33] == content_id:
