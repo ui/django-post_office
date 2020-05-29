@@ -1,5 +1,7 @@
 from unittest.mock import patch, MagicMock
 
+import pytz
+
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -406,7 +408,7 @@ class MailTest(TestCase):
         # attempt to send email for the first time
         with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 8, 0, 0)):
             email = create('from@example.com', recipients=['to@example.com'], subject='subject', message='message',
-                           backend='error')
+                            backend='error')
             self.assertIsNotNone(email.pk)
             self.assertEqual(email.created, timezone.datetime(2020, 5, 18, 8, 0, 0))
             self.assertEqual(email.status, STATUS.queued)
@@ -445,27 +447,30 @@ class MailTest(TestCase):
             self.assertEqual(email.number_of_retries, 2)
             self.assertEqual(email.scheduled_time, timezone.datetime(2020, 5, 18, 8, 30, 1))
 
+    @override_settings(USE_TZ=True)
     def test_expired(self):
-        # check that email is sent before its expire_at date
-        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 0)):
-            email = create('from@example.com', recipients=['to@example.com'], subject='subject',
-                           message='message', expires_at=timezone.datetime(2020, 5, 18, 9, 0, 1))
-            self.assertIsNotNone(email.pk)
+        tzinfo = pytz.timezone('Asia/Jakarta')
+        email = create('from@example.com', recipients=['to@example.com'], subject='subject', message='message',
+                       expires_at=timezone.datetime(2020, 5, 18, 9, 0, 1, tzinfo=tzinfo))
+        self.assertEqual(email.expires_at, timezone.datetime(2020, 5, 18, 9, 0, 1, tzinfo=tzinfo))
+        msg = email.prepare_email_message()
+        self.assertEqual(msg.extra_headers['Expires'], 'Mon, 18 May 09:00:01 +0707')
+
+        # check that email is not sent after its expire_at date
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 2, tzinfo=tzinfo)):
             self.assertEqual(email.status, STATUS.queued)
-            self.assertEqual(email.expires_at, timezone.datetime(2020, 5, 18, 9, 0, 1))
+            result = send_queued()
+            self.assertTupleEqual(result, (0, 0, 0))
+            email.refresh_from_db()
+
+        # check that email is sent before its expire_at date
+        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 0, tzinfo=tzinfo)):
+            self.assertEqual(email.status, STATUS.queued)
             result = send_queued()
             self.assertTupleEqual(result, (1, 0, 0))
             email.refresh_from_db()
             self.assertEqual(email.status, STATUS.sent)
 
-        # check that email is not sent after its expire_at date
-        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 1)):
-            email = create('from@example.com', recipients=['to@example.com'], subject='subject',
-                           message='message', expires_at=timezone.datetime(2020, 5, 18, 9, 0, 0))
-            result = send_queued()
-            self.assertTupleEqual(result, (0, 0, 0))
-            email.refresh_from_db()
-            self.assertEqual(email.status, STATUS.queued)
     def test_invalid_expired(self):
         with self.assertRaises(ValidationError):
             create('from@example.com', recipients=['to@example.com'], subject='subject',
