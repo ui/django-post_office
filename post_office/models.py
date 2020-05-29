@@ -2,8 +2,9 @@ import os
 
 from collections import namedtuple
 from uuid import uuid4
-
 from email.mime.nonmultipart import MIMENonMultipart
+
+from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.utils.encoding import smart_str
@@ -195,6 +196,10 @@ class Email(models.Model):
                                  exception_type=exception_type)
 
         return status
+
+    def clean(self):
+        if self.scheduled_time and self.expires_at and self.scheduled_time > self.expires_at:
+            raise ValidationError(_("The scheduled time may not be later than the expires time."))
 
     def save(self, *args, **kwargs):
         self.full_clean()

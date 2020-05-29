@@ -1,6 +1,7 @@
 from unittest.mock import patch, MagicMock
 
 from django.core import mail
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.conf import settings
 
@@ -465,6 +466,12 @@ class MailTest(TestCase):
             self.assertTupleEqual(result, (0, 0, 0))
             email.refresh_from_db()
             self.assertEqual(email.status, STATUS.queued)
+    def test_invalid_expired(self):
+        with self.assertRaises(ValidationError):
+            create('from@example.com', recipients=['to@example.com'], subject='subject',
+                           message='message',
+                           scheduled_time=timezone.datetime(2020, 5, 18, 9, 0, 1),
+                           expires_at=timezone.datetime(2020, 5, 18, 9, 0, 0))
 
     @patch('post_office.signals.email_queued.send')
     def test_backend_signal(self, mock):
