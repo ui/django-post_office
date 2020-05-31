@@ -293,7 +293,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
             email.number_of_retries = 1
         else:
             email.number_of_retries += 1
-        if email.number_of_retries < max_retries:
+        if email.number_of_retries <= max_retries:
             email.status = STATUS.requeued
             email.scheduled_time = scheduled_time
             num_requeued += 1
