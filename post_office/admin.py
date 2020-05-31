@@ -79,9 +79,9 @@ requeue.short_description = 'Requeue selected emails'
 
 @admin.register(Email)
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ['id', 'to_display', 'subject_shortened', 'status', 'last_updated', 'scheduled_time', 'use_template']
+    list_display = ['id', 'to_display', 'shortened_subject', 'status', 'last_updated', 'scheduled_time', 'use_template']
     search_fields = ['to', 'subject']
-    readonly_fields = ['subject_rendered', 'render_body_plain',  'render_body_html']
+    readonly_fields = ['render_subject', 'render_plaintext_body',  'render_html_body']
     date_hierarchy = 'last_updated'
     inlines = [AttachmentInline, LogInline]
     list_filter = ['status', 'template__language', 'template__name']
@@ -109,7 +109,7 @@ class EmailAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    def subject_shortened(self, instance):
+    def shortened_subject(self, instance):
         if instance.template:
             template_cache_key = '_subject_template_' + str(instance.template_id)
             template = getattr(self, template_cache_key, None)
@@ -122,11 +122,11 @@ class EmailAdmin(admin.ModelAdmin):
             subject = instance.subject
         return Truncator(subject).chars(100)
 
-    subject_shortened.short_description = _("Subject")
-    subject_shortened.admin_order_field = 'subject'
+    shortened_subject.short_description = _("Subject")
+    shortened_subject.admin_order_field = 'subject'
 
     def use_template(self, instance):
-        return bool(instance.template)
+        return bool(instance.template_id)
 
     use_template.short_description = _("Use Template")
     use_template.boolean = True
@@ -138,45 +138,45 @@ class EmailAdmin(admin.ModelAdmin):
                            'priority', ('status', 'scheduled_time')],
             }),
         ]
-        email_plain, email_html = False, False
-        for message in obj.email_message().message().walk():
-            if not isinstance(message, SafeMIMEText):
+        has_plaintext_content, has_html_content = False, False
+        for part in obj.email_message().message().walk():
+            if not isinstance(part, SafeMIMEText):
                 continue
-            content_type = message.get_content_type()
+            content_type = part.get_content_type()
             if content_type == 'text/plain':
-                email_plain = True
+                has_plaintext_content = True
             elif content_type == 'text/html':
-                email_html = True
+                has_html_content = True
 
-        if email_html:
+        if has_html_content:
             fieldsets.append(
-                (_("HTML Email"), {'fields': ['subject_rendered', 'render_body_html']})
+                (_("HTML Email"), {'fields': ['render_subject', 'render_html_body']})
             )
-            if email_plain:
+            if has_plaintext_content:
                 fieldsets.append(
-                    (_("Text Email"), {'classes': ['collapse'], 'fields': ['render_body_plain']})
+                    (_("Text Email"), {'classes': ['collapse'], 'fields': ['render_plaintext_body']})
                 )
-        elif email_plain:
+        elif has_plaintext_content:
             fieldsets.append(
-                (_("Text Email"), {'fields': ['subject_rendered', 'render_body_plain']})
+                (_("Text Email"), {'fields': ['render_subject', 'render_plaintext_body']})
              )
 
         return fieldsets
 
-    def subject_rendered(self, instance):
+    def render_subject(self, instance):
         message = instance.email_message()
         return format_html('<strong>{}</strong>', message.subject)
 
-    subject_rendered.short_description = _("Subject")
+    render_subject.short_description = _("Subject")
 
-    def render_body_plain(self, instance):
+    def render_plaintext_body(self, instance):
         for message in instance.email_message().message().walk():
             if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/plain':
                 return format_html('<pre>{}</pre>', message.get_payload())
 
-    render_body_plain.short_description = _("Mail Body")
+    render_plaintext_body.short_description = _("Mail Body")
 
-    def render_body_html(self, instance):
+    def render_html_body(self, instance):
         pattern = re.compile('cid:([0-9a-f]{32})')
         url = reverse('admin:post_office_email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
         url = url.replace(32 * '0', r'\1')
@@ -186,7 +186,7 @@ class EmailAdmin(admin.ModelAdmin):
                 body = mark_safe(pattern.sub(url, payload))
                 return format_html('<div>{}</div>', body)
 
-    render_body_html.short_description = _("Mail Body")
+    render_html_body.short_description = _("HTML Body")
 
     def fetch_email_image(self, request, pk, content_id):
         instance = self.get_object(request, pk)
