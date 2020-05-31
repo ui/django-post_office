@@ -4,7 +4,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
-from django.db.models import F, Q, Case, Value, When
+from django.db.models import Q
 from django.template import Context, Template
 from django.utils import timezone
 
@@ -282,23 +282,25 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     email_ids = [email.id for email in sent_emails]
     Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
 
-    # Conditionally update statuses of failed emails
+    # Update statuses and conditionally requeue failed emails
+    num_failed, num_requeued = 0, 0
+    max_retries = get_max_retries()
+    scheduled_time = timezone.now() + get_time_delta_to_retry()
     email_ids = [email.id for email, _ in failed_emails]
-    emails_failed = Email.objects.filter(id__in=email_ids).annotate(
-        retry_counter=Case(
-            When(number_of_retries__isnull=True, then=Value(1)),
-            default=F('number_of_retries') + 1
-        )
-    )
-    query = Q(retry_counter__lte=get_max_retries())
-    num_failed = emails_failed.exclude(query).update(
-        status=STATUS.failed
-    )
-    num_requeued = emails_failed.filter(query).update(
-        number_of_retries=F('retry_counter'),
-        status=STATUS.requeued,
-        scheduled_time=timezone.now() + get_time_delta_to_retry(),
-    )
+    emails_failed = Email.objects.filter(id__in=email_ids)
+    for email in emails_failed:
+        if email.number_of_retries is None:
+            email.number_of_retries = 1
+        else:
+            email.number_of_retries += 1
+        if email.number_of_retries < max_retries:
+            email.status = STATUS.requeued
+            email.scheduled_time = scheduled_time
+            num_requeued += 1
+        else:
+            email.status = STATUS.failed
+            num_failed += 1
+    Email.objects.bulk_update(emails_failed, ['status', 'scheduled_time', 'number_of_retries'])
 
     # If log level is 0, log nothing, 1 logs only sending failures
     # and 2 means log both successes and failures

@@ -56,17 +56,17 @@ class Email(models.Model):
                                                 blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
-    scheduled_time = models.DateTimeField(_('The scheduled sending time'),
+    scheduled_time = models.DateTimeField(_("The scheduled sending time"),
                                           blank=True, null=True, db_index=True)
-    expires_at = models.DateTimeField(_('Expires timestamp for email'),
+    expires_at = models.DateTimeField(_("Email won't be sent after this timestamp"),
                                       blank=True, null=True)
     number_of_retries = models.PositiveIntegerField(null=True, blank=True)
     headers = JSONField(_('Headers'), blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True,
-                                 null=True, verbose_name=_('Email template'),
+                                 null=True, verbose_name=_("Email template"),
                                  on_delete=models.CASCADE)
     context = context_field_class(_('Context'), blank=True, null=True)
-    backend_alias = models.CharField(_('Backend alias'), blank=True, default='',
+    backend_alias = models.CharField(_("Backend alias"), blank=True, default='',
                                      max_length=64)
 
     class Meta:
