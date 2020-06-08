@@ -165,7 +165,7 @@ class EmailAdmin(admin.ModelAdmin):
 
     def render_subject(self, instance):
         message = instance.email_message()
-        return format_html('<strong>{}</strong>', message.subject)
+        return message.subject
 
     render_subject.short_description = _("Subject")
 
