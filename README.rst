@@ -23,6 +23,15 @@ Dependencies
 * `jsonfield <https://github.com/rpkilby/jsonfield>`_
 
 
+Optional Dependency
+-------------------
+
+* `lxml <https://lxml.de/>`_
+
+Add this optional dependency, if you don't trust the HTML beeing rendered inside the Django admin
+backend. This library then removes potentially dangerous tags in order to prevent XSS attacks.
+
+
 Installation
 ============
 

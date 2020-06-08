@@ -19,6 +19,13 @@ from django.utils.translation import ugettext_lazy as _
 from .fields import CommaSeparatedEmailField
 from .models import Attachment, Log, Email, EmailTemplate, STATUS
 
+try:
+    from lxml.html.clean import clean_html as clean_html_
+
+    clean_html = lambda body: mark_safe(clean_html_(body))
+except ImportError:
+    clean_html = lambda body: format_html('<div>{}</div>', mark_safe(body))
+
 
 def get_message_preview(instance):
     return ('{0}...'.format(instance.message[:25]) if len(instance.message) > 25
@@ -183,8 +190,7 @@ class EmailAdmin(admin.ModelAdmin):
         for message in instance.email_message().message().walk():
             if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/html':
                 payload = message.get_payload(decode=True).decode('utf-8')
-                body = mark_safe(pattern.sub(url, payload))
-                return format_html('<div>{}</div>', body)
+                return clean_html(pattern.sub(url, payload))
 
     render_html_body.short_description = _("HTML Body")
 
