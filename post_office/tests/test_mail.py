@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from ..settings import get_batch_size, get_log_level, get_threads_per_process, get_max_retries, get_time_delta_to_retry
+from ..settings import get_batch_size, get_log_level, get_threads_per_process, get_max_retries, get_retry_timedelta
 from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
 from ..mail import (create, get_queued,
                     send, send_many, send_queued, _send_bulk)
@@ -402,7 +402,7 @@ class MailTest(TestCase):
         self.assertEqual(email.status, STATUS.requeued)
 
     def test_retry_failed(self):
-        self.assertEqual(get_time_delta_to_retry(), timezone.timedelta(minutes=15))
+        self.assertEqual(get_retry_timedelta(), timezone.timedelta(minutes=15))
         self.assertEqual(get_max_retries(), 2)
 
         # attempt to send email for the first time

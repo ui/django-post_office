@@ -12,7 +12,7 @@ from .connections import connections
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
 from .settings import (get_available_backends, get_batch_size,
                        get_log_level, get_sending_order, get_threads_per_process, get_max_retries,
-                       get_time_delta_to_retry)
+                       get_retry_timedelta)
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
@@ -285,7 +285,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     # Update statuses and conditionally requeue failed emails
     num_failed, num_requeued = 0, 0
     max_retries = get_max_retries()
-    scheduled_time = timezone.now() + get_time_delta_to_retry()
+    scheduled_time = timezone.now() + get_retry_timedelta()
     emails_failed = [email for email, _ in failed_emails]
     for email in emails_failed:
         if email.number_of_retries is None:

@@ -108,7 +108,7 @@ def get_max_retries():
     return get_config().get('MAX_RETRIES', 0)
 
 
-def get_time_delta_to_retry():
+def get_retry_timedelta():
     return get_config().get('RETRY_INTERVAL', datetime.timedelta(minutes=15))
 
 
