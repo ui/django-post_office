@@ -286,8 +286,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     num_failed, num_requeued = 0, 0
     max_retries = get_max_retries()
     scheduled_time = timezone.now() + get_time_delta_to_retry()
-    email_ids = [email.id for email, _ in failed_emails]
-    emails_failed = Email.objects.filter(id__in=email_ids)
+    emails_failed = [email for email, _ in failed_emails]
     for email in emails_failed:
         if email.number_of_retries is None:
             email.number_of_retries = 0
