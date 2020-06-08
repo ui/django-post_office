@@ -31,21 +31,17 @@ class EmailBackend(BaseEmailBackend):
             headers = email_message.extra_headers
             message = email_message.message()
 
-            # Look for first 'text/plain' alternative in email
+            # Look for first 'text/plain' and 'text/html' alternative in email
+            plaintext_body = html_body = ''
             for part in message.walk():
                 if part.get_content_type() == 'text/plain':
                     plaintext_body = part.get_payload()
-                    break
-            else:
-                plaintext_body = ''
-
-            # Look for first 'text/html' alternative in email
-            for part in message.walk():
+                    if html_body:
+                        break
                 if part.get_content_type() == 'text/html':
                     html_body = part.get_payload()
-                    break
-            else:
-                html_body = ''
+                    if plaintext_body:
+                        break
 
             attachment_files = {}
             for attachment in email_message.attachments:
