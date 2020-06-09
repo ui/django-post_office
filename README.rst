@@ -26,10 +26,11 @@ Dependencies
 Optional Dependency
 -------------------
 
-* `lxml <https://lxml.de/>`_
+* `bleach <https://bleach.readthedocs.io/>`_
 
-Add this optional dependency, if you don't trust the HTML beeing rendered inside the Django admin
-backend. This library then removes potentially dangerous tags in order to prevent XSS attacks.
+Add this optional dependency, so that HTML emails are nicely rendered inside the Django admin
+backend. Without this library, all HTML tags will otherwise be stripped for safety reasons in order
+to prevent XSS attacks.
 
 
 Installation

@@ -160,9 +160,13 @@ class EmailAdminTest(TestCase):
         email_change_url = reverse('admin:post_office_email_change', args=(email.pk,))
         response = self.client.get(email_change_url, follow=True)
         self.assertContains(response, "[Django Post-Office unit tests] attached image")
-        self.assertContains(response, "<h3>Testing image attachments</h3>")
         email_image_url = reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': content_id})
-        self.assertContains(response, '<img src="{}" width="200"'.format(email_image_url))
+        try:
+            import bleach
+            self.assertContains(response, "<h3>Testing image attachments</h3>")
+            self.assertContains(response, '<img src="{}" width="200"'.format(email_image_url))
+        except ImportError:
+            self.assertContains(response, "Testing image attachments")
 
         # check that inlined images are accessible through Django admin URL
         response = self.client.get(email_image_url)

@@ -12,19 +12,13 @@ from django.forms.widgets import TextInput
 from django.http.response import HttpResponse, HttpResponseNotFound
 from django.template import Context, Template
 from django.urls import reverse
-from django.utils.html import format_html, mark_safe
+from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import ugettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
 from .models import Attachment, Log, Email, EmailTemplate, STATUS
-
-try:
-    from lxml.html.clean import clean_html as clean_html_
-
-    clean_html = lambda body: mark_safe(clean_html_(body))
-except ImportError:
-    clean_html = lambda body: format_html('<div>{}</div>', mark_safe(body))
+from .sanitizer import clean_html
 
 
 def get_message_preview(instance):
