@@ -1,4 +1,4 @@
-from django.utils.html import mark_safe, strip_tags
+from django.utils.html import mark_safe, strip_tags, escape
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy
 
@@ -141,4 +141,4 @@ except ImportError:
     # if bleach is not installed, handle rendered HTML as plain text
     clean_html = lambda body: mark_safe(format_lazy('<p><em>({heading})</em></p><div>{body}</div>',
                                                     heading=gettext_lazy("stripping all HTML tags"),
-                                                    body=strip_tags(body)))
+                                                    body=escape(strip_tags(body))))
