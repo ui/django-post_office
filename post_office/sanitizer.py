@@ -139,6 +139,7 @@ try:
     ))
 except ImportError:
     # if bleach is not installed, handle rendered HTML as plain text
+    heading = gettext_lazy("Stripping all HTML tags – install 'bleach' to render HTML properly.")
     clean_html = lambda body: mark_safe(format_lazy('<p><em>({heading})</em></p><div>{body}</div>',
-                                                    heading=gettext_lazy("stripping all HTML tags"),
+                                                    heading=heading,
                                                     body=escape(strip_tags(body))))
