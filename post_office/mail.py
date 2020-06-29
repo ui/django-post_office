@@ -3,10 +3,13 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.mail.utils import DNS_NAME
 from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 from django.utils import timezone
+
+from email.utils import make_msgid
 
 from .connections import connections
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
@@ -40,6 +43,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         bcc = []
     if context is None:
         context = ''
+    message_id = make_msgid(domain=settings.POST_OFFICE.get('MESSAGE_ID_RIGHT', DNS_NAME))
 
     # If email is to be rendered during delivery, save all necessary
     # information
@@ -51,6 +55,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             bcc=bcc,
             scheduled_time=scheduled_time,
             expires_at=expires_at,
+            message_id=message_id,
             headers=headers, priority=priority, status=status,
             context=context, template=template, backend_alias=backend
         )
@@ -77,6 +82,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             html_message=html_message,
             scheduled_time=scheduled_time,
             expires_at=expires_at,
+            message_id=message_id,
             headers=headers, priority=priority, status=status,
             backend_alias=backend
         )

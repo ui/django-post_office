@@ -53,8 +53,9 @@ requeue.short_description = 'Requeue selected emails'
 
 
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ('id', 'to_display', 'subject', 'template',
-                    'status', 'last_updated')
+    list_display = ['truncated_message_id', 'to_display', 'subject', 'template',
+                    'status', 'last_updated']
+    readonly_fields = ['message_id']
     search_fields = ['to', 'subject']
     date_hierarchy = 'last_updated'
     inlines = [AttachmentInline, LogInline]
@@ -70,8 +71,14 @@ class EmailAdmin(admin.ModelAdmin):
     def to_display(self, instance):
         return ', '.join(instance.to)
 
+    def truncated_message_id(self, instance):
+        if instance.message_id:
+            return Truncator(instance.message_id[1:-1]).chars(10)
+        return str(instance.id)
+
     to_display.short_description = 'to'
     to_display.admin_order_field = 'to'
+    truncated_message_id.short_description = "Message-ID"
 
 
 class LogAdmin(admin.ModelAdmin):
