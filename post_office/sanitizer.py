@@ -1,5 +1,4 @@
-from django.utils.html import mark_safe, strip_tags, escape
-from django.utils.text import format_lazy
+from django.utils.html import mark_safe, format_html
 from django.utils.translation import gettext_lazy
 
 try:
@@ -138,8 +137,7 @@ try:
         ],
     ))
 except ImportError:
-    # if bleach is not installed, handle rendered HTML as plain text
-    heading = gettext_lazy("Stripping all HTML tags – install 'bleach' to render HTML properly.")
-    clean_html = lambda body: mark_safe(format_lazy('<p><em>({heading})</em></p><div>{body}</div>',
-                                                    heading=heading,
-                                                    body=escape(strip_tags(body))))
+    # if bleach is not installed, render HTML as escaped text to prevent XSS attacks
+    heading = gettext_lazy("Install 'bleach' to render HTML properly.")
+    clean_html = lambda body: format_html('<p><em>{heading}</em></p>\n<div>{body}</div>',
+                                          heading=heading, body=body)
