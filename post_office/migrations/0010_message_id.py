@@ -1,12 +1,11 @@
 import random
-from django.conf import settings
-from django.core.mail.utils import DNS_NAME
 from django.db import migrations, models
-from post_office.models import STATUS
 
+from post_office.models import STATUS
+from post_office.settings import get_message_id_right
 
 def forwards(apps, schema_editor):
-    msg_id_right = settings.POST_OFFICE.get('MESSAGE_ID_RIGHT', DNS_NAME)
+    msg_id_right = get_message_id_right()
     Email = apps.get_model('post_office', 'Email')
     for email in Email.objects.using(schema_editor.connection.alias).filter(message_id__isnull=True):
         if email.status in [STATUS.queued, STATUS.requeued]:
