@@ -150,6 +150,9 @@ arguments:
 | scheduled_time     | No       | A date/datetime object indicating when the email |
 |                    |          | should be sent                                   |
 +--------------------+----------+--------------------------------------------------+
+| expires_at         | No       | If specified, mails that are not yet sent        |
+|                    |          | won't be delivered after this date.              |
++--------------------+----------+--------------------------------------------------+
 | priority           | No       | ``high``, ``medium``, ``low`` or ``now``         |
 |                    |          | (send_immediately)                               |
 +--------------------+----------+--------------------------------------------------+
