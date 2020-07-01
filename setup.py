@@ -68,6 +68,7 @@ setup(
     tests_require=TESTS_REQUIRE,
     extras_require={
         'test': TESTS_REQUIRE,
+        'prevent-XSS': ['bleach'],
     },
     cmdclass={'test': Tox}
 )

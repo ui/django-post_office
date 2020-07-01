@@ -14,7 +14,7 @@ matrix:
 
     # Python 3.7
     - python: 3.7
-      env: TOXENV=py37-django22,py37-django30
+      env: TOXENV=py37-django22,py37-django30,py37-preventxss
 
     # Python 3.8
     - python: 3.8
