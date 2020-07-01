@@ -209,7 +209,7 @@ If you want to send an email with attachments:
         attachments={
             'attachment1.doc': '/path/to/file/file1.doc',
             'attachment2.txt': ContentFile('file content'),
-            'attachment3.txt': { 'file': ContentFile('file content'), 'mimetype': 'text/plain'},
+            'attachment3.txt': {'file': ContentFile('file content'), 'mimetype': 'text/plain'},
         }
     )
 
@@ -499,7 +499,7 @@ highly recommend), then use the Django-Admin backend and add a periodic taks for
 ``post_office.tasks.send_queued_mail``.
 
 Depending on your policy, you may also want to remove expired emails from the queue. This can be
-done by adding another Periodic taks for ``post_office.tasks.cleanup_mail``, which may run once a
+done by adding another periodic taks for ``post_office.tasks.cleanup_mail``, which may run once a
 week or month.
 
 .. _configured Celery: https://docs.celeryproject.org/en/latest/userguide/application.html
