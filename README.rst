@@ -617,6 +617,28 @@ Defaults to ``None``. This option is useful if you want to redirect all emails t
         'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
     }
 
+
+Message-ID
+----------
+
+In order to track and find emails delivered to remote SMTP servers, **django-post_office** generates a unique Message-ID_
+for each email. This identifier then stored with each email and can be looked up in the Django admin backend. Typically
+the Message-ID consists of two parts separated by the ``@`` symbol: The left part is a generated pseudo random number.
+The right part is a constant string, typically denoting the domain name of the sending entity.
+
+It shall be configured using
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        'MESSAGE_ID_RIGHT': 'example.com'
+    }
+
+
+.. _Message-ID: https://tools.ietf.org/html/rfc2822#section-3.6.4
+
+
 Mail Retry
 -------------------
 
