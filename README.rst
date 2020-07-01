@@ -23,6 +23,16 @@ Dependencies
 * `jsonfield <https://github.com/rpkilby/jsonfield>`_
 
 
+Optional Dependency
+-------------------
+
+* `bleach <https://bleach.readthedocs.io/>`_
+
+Add this optional dependency, so that HTML emails are nicely rendered inside the Django admin
+backend. Without this library, all HTML tags will otherwise be stripped for safety reasons in order
+to prevent XSS attacks.
+
+
 Installation
 ============
 
@@ -139,6 +149,9 @@ arguments:
 +--------------------+----------+--------------------------------------------------+
 | scheduled_time     | No       | A date/datetime object indicating when the email |
 |                    |          | should be sent                                   |
++--------------------+----------+--------------------------------------------------+
+| expires_at         | No       | If specified, mails that are not yet sent        |
+|                    |          | won't be delivered after this date.              |
 +--------------------+----------+--------------------------------------------------+
 | priority           | No       | ``high``, ``medium``, ``low`` or ``now``         |
 |                    |          | (send_immediately)                               |

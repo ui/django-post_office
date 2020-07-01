@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.utils.encoding import smart_str
-from django.utils.translation import pgettext_lazy, ugettext_lazy as _
+from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
 from jsonfield import JSONField
 
@@ -56,9 +56,10 @@ class Email(models.Model):
                                                 blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
-    scheduled_time = models.DateTimeField(_("The scheduled sending time"),
-                                          blank=True, null=True, db_index=True)
-    expires_at = models.DateTimeField(_("Expires at"),
+    scheduled_time = models.DateTimeField(_("Scheduled Time"),
+                                          blank=True, null=True, db_index=True,
+                                          help_text=_("The scheduled sending time"))
+    expires_at = models.DateTimeField(_("Expires"),
                                       blank=True, null=True,
                                       help_text=_("Email won't be sent after this timestamp"))
     message_id = models.CharField("Message-ID", null=True, max_length=255, editable=False)
@@ -304,7 +305,7 @@ class Attachment(models.Model):
     file = models.FileField(_('File'), upload_to=get_upload_path)
     name = models.CharField(_('Name'), max_length=255, help_text=_("The original filename"))
     emails = models.ManyToManyField(Email, related_name='attachments',
-                                    verbose_name=_('Email addresses'))
+                                    verbose_name=_('Emails'))
     mimetype = models.CharField(max_length=255, default='', blank=True)
     headers = JSONField(_('Headers'), blank=True, null=True)
 
