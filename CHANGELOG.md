@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 3.5.0
+-------------
+* Add ``Message-ID`` to the Email models and use it when sending emails. It replaces the
+  ID column in the Django admin backend.
+
+
 Version 3.4.1 (2020-05-16)
 --------------------------
 * Allow `tasks.py` to be imported when Celery is not installed. This allows
