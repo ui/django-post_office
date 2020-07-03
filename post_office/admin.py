@@ -234,7 +234,7 @@ class EmailTemplateAdminForm(forms.ModelForm):
 
     class Meta:
         model = EmailTemplate
-        fields = ['name', 'description', 'subject', 'content', 'html_content', 'language',
+        fields = ['name', 'label', 'description', 'subject', 'content', 'html_content', 'language',
                   'default_template']
 
     def __init__(self, *args, **kwargs):
@@ -249,7 +249,7 @@ class EmailTemplateInline(admin.StackedInline):
     formset = EmailTemplateAdminFormSet
     model = EmailTemplate
     extra = 0
-    fields = ('language', 'subject', 'content', 'html_content',)
+    fields = ('language', 'label', 'subject', 'content', 'html_content',)
     formfield_overrides = {
         models.CharField: {'widget': SubjectField}
     }
@@ -261,11 +261,13 @@ class EmailTemplateInline(admin.StackedInline):
 @admin.register(EmailTemplate)
 class EmailTemplateAdmin(admin.ModelAdmin):
     form = EmailTemplateAdminForm
-    list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
-    search_fields = ('name', 'description', 'subject')
+    list_display = ('name', 'label', 'description_shortened', 'subject', 'languages_compact', 'created')
+    search_fields = ('name', 'label', 'description', 'subject')
     fieldsets = [
         (None, {
-            'fields': ('name', 'description'),
+            'fields': (
+                ('name', 'label', 'description',),
+            ),
         }),
         (_("Default Content"), {
             'fields': ('subject', 'content', 'html_content'),

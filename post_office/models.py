@@ -241,6 +241,8 @@ class EmailTemplate(models.Model):
     Model to hold template information from db
     """
     name = models.CharField(_('Name'), max_length=255, help_text=_("e.g: 'welcome_email'"))
+    label = models.CharField(_('Label'), max_length=128, blank=True, default="",
+                             help_text=_("Human readable template name"))
     description = models.TextField(_('Description'), blank=True,
                                    help_text=_("Description of this template."))
     created = models.DateTimeField(auto_now_add=True)
