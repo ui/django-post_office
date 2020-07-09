@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytz
 
@@ -249,10 +249,10 @@ class MailTest(TestCase):
         """
         template = EmailTemplate.objects.create(
             subject='Subject {{ name }}',
-            content='Content {{ name }}',
-            html_content='HTML {{ name }}'
+            content='Content {{ name }} Date {{ date }}',
+            html_content='HTML {{ name }} Date {{ date }}'
         )
-        context = {'name': 'test'}
+        context = {'name': 'test', 'date': timezone.datetime(2020, 5, 18)}
         email = send(recipients=['a@example.com', 'b@example.com'],
                      template=template, context=context,
                      render_on_delivery=True)
@@ -346,25 +346,25 @@ class MailTest(TestCase):
 
         template = EmailTemplate.objects.create(
             subject='Subject {{ name }}',
-            content='Content {{ name }}',
-            html_content='HTML {{ name }}'
+            content='Content {{ name }} Date {{ date }}',
+            html_content='HTML {{ name }} Date {{ date }}'
         )
         russian_template = EmailTemplate(
             default_template=template,
             language='ru',
             subject='предмет {{ name }}',
-            content='содержание {{ name }}',
-            html_content='HTML {{ name }}'
+            content='содержание {{ name }} Дата {{ date }}',
+            html_content='HTML {{ name }} Дата {{ date }}'
         )
         russian_template.save()
 
-        context = {'name': 'test'}
+        context = {'name': 'test', 'date': timezone.datetime(2020, 5, 18)}
         email = send(recipients=['to@example.com'], sender='from@example.com',
                      template=template, context=context)
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'Subject test')
-        self.assertEqual(email.message, 'Content test')
-        self.assertEqual(email.html_message, 'HTML test')
+        self.assertEqual(email.message, 'Content test Date May 18, 2020, midnight')
+        self.assertEqual(email.html_message, 'HTML test Date May 18, 2020, midnight')
         self.assertEqual(email.context, None)
         self.assertEqual(email.template, None)
 
@@ -373,8 +373,8 @@ class MailTest(TestCase):
                      template=russian_template, context=context)
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'предмет test')
-        self.assertEqual(email.message, 'содержание test')
-        self.assertEqual(email.html_message, 'HTML test')
+        self.assertEqual(email.message, 'содержание test Дата Май 18, 2020, полночь')
+        self.assertEqual(email.html_message, 'HTML test Дата Май 18, 2020, полночь')
         self.assertEqual(email.context, None)
         self.assertEqual(email.template, None)
 

@@ -10,6 +10,8 @@ from django.db import models
 from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import override as translation_override
+
 from jsonfield import JSONField
 
 from post_office import cache
@@ -100,10 +102,11 @@ class Email(models.Model):
 
         if self.template is not None:
             engine = get_template_engine()
-            subject = engine.from_string(self.template.subject).render(self.context)
-            plaintext_message = engine.from_string(self.template.content).render(self.context)
-            multipart_template = engine.from_string(self.template.html_content)
-            html_message = multipart_template.render(self.context)
+            with translation_override(self.template.language):
+                subject = engine.from_string(self.template.subject).render(self.context)
+                plaintext_message = engine.from_string(self.template.content).render(self.context)
+                multipart_template = engine.from_string(self.template.html_content)
+                html_message = multipart_template.render(self.context)
 
         else:
             subject = smart_str(self.subject)

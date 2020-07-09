@@ -7,6 +7,7 @@ from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 from django.utils import timezone
+from django.utils.translation import override as translation_override
 
 from .connections import connections
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
@@ -58,14 +59,17 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
     else:
 
         if template:
+            language = template.language
             subject = template.subject
             message = template.content
             html_message = template.html_content
-
-        _context = Context(context or {})
-        subject = Template(subject).render(_context)
-        message = Template(message).render(_context)
-        html_message = Template(html_message).render(_context)
+        else:
+            language = ''
+        with translation_override(language):
+            _context = Context(context or {})
+            subject = Template(subject).render(_context)
+            message = Template(message).render(_context)
+            html_message = Template(html_message).render(_context)
 
         email = Email(
             from_email=sender,
