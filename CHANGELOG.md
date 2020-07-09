@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+* Fix rendering of email templates in expected locale.
+
+
 Version 3.4.1 (2020-05-16)
 --------------------------
 * Allow `tasks.py` to be imported when Celery is not installed. This allows
