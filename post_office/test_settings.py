@@ -37,7 +37,8 @@ POST_OFFICE = {
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
     },
     'MAX_RETRIES': 2,
-    'MESSAGE_ID_RIGHT': 'post_office.org',
+    'MESSAGE_ID_ON_DELIVERY': False,
+    'MESSAGE_ID_FQDN': 'post_office.org',
 }
 
 

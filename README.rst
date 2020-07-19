@@ -621,19 +621,26 @@ Defaults to ``None``. This option is useful if you want to redirect all emails t
 Message-ID
 ----------
 
-In order to track and find emails delivered to remote SMTP servers, **django-post_office** generates a unique Message-ID_
-for each email. This identifier then stored with each email and can be looked up in the Django admin backend. Typically
-the Message-ID consists of two parts separated by the ``@`` symbol: The left part is a generated pseudo random number.
-The right part is a constant string, typically denoting the domain name of the sending entity.
+The SMTP standard requires that each email contains a unique Message-ID_. Typically the Message-ID consists of two parts
+separated by the ``@`` symbol: The left part is a generated pseudo random number. The right part is a constant string,
+typically denoting the full qualified domain name of the sending server.
 
-It shall be configured using
+By default, **Django** generates such a Message-ID during email delivery. Since **django-post_office** keeps track of
+all delivered emails, it can be useful to store this Message-ID together with each email. This identifier then can be
+looked up in the Django admin backend.
+
+To activate this feature, you must disable the implicit generation of a Message-ID during delivery:
 
 .. code-block:: python
 
     # Put this in settings.py
     POST_OFFICE = {
-        'MESSAGE_ID_RIGHT': 'example.com'
+        'MESSAGE_ID_ON_DELIVERY': False,
+        'MESSAGE_ID_FQDN': 'example.com',  # optional
     }
+
+If ``MESSAGE_ID_FQDN`` is unset or ``None``, **django-post_office** falls back to the DNS name of the server, determined
+by Django itself.
 
 
 .. _Message-ID: https://tools.ietf.org/html/rfc2822#section-3.6.4
