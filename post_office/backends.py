@@ -28,17 +28,20 @@ class EmailBackend(BaseEmailBackend):
         for email_message in email_messages:
             subject = email_message.subject
             from_email = email_message.from_email
-            message = email_message.body
             headers = email_message.extra_headers
+            message = email_message.message()
 
-            # Check whether email has 'text/html' alternative
-            alternatives = getattr(email_message, 'alternatives', ())
-            for alternative in alternatives:
-                if alternative[1].startswith('text/html'):
-                    html_message = alternative[0]
-                    break
-            else:
-                html_message = ''
+            # Look for first 'text/plain' and 'text/html' alternative in email
+            plaintext_body = html_body = ''
+            for part in message.walk():
+                if part.get_content_type() == 'text/plain':
+                    plaintext_body = part.get_payload()
+                    if html_body:
+                        break
+                if part.get_content_type() == 'text/html':
+                    html_body = part.get_payload()
+                    if plaintext_body:
+                        break
 
             attachment_files = {}
             for attachment in email_message.attachments:
@@ -54,7 +57,7 @@ class EmailBackend(BaseEmailBackend):
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
                            bcc=email_message.bcc, subject=subject,
-                           message=message, html_message=html_message,
+                           message=plaintext_body, html_message=html_body,
                            headers=headers)
 
             if attachment_files:
