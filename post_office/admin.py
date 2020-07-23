@@ -234,7 +234,7 @@ class EmailTemplateAdminForm(forms.ModelForm):
 
     class Meta:
         model = EmailTemplate
-        fields = ['name', 'description', 'subject', 'content', 'html_content', 'language',
+        fields = ['language', 'name', 'description', 'subject', 'content', 'html_content',
                   'default_template']
 
     def __init__(self, *args, **kwargs):
@@ -243,13 +243,21 @@ class EmailTemplateAdminForm(forms.ModelForm):
         if instance and instance.language:
             self.fields['language'].disabled = True
 
+    def get_initial_for_field(self, field, field_name):
+        """
+        For new translated templates, copy the name from the default email template.
+        """
+        if field_name == 'name' and self.instance and self.instance.id is None and 'default_template' in self.fields:
+            return self.fields['default_template'].parent_instance.name
+        return super().get_initial_for_field(field, field_name)
+
 
 class EmailTemplateInline(admin.StackedInline):
     form = EmailTemplateAdminForm
     formset = EmailTemplateAdminFormSet
     model = EmailTemplate
     extra = 0
-    fields = ('language', 'subject', 'content', 'html_content',)
+    fields = ['language', 'name', 'description', 'subject', 'content', 'html_content']
     formfield_overrides = {
         models.CharField: {'widget': SubjectField}
     }
@@ -265,7 +273,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description', 'subject')
     fieldsets = [
         (None, {
-            'fields': ('name', 'description'),
+            'fields': ('name', 'description', 'identifier'),
         }),
         (_("Default Content"), {
             'fields': ('subject', 'content', 'html_content'),

@@ -1,6 +1,13 @@
 Changelog
 =========
 
+next
+----
+
+* Add unique `identifier` field to model `EmailTemplate`. It can be used to access templates from Python code
+  and leaves the `name` field as a human readable representation of that template.
+
+
 Version 3.4.1 (2020-05-16)
 --------------------------
 * Allow `tasks.py` to be imported when Celery is not installed. This allows
