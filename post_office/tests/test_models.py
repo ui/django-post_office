@@ -311,9 +311,10 @@ class ModelTest(TestCase):
                          [('test.txt', 'test file content', 'text/plain')])
 
     def test_translated_template_uses_default_templates_name(self):
-        template = EmailTemplate.objects.create(name='name')
-        id_template = template.translated_templates.create(language='id')
-        self.assertEqual(id_template.name, template.name)
+        template = EmailTemplate.objects.create(name='name', identifier='identifier')
+        id_template = template.translated_templates.create(name='Nama', language='id')
+        self.assertEqual(id_template.name, 'Nama')
+        self.assertEqual(id_template.identifier, None)
 
     def test_models_repr(self):
         self.assertEqual(repr(EmailTemplate(name='test', language='en')),
