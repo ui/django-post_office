@@ -38,7 +38,7 @@ POST_OFFICE = {
     },
     'MAX_RETRIES': 2,
     'MESSAGE_ID_ON_DELIVERY': False,
-    'MESSAGE_ID_FQDN': 'post_office.org',
+    'MESSAGE_ID_FQDN': 'example.com',
 }
 
 
