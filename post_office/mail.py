@@ -184,7 +184,7 @@ def get_queued():
         (Q(scheduled_time__lte=now) | Q(scheduled_time__isnull=True)) &
         (Q(expires_at__gt=now) | Q(expires_at__isnull=True))
     )
-    return Email.objects.filter(query) \
+    return Email.objects.select_for_update().filter(query) \
                 .select_related('template') \
                 .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
 
