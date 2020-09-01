@@ -2,12 +2,13 @@ import random
 from django.db import migrations, models
 
 from post_office.models import STATUS
-from post_office.settings import get_message_id_on_delivery, get_message_id_fqdn
+from post_office.settings import get_message_id_fqdn
+
 
 def forwards(apps, schema_editor):
-    if get_message_id_on_delivery():
-        return
     msg_id_fqdn = get_message_id_fqdn()
+    if not msg_id_fqdn:
+        return
     Email = apps.get_model('post_office', 'Email')
     for email in Email.objects.using(schema_editor.connection.alias).filter(message_id__isnull=True):
         if email.status in [STATUS.queued, STATUS.requeued]:

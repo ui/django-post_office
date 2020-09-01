@@ -634,29 +634,31 @@ Defaults to ``None``. This option is useful if you want to redirect all emails t
 Message-ID
 ----------
 
-The SMTP standard requires that each email contains a unique Message-ID_. Typically the Message-ID consists of two parts
+The SMTP standard requires that each email contains a unique
+`Message-ID <https://tools.ietf.org/html/rfc2822#section-3.6.4>`_. Typically the Message-ID consists of two parts
 separated by the ``@`` symbol: The left part is a generated pseudo random number. The right part is a constant string,
 typically denoting the full qualified domain name of the sending server.
 
 By default, **Django** generates such a Message-ID during email delivery. Since **django-post_office** keeps track of
-all delivered emails, it can be useful to store this Message-ID together with each email. This identifier then can be
-looked up in the Django admin backend.
+all delivered emails, it can be very useful to store this Message-ID together with each email. This identifier then
+can be looked up in the Django admin backend.
 
-To activate this feature, you must disable the implicit generation of a Message-ID during delivery:
+This feature can be fine tuned in your Post-Office settings, using for instance another full qualified domain name:
 
 .. code-block:: python
 
     # Put this in settings.py
     POST_OFFICE = {
-        'MESSAGE_ID_ON_DELIVERY': False,
+        ...
         'MESSAGE_ID_FQDN': 'example.com',  # optional
     }
 
-If ``MESSAGE_ID_FQDN`` is unset or ``None``, **django-post_office** falls back to the DNS name of the server, determined
-by Django itself.
+Otherwise, if ``MESSAGE_ID_FQDN`` is unset (the default), **django-post_office** falls back to the DNS name of the
+server, which is determined by the network settings of the host.
 
-
-.. _Message-ID: https://tools.ietf.org/html/rfc2822#section-3.6.4
+By explicitly setting ``MESSAGE_ID_FQDN`` to ``None``, the Message-ID is not stored within the database, but generated
+during delivery. This only makes sense, if for some reason you don't want to be able to track delivered emails, or save
+some space in the database.
 
 
 Mail Retry

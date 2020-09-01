@@ -113,10 +113,6 @@ def get_retry_timedelta():
     return get_config().get('RETRY_INTERVAL', datetime.timedelta(minutes=15))
 
 
-def get_message_id_on_delivery():
-    return get_config().get('MESSAGE_ID_ON_DELIVERY', True)
-
-
 def get_message_id_fqdn():
     return get_config().get('MESSAGE_ID_FQDN', DNS_NAME)
 
