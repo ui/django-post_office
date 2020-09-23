@@ -97,7 +97,7 @@ msgstr "HTML Messaggio"
 
 #: models.py:188
 msgid "e.g: 'welcome_email'"
-msgstr "z.B. 'welcome_email'"
+msgstr "per es. 'welcome_email'"
 
 #: models.py:190
 msgid "Description of this template."
