@@ -2,15 +2,23 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.utils.encoding import force_text
-
 from post_office import cache
-from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
+
+from .models import PRIORITY, STATUS, Attachment, Email, EmailTemplate
 from .settings import get_default_priority
 from .validators import validate_email_with_name
 
 
-def send_mail(subject, message, from_email, recipient_list, html_message='',
-              scheduled_time=None, headers=None, priority=PRIORITY.medium):
+def send_mail(
+    subject,
+    message,
+    from_email,
+    recipient_list,
+    html_message="",
+    scheduled_time=None,
+    headers=None,
+    priority=PRIORITY.medium,
+):
     """
     Add a new message to the mail queue. This is a replacement for Django's
     ``send_mail`` core email method.
@@ -22,9 +30,15 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     for address in recipient_list:
         emails.append(
             Email.objects.create(
-                from_email=from_email, to=address, subject=subject,
-                message=message, html_message=html_message, status=status,
-                headers=headers, priority=priority, scheduled_time=scheduled_time
+                from_email=from_email,
+                to=address,
+                subject=subject,
+                message=message,
+                html_message=html_message,
+                status=status,
+                headers=headers,
+                priority=priority,
+                scheduled_time=scheduled_time,
             )
         )
     if priority == PRIORITY.now:
@@ -33,23 +47,22 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     return emails
 
 
-def get_email_template(name, language=''):
+def get_email_template(name, language=""):
     """
     Function that returns an email template instance, from cache or DB.
     """
-    use_cache = getattr(settings, 'POST_OFFICE_CACHE', True)
+    use_cache = getattr(settings, "POST_OFFICE_CACHE", True)
     if use_cache:
-        use_cache = getattr(settings, 'POST_OFFICE_TEMPLATE_CACHE', True)
+        use_cache = getattr(settings, "POST_OFFICE_TEMPLATE_CACHE", True)
     if not use_cache:
         return EmailTemplate.objects.get(name=name, language=language)
     else:
-        composite_name = '%s:%s' % (name, language)
+        composite_name = "%s:%s" % (name, language)
         email_template = cache.get(composite_name)
         if email_template is not None:
             return email_template
         else:
-            email_template = EmailTemplate.objects.get(name=name,
-                                                       language=language)
+            email_template = EmailTemplate.objects.get(name=name, language=language)
             cache.set(composite_name, email_template)
             return email_template
 
@@ -76,9 +89,9 @@ def create_attachments(attachment_files):
     for filename, filedata in attachment_files.items():
 
         if isinstance(filedata, dict):
-            content = filedata.get('file', None)
-            mimetype = filedata.get('mimetype', None)
-            headers = filedata.get('headers', None)
+            content = filedata.get("file", None)
+            mimetype = filedata.get("mimetype", None)
+            headers = filedata.get("headers", None)
         else:
             content = filedata
             mimetype = None
@@ -88,13 +101,14 @@ def create_attachments(attachment_files):
 
         if isinstance(content, str):
             # `content` is a filename - try to open the file
-            opened_file = open(content, 'rb')
+            opened_file = open(content, "rb")
             content = File(opened_file)
 
         attachment = Attachment()
         if mimetype:
             attachment.mimetype = mimetype
         attachment.headers = headers
+        attachment.name = filename
         attachment.file.save(filename, content=content, save=True)
 
         attachments.append(attachment)
@@ -113,8 +127,9 @@ def parse_priority(priority):
         priority = getattr(PRIORITY, priority, None)
 
         if priority is None:
-            raise ValueError('Invalid priority, must be one of: %s' %
-                             ', '.join(PRIORITY._fields))
+            raise ValueError(
+                "Invalid priority, must be one of: %s" % ", ".join(PRIORITY._fields)
+            )
     return priority
 
 
@@ -135,7 +150,7 @@ def parse_emails(emails):
         try:
             validate_email_with_name(email)
         except ValidationError:
-            raise ValidationError('%s is not a valid email address' % email)
+            raise ValidationError("%s is not a valid email address" % email)
 
     return emails
 
@@ -146,7 +161,7 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True):
     Optionally also delete pending attachments.
     Return the number of deleted emails and attachments.
     """
-    expired_emails = Email.objects.only('id').filter(created__lt=cutoff_date)
+    expired_emails = Email.objects.only("id").filter(created__lt=cutoff_date)
     emails_count, _ = expired_emails.delete()
 
     if delete_attachments:
