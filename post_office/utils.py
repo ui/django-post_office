@@ -18,15 +18,13 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
 
     subject = force_text(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
-    emails = []
-    for address in recipient_list:
-        emails.append(
-            Email.objects.create(
-                from_email=from_email, to=address, subject=subject,
-                message=message, html_message=html_message, status=status,
-                headers=headers, priority=priority, scheduled_time=scheduled_time
-            )
-        )
+    emails = [
+        Email.objects.create(
+            from_email=from_email, to=address, subject=subject,
+            message=message, html_message=html_message, status=status,
+            headers=headers, priority=priority, scheduled_time=scheduled_time
+        ) for address in recipient_list
+    ]
     if priority == PRIORITY.now:
         for email in emails:
             email.dispatch()
@@ -45,13 +43,12 @@ def get_email_template(name, language=''):
     else:
         composite_name = '%s:%s' % (name, language)
         email_template = cache.get(composite_name)
-        if email_template is not None:
-            return email_template
-        else:
-            email_template = EmailTemplate.objects.get(name=name,
-                                                       language=language)
+
+        if email_template is None:
+            email_template = EmailTemplate.objects.get(name=name, language=language)
             cache.set(composite_name, email_template)
-            return email_template
+
+        return email_template
 
 
 def split_emails(emails, split_count=1):

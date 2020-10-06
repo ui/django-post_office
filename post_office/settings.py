@@ -10,7 +10,6 @@ from django.utils.module_loading import import_string
 import datetime
 
 
-
 def get_backend(alias='default'):
     return get_available_backends()[alias]
 
