@@ -11,7 +11,6 @@ from django.utils.module_loading import import_string
 import datetime
 
 
-
 def get_backend(alias='default'):
     return get_available_backends()[alias]
 
@@ -78,6 +77,10 @@ def get_config():
 
 def get_batch_size():
     return get_config().get('BATCH_SIZE', 100)
+
+
+def get_celery_enabled():
+    return get_config().get('CELERY_ENABLED', True)
 
 
 def get_threads_per_process():
