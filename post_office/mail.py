@@ -14,7 +14,7 @@ from .connections import connections
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
 from .settings import (get_available_backends, get_batch_size,
                        get_log_level, get_sending_order, get_threads_per_process, get_max_retries,
-                       get_message_id_fqdn, get_retry_timedelta)
+                       get_message_id_enabled, get_message_id_fqdn, get_retry_timedelta)
 from .utils import (get_email_template, parse_emails, parse_priority,
                     split_emails, create_attachments)
 from .logutils import setup_loghandlers
@@ -42,8 +42,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         bcc = []
     if context is None:
         context = ''
-    domain = get_message_id_fqdn()
-    message_id = make_msgid(domain=domain) if domain else None
+    message_id = make_msgid(domain=get_message_id_fqdn()) if get_message_id_enabled() else None
 
     # If email is to be rendered during delivery, save all necessary
     # information
