@@ -39,7 +39,10 @@ class AttachmentInline(admin.StackedInline):
         """
         queryset = super().get_queryset(request)
         inlined_attachments = [
-            a.id for a in queryset if a.attachment.headers.get('Content-Disposition').startswith('inline')
+            a.id
+            for a in queryset
+            if isinstance(a.attachment.headers, dict)
+            and a.attachment.headers.get("Content-Disposition", "").startswith("inline")
         ]
         return queryset.exclude(id__in=inlined_attachments)
 
