@@ -640,25 +640,32 @@ separated by the ``@`` symbol: The left part is a generated pseudo random number
 typically denoting the full qualified domain name of the sending server.
 
 By default, **Django** generates such a Message-ID during email delivery. Since **django-post_office** keeps track of
-all delivered emails, it can be very useful to store this Message-ID together with each email. This identifier then
-can be looked up in the Django admin backend.
+all delivered emails, it can be very useful to create and store this Message-ID while creating each email in the
+database. This identifier then can be looked up in the Django admin backend.
 
-This feature can be fine tuned in your Post-Office settings, using for instance another full qualified domain name:
+To enable this feature, add this to your Post-Office settings:
 
 .. code-block:: python
 
     # Put this in settings.py
     POST_OFFICE = {
         ...
-        'MESSAGE_ID_FQDN': 'example.com',  # optional
+        'MESSAGE_ID_ENABLED': True,
+    }
+
+It can further be fine tuned, using for instance another full qualified domain name:
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        ...
+        'MESSAGE_ID_ENABLED': True,
+        'MESSAGE_ID_FQDN': 'example.com',
     }
 
 Otherwise, if ``MESSAGE_ID_FQDN`` is unset (the default), **django-post_office** falls back to the DNS name of the
 server, which is determined by the network settings of the host.
-
-By explicitly setting ``MESSAGE_ID_FQDN`` to ``None``, the Message-ID is not stored within the database, but generated
-during delivery. This only makes sense, if for some reason you don't want to be able to track delivered emails, or save
-some space in the database.
 
 
 Mail Retry
