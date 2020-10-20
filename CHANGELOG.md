@@ -3,8 +3,8 @@ Changelog
 
 Version 3.5.0
 -------------
-* Add ``Message-ID`` to the Email models and use it when sending emails. It replaces the
-  ID column in the Django admin backend.
+* Add `Message-ID` to the Email model. If enabled, that `Message-ID` is generated during creation,
+  rather than delivery. This allows administrators to trace back emails.
 
 
 Version 3.4.1 (2020-05-16)
