@@ -222,7 +222,7 @@ If you want to send an email with attachments:
         attachments={
             'attachment1.doc': '/path/to/file/file1.doc',
             'attachment2.txt': ContentFile('file content'),
-            'attachment3.txt': { 'file': ContentFile('file content'), 'mimetype': 'text/plain'},
+            'attachment3.txt': {'file': ContentFile('file content'), 'mimetype': 'text/plain'},
         }
     )
 
@@ -512,7 +512,7 @@ highly recommend), then use the Django-Admin backend and add a periodic taks for
 ``post_office.tasks.send_queued_mail``.
 
 Depending on your policy, you may also want to remove expired emails from the queue. This can be
-done by adding another Periodic taks for ``post_office.tasks.cleanup_mail``, which may run once a
+done by adding another periodic taks for ``post_office.tasks.cleanup_mail``, which may run once a
 week or month.
 
 .. _configured Celery: https://docs.celeryproject.org/en/latest/userguide/application.html
@@ -629,6 +629,44 @@ Defaults to ``None``. This option is useful if you want to redirect all emails t
     POST_OFFICE = {
         'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
     }
+
+
+Message-ID
+----------
+
+The SMTP standard requires that each email contains a unique
+`Message-ID <https://tools.ietf.org/html/rfc2822#section-3.6.4>`_. Typically the Message-ID consists of two parts
+separated by the ``@`` symbol: The left part is a generated pseudo random number. The right part is a constant string,
+typically denoting the full qualified domain name of the sending server.
+
+By default, **Django** generates such a Message-ID during email delivery. Since **django-post_office** keeps track of
+all delivered emails, it can be very useful to create and store this Message-ID while creating each email in the
+database. This identifier then can be looked up in the Django admin backend.
+
+To enable this feature, add this to your Post-Office settings:
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        ...
+        'MESSAGE_ID_ENABLED': True,
+    }
+
+It can further be fine tuned, using for instance another full qualified domain name:
+
+.. code-block:: python
+
+    # Put this in settings.py
+    POST_OFFICE = {
+        ...
+        'MESSAGE_ID_ENABLED': True,
+        'MESSAGE_ID_FQDN': 'example.com',
+    }
+
+Otherwise, if ``MESSAGE_ID_FQDN`` is unset (the default), **django-post_office** falls back to the DNS name of the
+server, which is determined by the network settings of the host.
+
 
 Mail Retry
 -------------------

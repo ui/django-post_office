@@ -1,6 +1,7 @@
 from unittest.mock import patch, MagicMock
 
 import pytz
+import re
 
 from django.core import mail
 from django.core.exceptions import ValidationError
@@ -220,6 +221,7 @@ class MailTest(TestCase):
         self.assertEqual(email.html_message, 'Test My html')
         self.assertEqual(email.scheduled_time, scheduled_time)
         self.assertEqual(email.headers, {'header': 'Test header'})
+        self.assertTrue(re.match(r'<\d+\.\d+\.\d+@example.com>', email.message_id))
 
     def test_send_many(self):
         """Test send_many creates the right emails """
