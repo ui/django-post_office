@@ -438,6 +438,11 @@ Management Commands
 | ``--lockfile`` or ``-L``  | Full path to file used as lock file. Defaults to |
 |                           | ``/tmp/post_office.lock``                        |
 +---------------------------+--------------------------------------------------+
+| ``--exit-after-batch`` or | Exit the command after sending one batch of      |
+|    ``-x``                 | emails. By combining BATCH_SIZE and crontab,     |
+|                           | you can send emails through servers with small   |
+|                           | throttling values.                               |
++---------------------------+--------------------------------------------------+
 
 
 * ``cleanup_mail`` - delete all emails created before an X number of days
