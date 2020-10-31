@@ -679,7 +679,7 @@ Defaults to Not Activated. Auto requeue failed email with time interval
     POST_OFFICE = {
      'MAX_RETRIES': 4
      'RETRY_INTERVAL': datetime.timedelta(minutes=15)
-}
+    }
 
 
 Log Level
