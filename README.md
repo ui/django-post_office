@@ -31,39 +31,36 @@ will otherwise be stripped for security reasons.
 ## Installation
 
 [![Build
-Status](https://travis-ci.org/ui/django-post_office.png?branch=master)](https://travis-ci.org/ui/django-post_office)
-[![PyPI
-version](https://img.shields.io/pypi/v/django-post_office.svg)](https://pypi.org/project/django-post_office/)
-![Software
-license](https://img.shields.io/pypi/l/django-post_office.svg)
+Status](https://travis-ci.org/ui/django-post_office.png?branch=master)](https://travis-ci.org/ui/django-post_office) [![PyPI version](https://img.shields.io/pypi/v/django-post_office.svg)](https://pypi.org/project/django-post_office/) ![Software license](https://img.shields.io/pypi/l/django-post_office.svg)
 
--   Install from PyPI (or you [manually download from
-    PyPI](http://pypi.python.org/pypi/django-post_office)):
+Install from PyPI (or [manually download from PyPI](http://pypi.python.org/pypi/django-post_office)):
 
-        pip install django-post_office
+```sh
+pip install django-post_office
+```
 
--   Add `post_office` to your INSTALLED_APPS in django's `settings.py`:
+Add `post_office` to your INSTALLED_APPS in django's `settings.py`:
 
-    ```python
-    INSTALLED_APPS = (
-        # other apps
-        "post_office",
-    )
-    ```
+```python
+INSTALLED_APPS = (
+    # other apps
+    "post_office",
+)
+```
 
--   Run `migrate`:
+Run `migrate`:
 
-        python manage.py migrate
+```sh
+python manage.py migrate
+```
 
--   Set `post_office.EmailBackend` as your `EMAIL_BACKEND` in django's
-    `settings.py`:
+Set `post_office.EmailBackend` as your `EMAIL_BACKEND` in Django's `settings.py`:
 
-    ```python
-    EMAIL_BACKEND = 'post_office.EmailBackend'
-    ```
+```python
+EMAIL_BACKEND = 'post_office.EmailBackend'
+```
 
-Quickstart
-----------
+## Quickstart
 
 Send a simple email is really easy:
 
@@ -109,65 +106,25 @@ command to run regularly via cron:
 `mail.send` is the most important function in this library, it takes
 these arguments:
 
-+--------------------+-----------+----------------------------------------------+
-| Argument           | Required  | Description                                  |
-+--------------------+-----------+----------------------------------------------+
-| recipients         | Yes       | list of recipient email addresses            |
-+--------------------+-----------+----------------------------------------------+
-| sender             | No        | Defaults to `settings.DEFAULT_FROM_EMAIL`,   |
-|                    |           | display name is allowed                      |
-|                    |           | (`John <john@a.com>`)                        |
-+--------------------+-----------+----------------------------------------------+
-| subject            | No        | Email subject (if `template` is not          |
-|                    |           | specified)                                   |
-+--------------------+-----------+----------------------------------------------+
-| message            | No        | Email content (if `template` is not          |
-|                    |           | specified)                                   |
-+--------------------+-----------+----------------------------------------------+
-| html_message      | No        | HTML content (if `template` is not           |
-|                    |           | specified)                                   |
-+--------------------+-----------+----------------------------------------------+
-| template           | No        | `EmailTemplate` instance or name             |
-+--------------------+-----------+----------------------------------------------+
-| language           | No        | Language in which you want to send the email |
-|                    |           | in (if you have multilingual email           |
-|                    |           | templates.)                                  |
-+--------------------+-----------+----------------------------------------------+
-| cc                 | No        | list emails, will appear in `cc` field       |
-+--------------------+-----------+----------------------------------------------+
-| bcc                | No        | list of emails, will appear in bcc field     |
-+--------------------+-----------+----------------------------------------------+
-| attachments        | No        | Email attachments - A dictionary where the   |
-|                    |           | keys are the filenames and the values are    |
-|                    |           | either:                                      |
-|                    |           |                                              |
-|                    |           | -   files                                    |
-|                    |           | -   file-like objects                        |
-|                    |           | -   full path of the file                    |
-+--------------------+-----------+----------------------------------------------+
-| context            | No        | A dictionary, used to render templated email |
-+--------------------+-----------+----------------------------------------------+
-| headers            | No        | A dictionary of extra headers on the message |
-+--------------------+-----------+----------------------------------------------+
-| scheduled_time    | No        | A date/datetime object indicating when the   |
-|                    |           | email should be sent                         |
-+--------------------+-----------+----------------------------------------------+
-| expires_at        | No        | If specified, mails that are not yet sent    |
-|                    |           | won't be delivered after this date.          |
-+--------------------+-----------+----------------------------------------------+
-| priority           | No        | `high`, `medium`, `low` or `now`             |
-|                    |           | (sent immediately)                          |
-+--------------------+-----------+----------------------------------------------+
-| backend            | No        | Alias of the backend you want to use.        |
-|                    |           | `default` will be used if not specified.     |
-+--------------------+-----------+----------------------------------------------+
-| render_on_delive | No        | Setting this to `True` causes email to be    |
-| ry                 |           | lazily rendered during delivery. `template`  |
-|                    |           | is required when `render_on_delivery` is     |
-|                    |           | True. This way content is never stored in    |
-|                    |           | the DB. May result in significant space      |
-|                    |           | savings.                                     |
-+--------------------+-----------+----------------------------------------------+
+| Argument | Required | Description |
+| --- | --- | --- |
+| recipients | Yes | List of recipient email addresses |
+| sender | No | Defaults to `settings.DEFAULT_FROM_EMAIL`, display name like `John <john@a.com>` is allowed |
+| subject | No | Email subject (if `template` is not specified) |
+| message | No | Email content (if `template` is not specified) |
+| html_message | No | HTML content (if `template` is not specified) |
+| template | No | `EmailTemplate` instance or name of template |
+| language | No | Language in which you want to send the email in (if you have multilingual email templates). |
+| cc | No | List of emails, will appear in `cc` field |
+| bcc | No | List of emails, will appear in `bcc` field |
+| attachments | No | Email attachments - a dict where the keys are the filenames and the values are files, file-like-objects or path to file |
+| context | No | A dict, used to render templated email |
+| headers | No | A dictionary of extra headers on the message |
+| scheduled_time | No | A date/datetime object indicating when the email should be sent |
+| expires_at | No | If specified, mails that are not yet sent won't be delivered after this date. |
+| priority | No | `high`, `medium`, `low` or `now` (sent immediately) |
+| backend | No | Alias of the backend you want to use, `default` will be used if not specified. |
+| render_on_delivery | No | Setting this to `True` causes email to be lazily rendered during delivery. `template` is required when `render_on_delivery` is True. With this option, the full email content is never stored in the DB. May result in significant space savings if you're sending many emails using the same template. |
 
 Here are a few examples.
 
@@ -205,8 +162,7 @@ mail.send(
 )
 ```
 
-This is useful if you already use something like
-[django-rq](https://github.com/ui/django-rq) to send emails
+This is useful if you already use something like [django-rq](https://github.com/ui/django-rq) to send emails
 asynchronously and only need to store email related activities and logs.
 
 If you want to send an email with attachments:
@@ -232,8 +188,8 @@ mail.send(
 ### Template Tags and Variables
 
 `post-office` supports Django's template tags and variables. For
-example, if you put "Hello, {{ name }}" in the subject line and pass in
-`{'name': 'Alice'}` as context, you will get "Hello, Alice" as subject:
+example, if you put `Hello, {{ name }}` in the subject line and pass in
+`{'name': 'Alice'}` as context, you will get `Hello, Alice` as subject:
 
 ```python
 from post_office.models import EmailTemplate
@@ -277,8 +233,7 @@ indonesian_template = template.translated_templates.create(
 )
 ```
 
-Sending an email using template in a non default languange is also
-similarly easy:
+Sending an email using template in a non default languange is similarly easy:
 
 ```python
 mail.send(
@@ -302,8 +257,7 @@ as inlined `MIMEImage` to the outgoing email. This requires a slightly
 modified Django Template Engine, keeping a list of inlined images, which
 later will be added to the outgoing message.
 
-First we must add a special Django template backend to our list of
-template engines:
+First we must add a special Django template backend to our list of template engines:
 
 ```python
 TEMPLATES = [
@@ -393,8 +347,7 @@ email_message.send()
 By default, `post_office` uses django's `smtp.EmailBackend`. If you want
 to use a different backend, you can do so by configuring `BACKENDS`.
 
-For example if you want to use
-[django-ses](https://github.com/hmarr/django-ses):
+For example if you want to use [django-ses](https://github.com/hmarr/django-ses):
 
     POST_OFFICE = {
         'BACKENDS': {
@@ -427,29 +380,19 @@ mail.send(
 -   `send_queued_mail` - send queued emails, those aren't successfully
     sent will be marked as `failed`. Accepts the following arguments:
 
-  ------------------------- ----------------------------------------------
-  Argument                  Description
+  | Argument | Description |
+  | --- | --- |
+  |`--processes` or `-p` | Number of parallel processes to send email. Defaults to 1 |
+  | `--lockfile` or `-L` | Full path to file used as lock file. Defaults to `/tmp/post_office.lock` |
 
-  `--processes` or `-p`     Number of parallel processes to send email.
-                            Defaults to 1
-
-  `--lockfile` or `-L`      Full path to file used as lock file. Defaults
-                            to `/tmp/post_office.lock`
-  ------------------------- ----------------------------------------------
 
 -   `cleanup_mail` - delete all emails created before an X number of
     days (defaults to 90).
 
-+---------------------------+------------------------------------------------+
-| Argument                  | Description                                    |
-+---------------------------+------------------------------------------------+
-| `--days` or `-d`          | Email older than this argument will be         |
-|                           | deleted. Defaults to 90                        |
-+---------------------------+------------------------------------------------+
-| `--delete-attachments`    | Flag to delete orphaned attachment records and |
-| :   or `-da`              | files on disk. If flag does not exist,         |
-|                           | attachments will be ignored by the cleanup.    |
-+---------------------------+------------------------------------------------+
+| Argument | Description |
+| --- | --- |
+| `--days` or `-d` | Email older than this argument will be deleted. Defaults to 90 |
+| `--delete-attachments` | Flag to delete orphaned attachment records and files on disk. If not specified, attachments won't be deleted. |
 
 You may want to set these up via cron to run regularly:
 
@@ -466,13 +409,11 @@ after they have been added to the mail queue. The delivery is still
 performed in a separate and asynchronous task, which prevents sending
 emails during the request/response-cycle.
 
-If you [configured
-Celery](https://docs.celeryproject.org/en/latest/userguide/application.html)
-in your project and started the [Celery
-worker](https://docs.celeryproject.org/en/latest/userguide/workers.html),
+If you [configured Celery](https://docs.celeryproject.org/en/latest/userguide/application.html)
+in your project and started the [Celery worker](https://docs.celeryproject.org/en/latest/userguide/workers.html),
 you should see something such as:
 
-``` {.sourceCode .text}
+```
 --------------- celery@halcyon.local v4.0 (latentcall)
 --- ***** -----
 -- ******* ---- [Configuration]
@@ -624,9 +565,7 @@ POST_OFFICE = {
 
 ### Message-ID
 
-The SMTP standard requires that each email contains a unique
-[Message-ID](https://tools.ietf.org/html/rfc2822#section-3.6.4).
-Typically the Message-ID consists of two parts separated by the `@`
+The SMTP standard requires that each email contains a unique [Message-ID](https://tools.ietf.org/html/rfc2822#section-3.6.4). Typically the Message-ID consists of two parts separated by the `@`
 symbol: The left part is a generated pseudo random number. The right
 part is a constant string, typically denoting the full qualified domain
 name of the sending server.
@@ -847,9 +786,7 @@ or:
 
 ## Changelog
 
-Full changelog can be found
-[here](https://github.com/ui/django-post_office/blob/master/CHANGELOG.md).
+Full changelog can be found [here](https://github.com/ui/django-post_office/blob/master/CHANGELOG.md).
 
-Created and maintained by the cool guys at
-[Stamps](https://stamps.co.id), Indonesia's most elegant CRM/loyalty
+Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant CRM/loyalty
 platform.
