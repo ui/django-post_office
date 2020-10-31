@@ -1,15 +1,14 @@
 Changelog
 =========
 
-Version 3.5.0
--------------
+Version 3.5.0 (2020-10-31)
+--------------------------
 * Added the capability to configure retries via `MAX_RETRIES` and `RETRY_INTERVAL` configuration settings. Thanks @Houtmann and @jrief!
 * The admin interface has been improved to show previews of emails. If you want HTML emails to be rendered,
   please install `bleach`. Thanks @jrief!
 * Add `Message-ID` to the Email model. This allows administrators to trace back emails. Thanks @jrief!
 * Added `CELERY_ENABLED` settings. Thanks @elineda!
 * Fixes an issue that prevents PDS attachments from being sent. Thanks @patroqueeet!
-
 
 Version 3.4.1 (2020-05-16)
 --------------------------
