@@ -1,7 +1,7 @@
 import os
 import platform
 
-if platform.system() != "Linux":
+if platform.system() in ["Darwin"]:
     from multiprocessing import set_start_method
     # required since Python-3.8. See #319
     set_start_method("fork")
