@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 3.5.1 (2020-11-03)
+--------------------------
+* Added missing migration file (some model fields now offer a help text).
+
 Version 3.5.0 (2020-10-31)
 --------------------------
 * Added the capability to configure retries via `MAX_RETRIES` and `RETRY_INTERVAL` configuration settings. Thanks @Houtmann and @jrief!
