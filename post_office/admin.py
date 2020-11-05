@@ -81,7 +81,7 @@ def requeue(modeladmin, request, queryset):
 requeue.short_description = 'Requeue selected emails'
 
 
-@admin.register(Email)
+# @admin.register(Email)
 class EmailAdmin(admin.ModelAdmin):
     list_display = ['truncated_message_id', 'to_display', 'shortened_subject', 'status', 'last_updated', 'scheduled_time', 'use_template']
     search_fields = ['to', 'subject']
@@ -203,7 +203,7 @@ class EmailAdmin(admin.ModelAdmin):
         return HttpResponseNotFound()
 
 
-@admin.register(Log)
+# @admin.register(Log)
 class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
 
@@ -265,7 +265,7 @@ class EmailTemplateInline(admin.StackedInline):
         return len(settings.LANGUAGES)
 
 
-@admin.register(EmailTemplate)
+# @admin.register(EmailTemplate)
 class EmailTemplateAdmin(admin.ModelAdmin):
     form = EmailTemplateAdminForm
     list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
@@ -304,7 +304,12 @@ class EmailTemplateAdmin(admin.ModelAdmin):
             obj.translated_templates.update(name=obj.name)
 
 
-@admin.register(Attachment)
+# @admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ['name', 'file']
     filter_horizontal = ['emails']
+
+admin.site.register(Email, EmailAdmin)
+admin.site.register(Log, LogAdmin)
+admin.site.register(EmailTemplate, EmailTemplateAdmin)
+admin.site.register(Attachment, AttachmentAdmin)
