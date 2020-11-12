@@ -3,10 +3,25 @@ Changelog
 
 next
 ----
-
 * Add unique `identifier` field to model `EmailTemplate`. It can be used to access templates from Python code
   and leaves the `name` field as a human readable representation of that template.
 
+Version 3.5.2 (2020-11-05)
+--------------------------
+* Fixed an issue where Post Office's admin interface doesn't show. Thanks @christianciu!
+
+Version 3.5.1 (2020-11-03)
+--------------------------
+* Added missing migration file (some model fields now offer a help text).
+
+Version 3.5.0 (2020-10-31)
+--------------------------
+* Added the capability to configure retries via `MAX_RETRIES` and `RETRY_INTERVAL` configuration settings. Thanks @Houtmann and @jrief!
+* The admin interface has been improved to show previews of emails. If you want HTML emails to be rendered,
+  please install `bleach`. Thanks @jrief!
+* Add `Message-ID` to the Email model. This allows administrators to trace back emails. Thanks @jrief!
+* Added `CELERY_ENABLED` settings. Thanks @elineda!
+* Fixes an issue that prevents PDS attachments from being sent. Thanks @patroqueeet!
 
 Version 3.4.1 (2020-05-16)
 --------------------------

@@ -5,13 +5,19 @@ from django.utils.timezone import now
 from post_office.mail import send_queued
 from post_office.utils import cleanup_expired_mails
 
+from .settings import get_celery_enabled
+
 # Only define the tasks and handler if we can import celery.
 # This allows the module to be imported in environments without Celery, for
 # example by other task queue systems such as Huey, which use the same pattern
 # of auto-discovering tasks in "tasks" submodules
+
 try:
-    from celery import shared_task
-except ImportError:
+    if get_celery_enabled():
+        from celery import shared_task
+    else:
+        raise NotImplementedError()
+except (ImportError, NotImplementedError):
     pass
 else:
     @shared_task(ignore_result=True)

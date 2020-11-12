@@ -13,7 +13,7 @@ def validate_email_with_name(value):
     value = force_str(value)
 
     recipient = value
-    if '<' and '>' in value:
+    if '<' in value and '>' in value:
         start = value.find('<') + 1
         end = value.find('>')
         if start < end:

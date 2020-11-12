@@ -3,12 +3,12 @@ import warnings
 from django.conf import settings
 from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
+from django.core.mail.utils import DNS_NAME
 from django.template import engines as template_engines
 
 from django.utils.module_loading import import_string
 
 import datetime
-
 
 
 def get_backend(alias='default'):
@@ -79,6 +79,10 @@ def get_batch_size():
     return get_config().get('BATCH_SIZE', 100)
 
 
+def get_celery_enabled():
+    return get_config().get('CELERY_ENABLED', True)
+
+
 def get_threads_per_process():
     return get_config().get('THREADS_PER_PROCESS', 5)
 
@@ -110,6 +114,14 @@ def get_max_retries():
 
 def get_retry_timedelta():
     return get_config().get('RETRY_INTERVAL', datetime.timedelta(minutes=15))
+
+
+def get_message_id_enabled():
+    return get_config().get('MESSAGE_ID_ENABLED', False)
+
+
+def get_message_id_fqdn():
+    return get_config().get('MESSAGE_ID_FQDN', DNS_NAME)
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',

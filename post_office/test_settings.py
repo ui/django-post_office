@@ -1,6 +1,10 @@
-import django
 import os
-from distutils.version import StrictVersion
+import platform
+
+if platform.system() in ["Darwin"]:
+    from multiprocessing import set_start_method
+    # required since Python-3.8. See #319
+    set_start_method("fork")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,6 +41,8 @@ POST_OFFICE = {
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
     },
     'MAX_RETRIES': 2,
+    'MESSAGE_ID_ENABLED': True,
+    'MESSAGE_ID_FQDN': 'example.com',
 }
 
 

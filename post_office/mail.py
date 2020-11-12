@@ -1,22 +1,24 @@
-from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
 from django.db.models import Q
 from django.template import Context, Template
 from django.utils import timezone
+from email.utils import make_msgid
+from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 
 from .connections import connections
-from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
-from .settings import (get_available_backends, get_batch_size,
-                       get_log_level, get_sending_order, get_threads_per_process, get_max_retries,
-                       get_retry_timedelta)
-from .utils import (get_email_template, parse_emails, parse_priority,
-                    split_emails, create_attachments)
 from .logutils import setup_loghandlers
+from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
+from .settings import (
+    get_available_backends, get_batch_size, get_log_level, get_max_retries, get_message_id_enabled,
+    get_message_id_fqdn, get_retry_timedelta, get_sending_order, get_threads_per_process,
+)
 from .signals import email_queued
+from .utils import (
+    create_attachments, get_email_template, parse_emails, parse_priority, split_emails,
+)
 
 logger = setup_loghandlers("INFO")
 
@@ -40,6 +42,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         bcc = []
     if context is None:
         context = ''
+    message_id = make_msgid(domain=get_message_id_fqdn()) if get_message_id_enabled() else None
 
     # If email is to be rendered during delivery, save all necessary
     # information
@@ -51,6 +54,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             bcc=bcc,
             scheduled_time=scheduled_time,
             expires_at=expires_at,
+            message_id=message_id,
             headers=headers, priority=priority, status=status,
             context=context, template=template, backend_alias=backend
         )
@@ -77,6 +81,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             html_message=html_message,
             scheduled_time=scheduled_time,
             expires_at=expires_at,
+            message_id=message_id,
             headers=headers, priority=priority, status=status,
             backend_alias=backend
         )
@@ -133,9 +138,8 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         if isinstance(template, EmailTemplate):
             template = template
             # If language is specified, ensure template uses the right language
-            if language:
-                if template.language != language:
-                    template = template.translated_templates.get(language=language)
+            if language and template.language != language:
+                template = template.translated_templates.get(language=language)
         else:
             template = get_email_template(template, language)
 
@@ -163,10 +167,8 @@ def send_many(kwargs_list):
     Internally, it uses Django's bulk_create command for efficiency reasons.
     Currently send_many() can't be used to send emails with priority = 'now'.
     """
-    emails = []
-    for kwargs in kwargs_list:
-        emails.append(send(commit=False, **kwargs))
-    if len(emails) > 0:
+    emails = [send(commit=False, **kwargs) for kwargs in kwargs_list]
+    if emails:
         Email.objects.bulk_create(emails)
         email_queued.send(sender=Email, emails=emails)
 
@@ -204,15 +206,16 @@ def send_queued(processes=1, log_level=None):
         log_level = get_log_level()
 
     if queued_emails:
-
         # Don't use more processes than number of emails
         if total_email < processes:
             processes = total_email
 
         if processes == 1:
-            total_sent, total_failed, total_requeued = _send_bulk(queued_emails,
-                                                  uses_multiprocessing=False,
-                                                  log_level=log_level)
+            total_sent, total_failed, total_requeued = _send_bulk(
+                emails=queued_emails,
+                uses_multiprocessing=False,
+                log_level=log_level,
+            )
         else:
             email_lists = split_emails(queued_emails, processes)
 
@@ -220,16 +223,15 @@ def send_queued(processes=1, log_level=None):
             results = pool.map(_send_bulk, email_lists)
             pool.terminate()
 
-            total_sent = sum([result[0] for result in results])
-            total_failed = sum([result[1] for result in results])
+            total_sent = sum(result[0] for result in results)
+            total_failed = sum(result[1] for result in results)
             total_requeued = [result[2] for result in results]
-    message = '%s emails attempted, %s sent, %s failed, %s requeued' % (
-        total_email,
-        total_sent,
-        total_failed,
-        total_requeued
+
+    logger.info(
+        '%s emails attempted, %s sent, %s failed, %s requeued',
+        total_email, total_sent, total_failed, total_requeued,
     )
-    logger.info(message)
+
     return total_sent, total_failed, total_requeued
 
 
@@ -287,6 +289,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     max_retries = get_max_retries()
     scheduled_time = timezone.now() + get_retry_timedelta()
     emails_failed = [email for email, _ in failed_emails]
+
     for email in emails_failed:
         if email.number_of_retries is None:
             email.number_of_retries = 0
@@ -298,6 +301,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
         else:
             email.status = STATUS.failed
             num_failed += 1
+
     Email.objects.bulk_update(emails_failed, ['status', 'scheduled_time', 'number_of_retries'])
 
     # If log level is 0, log nothing, 1 logs only sending failures
@@ -325,9 +329,8 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
             Log.objects.bulk_create(logs)
 
     logger.info(
-        'Process finished, %s attempted, %s sent, %s failed, %s requeued' % (
-            email_count, len(sent_emails), num_failed, num_requeued
-        )
+        'Process finished, %s attempted, %s sent, %s failed, %s requeued',
+        email_count, len(sent_emails), num_failed, num_requeued,
     )
 
     return len(sent_emails), num_failed, num_requeued

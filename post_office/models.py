@@ -62,6 +62,7 @@ class Email(models.Model):
     expires_at = models.DateTimeField(_("Expires"),
                                       blank=True, null=True,
                                       help_text=_("Email won't be sent after this timestamp"))
+    message_id = models.CharField("Message-ID", null=True, max_length=255, editable=False)
     number_of_retries = models.PositiveIntegerField(null=True, blank=True)
     headers = JSONField(_('Headers'), blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True,
@@ -114,10 +115,12 @@ class Email(models.Model):
             html_message = self.html_message
 
         connection = connections[self.backend_alias or 'default']
-        if isinstance(self.headers, dict) or self.expires_at:
+        if isinstance(self.headers, dict) or self.expires_at or self.message_id:
             headers = dict(self.headers or {})
             if self.expires_at:
                 headers.update({'Expires': self.expires_at.strftime("%a, %-d %b %H:%M:%S %z")})
+            if self.message_id:
+                headers.update({'Message-ID': self.message_id})
         else:
             headers = None
 
