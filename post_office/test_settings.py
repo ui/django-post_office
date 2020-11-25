@@ -40,6 +40,7 @@ POST_OFFICE = {
         'smtp': 'django.core.mail.backends.smtp.EmailBackend',
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
     },
+    'CELERY_ENABLED': False,
     'MAX_RETRIES': 2,
     'MESSAGE_ID_ENABLED': True,
     'MESSAGE_ID_FQDN': 'example.com',
