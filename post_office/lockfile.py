@@ -19,8 +19,9 @@
 # out and have suggestions please let me know.
 
 import os
-import time
 import platform
+import tempfile
+import time
 
 
 class FileLocked(Exception):
@@ -149,3 +150,6 @@ class FileLock:
 
     def __exit__(self, type, value, traceback):
         self.release()
+
+
+default_lockfile = os.path.join(tempfile.gettempdir(), 'post_office')
