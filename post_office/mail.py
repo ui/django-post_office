@@ -345,7 +345,7 @@ def send_all_in_queue(lockfile=default_lockfile, processes=1, log_level=None):
     """
     try:
         with FileLock(lockfile):
-            while get_queued().exists():
+            while True:
                 try:
                     send_queued(processes, log_level)
                 except Exception as e:
@@ -354,5 +354,8 @@ def send_all_in_queue(lockfile=default_lockfile, processes=1, log_level=None):
 
                 # Close DB connection to avoid multiprocessing errors
                 db_connection.close()
+
+                if not get_queued().exists():
+                    break
     except FileLocked:
         logger.info('Failed to acquire lock, terminating now.')
