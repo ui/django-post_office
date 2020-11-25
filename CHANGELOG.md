@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 3.5.2 (2020-11-05)
+--------------------------
+* Fixed an issue where Post Office's admin interface doesn't show. Thanks @christianciu!
+
 Version 3.5.1 (2020-11-03)
 --------------------------
 * Added missing migration file (some model fields now offer a help text).
