@@ -19,7 +19,11 @@ try:
     else:
         raise NotImplementedError()
 except (ImportError, NotImplementedError):
-    pass
+    def queued_mail_handler(sender, **kwargs):
+        """
+        To be called by :func:`post_office.signals.email_queued.send()` for triggering asynchronous
+        mail delivery – if provided by an external queue, such as Celery.
+        """
 else:
     @shared_task(ignore_result=True)
     def send_queued_mail(*args, **kwargs):
@@ -30,7 +34,7 @@ else:
 
     def queued_mail_handler(sender, **kwargs):
         """
-        To be called by post_office.signals.email_queued.send()
+        Trigger an asynchronous mail delivery.
         """
         send_queued_mail.delay()
 
