@@ -345,6 +345,7 @@ def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_leve
     """
     try:
         with FileLock(lockfile):
+            logger.info('Acquired lock for sending queued emails at %s.lock', lockfile)
             while True:
                 try:
                     send_queued(processes, log_level)

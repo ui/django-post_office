@@ -1,10 +1,6 @@
 from django.core.management.base import BaseCommand
 
 from ...lockfile import default_lockfile
-from ...logutils import setup_loghandlers
-
-
-logger = setup_loghandlers()
 from ...mail import send_queued_mail_until_done
 
 
@@ -28,5 +24,4 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logger.info('Acquiring lock for sending queued emails at %s.lock', options['lockfile'])
-        send_all_in_queue(options['lockfile'], options['processes'], options.get('log_level'))
+        send_queued_mail_until_done(options['lockfile'], options['processes'], options.get('log_level'))
