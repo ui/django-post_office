@@ -8,7 +8,7 @@ import datetime
 
 from django.utils.timezone import now
 
-from post_office.mail import send_all_in_queue
+from post_office.mail import send_queued_mail_until_done
 from post_office.utils import cleanup_expired_mails
 
 from .settings import get_celery_enabled
@@ -30,7 +30,7 @@ else:
         """
         To be called by the Celery task manager.
         """
-        send_all_in_queue()
+        send_queued_mail_until_done()
 
     def queued_mail_handler(sender, **kwargs):
         """

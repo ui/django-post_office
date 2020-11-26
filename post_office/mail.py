@@ -339,9 +339,9 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     return len(sent_emails), num_failed, num_requeued
 
 
-def send_all_in_queue(lockfile=default_lockfile, processes=1, log_level=None):
+def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_level=None):
     """
-    Send all mail in queue, which fulfills criteria to be send.
+    Send mail in queue batch by batch, until all emails have been processed.
     """
     try:
         with FileLock(lockfile):

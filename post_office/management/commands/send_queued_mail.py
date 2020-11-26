@@ -1,11 +1,11 @@
 from django.core.management.base import BaseCommand
 
 from ...lockfile import default_lockfile
-from ...mail import send_all_in_queue
 from ...logutils import setup_loghandlers
 
 
 logger = setup_loghandlers()
+from ...mail import send_queued_mail_until_done
 
 
 class Command(BaseCommand):
