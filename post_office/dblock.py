@@ -21,7 +21,56 @@ class TimeoutException(Exception):
 
 class db_lock:
     """
-    An entity that can lock a named resource and release it through database locking.
+    An entity that can lock a shared resource and release it through database locking.
+    Locks can be acquired by different hosts, since the source of truth is handled by the database.
+
+    Usage:
+
+    ```
+    # Lock a critical section of code
+    with db_lock('my_lock', timedelta(seconds=30)):
+        do_something()
+    ```
+    The section inside the ``with`` statement will run for a maximum of 30 seconds. If that
+    time elapses before leaving the block, a ``TimeoutException`` is raised.
+
+    If another process attempts to run a critical section of code, using the same resource
+    identifier while the above block is running, a ``LockedException`` is raised.
+
+    ```
+    # Blocking variant of the above
+    with db_lock('my_lock', wait=True):
+        do_something()
+    ```
+    By using the parameter ``wait=True``, the critical section of code is only entered after
+    mutexes from other processes have been released. A ``LockedException`` will not be raised.
+
+    ```
+    # Running critical section until it expires
+    with db_lock('my_lock') as lock:
+        while lock.remaining_time > timedelta(seconds=1):
+            do_something()  # never requires more than one second
+    ```
+    By querying the remaining time left over for the acquisition of the lock, one can
+    avoid a ``TimeoutException`` to be raised.
+
+    ```
+    # Use a decorator to mark a whole function as critical
+    @db_lock('my_lock')
+    def do_something():
+        # do somethinge here
+    ```
+    This function may raise a ``LockedException`` or a ``TimeoutException``.
+
+    ```
+    # Lock critical section of code explicitly
+    lock = db_lock('my_lock')
+    lock.acquire()
+    do_something()
+    lock.release()
+    ```
+    A lock can also be acquired and released explicitly. This is error-prone, because it relies
+    upon releasing the lock.
     """
     GRANULARITY = timedelta(milliseconds=100)
     locked_by = uuid4()
@@ -30,8 +79,8 @@ class db_lock:
         self.lock_id = lock_id[:50]
         if not isinstance(timeout, timedelta):
             raise ValueError("DB lock timeout must be of type timedelta.")
-        if timeout.total_seconds() < 1:
-            raise ImproperlyConfigured("DB lock timeout must be at least one second.")
+        if timeout < self.GRANULARITY:
+            raise ImproperlyConfigured("DB lock timeout must be at least {}.".format(self.GRANULARITY))
         self.timeout = timeout
         self.wait = wait
         self._mutex = None
@@ -61,10 +110,10 @@ class db_lock:
             raise TimeoutException()
 
         signal.signal(signal.SIGALRM, stop_on_alarm)
-        if self.wait:
+        granularity = self.GRANULARITY.total_seconds()
+        while self.wait:
             # the following call may block, until lock is released by another process
-            granularity = self.GRANULARITY.total_seconds()
-            mutex = DBMutex.objects.select_for_update().filter(lock_id=self.lock_id, expires_at__gt=now()).first()
+            mutex = DBMutex.objects.filter(lock_id=self.lock_id, expires_at__gt=now()).first()
             while mutex:
                 remaining = mutex.expires_at - now()
                 time.sleep(remaining.total_seconds() if remaining < self.GRANULARITY else granularity)
@@ -72,8 +121,14 @@ class db_lock:
                     mutex.refresh_from_db()
                 except DBMutex.DoesNotExist:
                     mutex = None
-            self._mutex = DBMutex.objects.create(
-                lock_id=self.lock_id, locked_by=self.locked_by, expires_at=now() + self.timeout)
+            try:
+                self._mutex = DBMutex.objects.create(
+                    lock_id=self.lock_id, locked_by=self.locked_by, expires_at=now() + self.timeout)
+                break
+            except IntegrityError:  # NOQA
+                # very rare: other process acquired a lock between exiting inner loop and
+                # creating DBMutex object
+                continue
         else:
             try:
                 self._mutex = DBMutex.objects.create(
