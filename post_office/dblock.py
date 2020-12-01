@@ -1,12 +1,11 @@
 import atexit
-
 from datetime import timedelta
 import signal
 import time
 from uuid import uuid4
 
 from django.core.exceptions import ImproperlyConfigured
-from django.db import IntegrityError, DatabaseError, transaction
+from django.db import IntegrityError, DatabaseError
 from django.utils.timezone import now
 
 from post_office.models import DBMutex
@@ -64,29 +63,25 @@ class db_lock:
         signal.signal(signal.SIGALRM, stop_on_alarm)
         if self.wait:
             # the following call may block, until lock is released by another process
+            granularity = self.GRANULARITY.total_seconds()
             mutex = DBMutex.objects.select_for_update().filter(lock_id=self.lock_id, expires_at__gt=now()).first()
-            print(f"1 in transaction: {mutex}")
             while mutex:
-                remaining_time = mutex.expires_at - now()
-                print(f'Remain: {remaining_time}')
-                time.sleep(remaining_time.total_seconds() if remaining_time < self.GRANULARITY else self.GRANULARITY.total_seconds())
+                remaining = mutex.expires_at - now()
+                time.sleep(remaining.total_seconds() if remaining < self.GRANULARITY else granularity)
                 try:
                     mutex.refresh_from_db()
                 except DBMutex.DoesNotExist:
                     mutex = None
-                print(f"2 in transaction: {mutex}")
             self._mutex = DBMutex.objects.create(
                 lock_id=self.lock_id, locked_by=self.locked_by, expires_at=now() + self.timeout)
         else:
             try:
-                print(f"Creating mutex: ")
                 self._mutex = DBMutex.objects.create(
                     lock_id=self.lock_id, locked_by=self.locked_by, expires_at=now() + self.timeout)
-                print(self._mutex)
             except IntegrityError:
                 raise LockedException("DB mutex for {} is locked.".format(self.lock_id))
 
-        # install a timeout handler, in case the lock expires without being released
+        # install a timeout handler, in case the lock expires before being released
         signal.setitimer(signal.ITIMER_REAL, (self._mutex.expires_at - now()).total_seconds())
 
     def release(self):
@@ -95,7 +90,6 @@ class db_lock:
         """
         if self._mutex:
             signal.setitimer(signal.ITIMER_REAL, 0)
-            print(f"Releasing: {self._mutex}")
             self._mutex.delete()
             self._mutex = None
 
