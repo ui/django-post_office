@@ -349,12 +349,16 @@ to use a different backend, you can do so by configuring `BACKENDS`.
 
 For example if you want to use [django-ses](https://github.com/hmarr/django-ses):
 
-    POST_OFFICE = {
-        'BACKENDS': {
-            'default': 'smtp.EmailBackend',
-            'ses': 'django_ses.SESBackend',
-        }
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'BACKENDS': {
+        'default': 'smtp.EmailBackend',
+        'ses': 'django_ses.SESBackend',
     }
+}
+```
 
 You can then choose what backend you want to use when sending mail:
 
@@ -415,7 +419,8 @@ limit the number of queued emails fetched in one batch.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'BATCH_SIZE': 50
+    ...
+    'BATCH_SIZE': 50,
 }
 ```
 
@@ -428,7 +433,8 @@ setting `DEFAULT_PRIORITY`. Integration with asynchronous email backends
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'DEFAULT_PRIORITY': 'now'
+    ...
+    'DEFAULT_PRIORITY': 'now',
 }
 ```
 
@@ -440,7 +446,8 @@ emails to specified a few email for development purposes.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
+    ...
+    'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com'],
 }
 ```
 
@@ -491,8 +498,9 @@ You can also configure failed deliveries to be retried after a specific time int
 ```python
 # Put this in settings.py
 POST_OFFICE = {
- 'MAX_RETRIES': 4
- 'RETRY_INTERVAL': datetime.timedelta(minutes=15)  # Schedule to be retried 15 minutes later
+    ...
+    'MAX_RETRIES': 4,
+    'RETRY_INTERVAL': datetime.timedelta(minutes=15),  # Schedule to be retried 15 minutes later
 }
 ```
 
@@ -505,7 +513,8 @@ This behavior can be changed by setting `LOG_LEVEL`.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'LOG_LEVEL': 1 # Log only failed deliveries
+    ...
+    'LOG_LEVEL': 1, # Log only failed deliveries
 }
 ```
 
@@ -524,7 +533,8 @@ queued emails in FIFO order :
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'SENDING_ORDER': ['created']
+    ...
+    'SENDING_ORDER': ['created'],
 }
 ```
 
@@ -538,7 +548,8 @@ field class to store context variables. For example if you want to use
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField'
+    ...
+    'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField',
 }
 ```
 
@@ -595,7 +606,8 @@ but doesn't seem to help SMTP based backends.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'THREADS_PER_PROCESS': 10
+    ...
+    'THREADS_PER_PROCESS': 10,
 }
 ```
 
@@ -655,15 +667,21 @@ Attachments are not supported with `mail.send_many()`.
 
 To run the test suite:
 
-    `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
+```python
+`which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
+```
 
-You can run the full test suite with:
+You can run the full test suite for all supported versions of Django and Python with:
 
-    tox
+```python
+tox
+```
 
 or:
 
-    python setup.py test
+```python
+python setup.py test
+```
 
 
 ## Integration with Celery
@@ -792,5 +810,5 @@ handler.
 
 Full changelog can be found [here](https://github.com/ui/django-post_office/blob/master/CHANGELOG.md).
 
-Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant CRM/loyalty
-platform.
+Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant
+CRM/loyalty platform.
