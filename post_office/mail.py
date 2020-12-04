@@ -1,3 +1,5 @@
+import sys
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
@@ -9,6 +11,7 @@ from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
 from .connections import connections
+from .lockfile import default_lockfile, FileLock, FileLocked
 from .logutils import setup_loghandlers
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
 from .settings import (
@@ -175,7 +178,7 @@ def send_many(kwargs_list):
 
 def get_queued():
     """
-    Returns a list of emails that should be sent fulfilling these conditions:
+    Returns the queryset of emails eligible for sending – fulfilling these conditions:
      - Status is queued or requeued
      - Has scheduled_time before the current time or is None
      - Has expires_at after the current time or is None
@@ -334,3 +337,26 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     )
 
     return len(sent_emails), num_failed, num_requeued
+
+
+def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_level=None):
+    """
+    Send mail in queue batch by batch, until all emails have been processed.
+    """
+    try:
+        with FileLock(lockfile):
+            logger.info('Acquired lock for sending queued emails at %s.lock', lockfile)
+            while True:
+                try:
+                    send_queued(processes, log_level)
+                except Exception as e:
+                    logger.error(e, exc_info=sys.exc_info(), extra={'status_code': 500})
+                    raise
+
+                # Close DB connection to avoid multiprocessing errors
+                db_connection.close()
+
+                if not get_queued().exists():
+                    break
+    except FileLocked:
+        logger.info('Failed to acquire lock, terminating now.')

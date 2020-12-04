@@ -349,12 +349,16 @@ to use a different backend, you can do so by configuring `BACKENDS`.
 
 For example if you want to use [django-ses](https://github.com/hmarr/django-ses):
 
-    POST_OFFICE = {
-        'BACKENDS': {
-            'default': 'smtp.EmailBackend',
-            'ses': 'django_ses.SESBackend',
-        }
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'BACKENDS': {
+        'default': 'smtp.EmailBackend',
+        'ses': 'django_ses.SESBackend',
     }
+}
+```
 
 You can then choose what backend you want to use when sending mail:
 
@@ -431,15 +435,22 @@ you should see something such as:
 . post_office.tasks.send_queued_mail
 ```
 
-Emails will now be delivered by the Celery worker, immediately after
-they have been queued. In order to make this happen, the project's
-`celery.py` setup shall invoke the
+Emails will now be delivered by the Celery worker, immediately after they have been queued. In order
+to make this happen, the project's `celery.py` setup shall invoke the
 [autodiscoverttasks](https://docs.celeryproject.org/en/latest/reference/celery.html#celery.Celery.autodiscover_tasks)
-function. There is no need to otherwise configure Post Office for
-integrating with Celery. However, in case of a temporary delivery
-failure, we might want retrying to send those emails by a periodic task.
-This can be done by a simple [Celery beat
-configuration](https://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html#entries),
+function. Additionally you must enable Celery by configuring **Post Office** using:
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'CELERY_ENABLED': True,
+}
+```
+ 
+In case of a temporary email recipient failure, we might want retrying to send emails which didn't
+deliver during the first time. This can be done by adding simple periodic task to our
+[Celery beat configuration](https://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html#entries),
 for instance through
 
 ```python
@@ -451,10 +462,10 @@ app.conf.beat_schedule = {
 }
 ```
 
-This will send queued emails every 10 minutes. If you are using [Django
-Celery Beat](https://django-celery-beat.readthedocs.io/en/latest/)
-(which I highly recommend), then use the Django-Admin backend and add a
-periodic taks for `post_office.tasks.send_queued_mail`.
+This will send queued emails every 10 minutes. If you are using
+[Django Celery Beat](https://django-celery-beat.readthedocs.io/en/latest/)
+(which I highly recommend), then use the Django-Admin backend and add a periodic taks for
+`post_office.tasks.send_queued_mail`.
 
 Depending on your policy, you may also want to remove expired emails
 from the queue. This can be done by adding another periodic taks for
@@ -534,7 +545,8 @@ limit the number of queued emails fetched in one batch.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'BATCH_SIZE': 50
+    ...
+    'BATCH_SIZE': 50,
 }
 ```
 
@@ -547,7 +559,8 @@ setting `DEFAULT_PRIORITY`. Integration with asynchronous email backends
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'DEFAULT_PRIORITY': 'now'
+    ...
+    'DEFAULT_PRIORITY': 'now',
 }
 ```
 
@@ -559,7 +572,8 @@ emails to specified a few email for development purposes.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
+    ...
+    'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com'],
 }
 ```
 
@@ -610,8 +624,9 @@ You can also configure failed deliveries to be retried after a specific time int
 ```python
 # Put this in settings.py
 POST_OFFICE = {
- 'MAX_RETRIES': 4
- 'RETRY_INTERVAL': datetime.timedelta(minutes=15)  # Schedule to be retried 15 minutes later
+    ...
+    'MAX_RETRIES': 4,
+    'RETRY_INTERVAL': datetime.timedelta(minutes=15),  # Schedule to be retried 15 minutes later
 }
 ```
 
@@ -624,7 +639,8 @@ This behavior can be changed by setting `LOG_LEVEL`.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'LOG_LEVEL': 1 # Log only failed deliveries
+    ...
+    'LOG_LEVEL': 1, # Log only failed deliveries
 }
 ```
 
@@ -643,7 +659,8 @@ queued emails in FIFO order :
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'SENDING_ORDER': ['created']
+    ...
+    'SENDING_ORDER': ['created'],
 }
 ```
 
@@ -657,7 +674,8 @@ field class to store context variables. For example if you want to use
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField'
+    ...
+    'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField',
 }
 ```
 
@@ -714,7 +732,8 @@ but doesn't seem to help SMTP based backends.
 ```python
 # Put this in settings.py
 POST_OFFICE = {
-    'THREADS_PER_PROCESS': 10
+    ...
+    'THREADS_PER_PROCESS': 10,
 }
 ```
 
@@ -774,19 +793,25 @@ Attachments are not supported with `mail.send_many()`.
 
 To run the test suite:
 
-    `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
+```python
+`which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
+```
 
-You can run the full test suite with:
+You can run the full test suite for all supported versions of Django and Python with:
 
-    tox
+```python
+tox
+```
 
 or:
 
-    python setup.py test
+```python
+python setup.py test
+```
 
 ## Changelog
 
 Full changelog can be found [here](https://github.com/ui/django-post_office/blob/master/CHANGELOG.md).
 
-Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant CRM/loyalty
-platform.
+Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant
+CRM/loyalty platform.
