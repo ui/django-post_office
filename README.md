@@ -349,12 +349,16 @@ to use a different backend, you can do so by configuring `BACKENDS`.
 
 For example if you want to use [django-ses](https://github.com/hmarr/django-ses):
 
-    POST_OFFICE = {
-        'BACKENDS': {
-            'default': 'smtp.EmailBackend',
-            'ses': 'django_ses.SESBackend',
-        }
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'BACKENDS': {
+        'default': 'smtp.EmailBackend',
+        'ses': 'django_ses.SESBackend',
     }
+}
+```
 
 You can then choose what backend you want to use when sending mail:
 
@@ -398,6 +402,287 @@ You may want to set these up via cron to run regularly:
 
     * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
     0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 --delete-attachments >> $PROJECT/cron_mail_cleanup.log 2>&1)
+
+
+## Settings
+
+This section outlines all the settings and configurations that you can
+put in Django's `settings.py` to fine tune `post-office`'s behavior.
+
+
+### Batch Size
+
+If you may want to limit the number of emails sent in a batch (sometimes
+useful in a low memory environment), use the `BATCH_SIZE` argument to
+limit the number of queued emails fetched in one batch.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'BATCH_SIZE': 50,
+}
+```
+
+### Default Priority
+
+The default priority for emails is `medium`, but this can be altered by
+setting `DEFAULT_PRIORITY`. Integration with asynchronous email backends
+(e.g. based on Celery) becomes trivial when set to `now`.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'DEFAULT_PRIORITY': 'now',
+}
+```
+
+### Override Recipients
+
+Defaults to `None`. This option is useful if you want to redirect all
+emails to specified a few email for development purposes.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com'],
+}
+```
+
+### Message-ID
+
+The SMTP standard requires that each email contains a unique [Message-ID](https://tools.ietf.org/html/rfc2822#section-3.6.4). Typically the Message-ID consists of two parts separated by the `@`
+symbol: The left part is a generated pseudo random number. The right
+part is a constant string, typically denoting the full qualified domain
+name of the sending server.
+
+By default, **Django** generates such a Message-ID during email
+delivery. Since **django-post_office** keeps track of all delivered
+emails, it can be very useful to create and store this Message-ID while
+creating each email in the database. This identifier then can be looked
+up in the Django admin backend.
+
+To enable this feature, add this to your Post-Office settings:
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'MESSAGE_ID_ENABLED': True,
+}
+```
+
+It can further be fine tuned, using for instance another full qualified
+domain name:
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'MESSAGE_ID_ENABLED': True,
+    'MESSAGE_ID_FQDN': 'example.com',
+}
+```
+
+Otherwise, if `MESSAGE_ID_FQDN` is unset (the default),
+**django-post_office** falls back to the DNS name of the server, which
+is determined by the network settings of the host.
+
+### Retry
+
+Not activated by default. You can automatically requeue failed email deliveries.
+You can also configure failed deliveries to be retried after a specific time interval.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'MAX_RETRIES': 4,
+    'RETRY_INTERVAL': datetime.timedelta(minutes=15),  # Schedule to be retried 15 minutes later
+}
+```
+
+### Log Level
+
+Logs are stored in the database and is browseable via Django admin.
+The default log level is 2 (logs both successful and failed deliveries)
+This behavior can be changed by setting `LOG_LEVEL`.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'LOG_LEVEL': 1, # Log only failed deliveries
+}
+```
+
+The different options are:
+
+* `0` logs nothing
+* `1` logs only failed deliveries
+* `2` logs everything (both successful and failed delivery attempts)
+
+### Sending Order
+
+The default sending order for emails is `-priority`, but this can be
+altered by setting `SENDING_ORDER`. For example, if you want to send
+queued emails in FIFO order :
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'SENDING_ORDER': ['created'],
+}
+```
+
+### Context Field Serializer
+
+If you need to store complex Python objects for deferred rendering (i.e.
+setting `render_on_delivery=True`), you can specify your own context
+field class to store context variables. For example if you want to use
+[django-picklefield](https://github.com/gintas/django-picklefield/tree/master/src/picklefield):
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField',
+}
+```
+
+`CONTEXT_FIELD_CLASS` defaults to `jsonfield.JSONField`.
+
+### Logging
+
+You can configure `post-office`'s logging from Django's `settings.py`.
+For example:
+
+```python
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "post_office": {
+            "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
+            "datefmt": "%d-%m-%Y %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "post_office": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "post_office"
+        },
+        # If you use sentry for logging
+        'sentry': {
+            'level': 'ERROR',
+            'class': 'raven.contrib.django.handlers.SentryHandler',
+        },
+    },
+    'loggers': {
+        "post_office": {
+            "handlers": ["post_office", "sentry"],
+            "level": "INFO"
+        },
+    },
+}
+```
+
+### Threads
+
+`post-office` >= 3.0 allows you to use multiple threads to dramatically
+speed up the speed at which emails are sent. By default, `post-office`
+uses 5 threads per process. You can tweak this setting by changing
+`THREADS_PER_PROCESS` setting.
+
+This may dramatically increase the speed of bulk email delivery,
+depending on which email backends you use. In my tests, multi threading
+speeds up email backends that use HTTP based (REST) delivery mechanisms
+but doesn't seem to help SMTP based backends.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'THREADS_PER_PROCESS': 10,
+}
+```
+
+Performance
+-----------
+
+### Caching
+
+if Django's caching mechanism is configured, `post_office` will cache
+`EmailTemplate` instances . If for some reason you want to disable
+caching, set `POST_OFFICE_CACHE` to `False` in `settings.py`:
+
+```python
+## All cache key will be prefixed by post_office:template:
+## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
+POST_OFFICE_CACHE = False
+
+## Optional: to use a non default cache backend, add a "post_office" entry in CACHES
+CACHES = {
+    'post_office': {
+        'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+```
+
+### send_many()
+
+`send_many()` is much more performant (generates less database queries)
+when sending a large number of emails. `send_many()` is almost identical
+to `mail.send()`, with the exception that it accepts a list of keyword
+arguments that you'd usually pass into `mail.send()`:
+
+```python
+from post_office import mail
+
+first_email = {
+    'sender': 'from@example.com',
+    'recipients': ['alice@example.com'],
+    'subject': 'Hi!',
+    'message': 'Hi Alice!'
+}
+second_email = {
+    'sender': 'from@example.com',
+    'recipients': ['bob@example.com'],
+    'subject': 'Hi!',
+    'message': 'Hi Bob!'
+}
+kwargs_list = [first_email, second_email]
+
+mail.send_many(kwargs_list)
+```
+
+Attachments are not supported with `mail.send_many()`.
+
+## Running Tests
+
+To run the test suite:
+
+```python
+`which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
+```
+
+You can run the full test suite for all supported versions of Django and Python with:
+
+```python
+tox
+```
+
+or:
+
+```python
+python setup.py test
+```
+
 
 ## Integration with Celery
 
@@ -452,8 +737,8 @@ app.conf.beat_schedule = {
 ```
 
 This will send queued emails every 10 minutes. If you are using [Django
-Celery Beat](https://django-celery-beat.readthedocs.io/en/latest/)
-(which I highly recommend), then use the Django-Admin backend and add a
+Celery Beat](https://django-celery-beat.readthedocs.io/en/latest/),
+then use the Django-Admin backend and add a
 periodic taks for `post_office.tasks.send_queued_mail`.
 
 Depending on your policy, you may also want to remove expired emails
@@ -520,273 +805,10 @@ def my_callback(sender, emails, **kwargs):
 The Emails objects added to the queue are passed as list to the callback
 handler.
 
-## Settings
-
-This section outlines all the settings and configurations that you can
-put in Django's `settings.py` to fine tune `post-office`'s behavior.
-
-### Batch Size
-
-If you may want to limit the number of emails sent in a batch (sometimes
-useful in a low memory environment), use the `BATCH_SIZE` argument to
-limit the number of queued emails fetched in one batch.
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    'BATCH_SIZE': 50
-}
-```
-
-### Default Priority
-
-The default priority for emails is `medium`, but this can be altered by
-setting `DEFAULT_PRIORITY`. Integration with asynchronous email backends
-(e.g. based on Celery) becomes trivial when set to `now`.
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    'DEFAULT_PRIORITY': 'now'
-}
-```
-
-### Override Recipients
-
-Defaults to `None`. This option is useful if you want to redirect all
-emails to specified a few email for development purposes.
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    'OVERRIDE_RECIPIENTS': ['to@example.com', 'to2@example.com']
-}
-```
-
-### Message-ID
-
-The SMTP standard requires that each email contains a unique [Message-ID](https://tools.ietf.org/html/rfc2822#section-3.6.4). Typically the Message-ID consists of two parts separated by the `@`
-symbol: The left part is a generated pseudo random number. The right
-part is a constant string, typically denoting the full qualified domain
-name of the sending server.
-
-By default, **Django** generates such a Message-ID during email
-delivery. Since **django-post_office** keeps track of all delivered
-emails, it can be very useful to create and store this Message-ID while
-creating each email in the database. This identifier then can be looked
-up in the Django admin backend.
-
-To enable this feature, add this to your Post-Office settings:
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    ...
-    'MESSAGE_ID_ENABLED': True,
-}
-```
-
-It can further be fine tuned, using for instance another full qualified
-domain name:
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    ...
-    'MESSAGE_ID_ENABLED': True,
-    'MESSAGE_ID_FQDN': 'example.com',
-}
-```
-
-Otherwise, if `MESSAGE_ID_FQDN` is unset (the default),
-**django-post_office** falls back to the DNS name of the server, which
-is determined by the network settings of the host.
-
-### Retry
-
-Not activated by default. You can automatically requeue failed email deliveries.
-You can also configure failed deliveries to be retried after a specific time interval.
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
- 'MAX_RETRIES': 4
- 'RETRY_INTERVAL': datetime.timedelta(minutes=15)  # Schedule to be retried 15 minutes later
-}
-```
-
-### Log Level
-
-Logs are stored in the database and is browseable via Django admin.
-The default log level is 2 (logs both successful and failed deliveries)
-This behavior can be changed by setting `LOG_LEVEL`.
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    'LOG_LEVEL': 1 # Log only failed deliveries
-}
-```
-
-The different options are:
-
-* `0` logs nothing
-* `1` logs only failed deliveries
-* `2` logs everything (both successful and failed delivery attempts)
-
-### Sending Order
-
-The default sending order for emails is `-priority`, but this can be
-altered by setting `SENDING_ORDER`. For example, if you want to send
-queued emails in FIFO order :
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    'SENDING_ORDER': ['created']
-}
-```
-
-### Context Field Serializer
-
-If you need to store complex Python objects for deferred rendering (i.e.
-setting `render_on_delivery=True`), you can specify your own context
-field class to store context variables. For example if you want to use
-[django-picklefield](https://github.com/gintas/django-picklefield/tree/master/src/picklefield):
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    'CONTEXT_FIELD_CLASS': 'picklefield.fields.PickledObjectField'
-}
-```
-
-`CONTEXT_FIELD_CLASS` defaults to `jsonfield.JSONField`.
-
-### Logging
-
-You can configure `post-office`'s logging from Django's `settings.py`.
-For example:
-
-```python
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "post_office": {
-            "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
-            "datefmt": "%d-%m-%Y %H:%M:%S",
-        },
-    },
-    "handlers": {
-        "post_office": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "post_office"
-        },
-        # If you use sentry for logging
-        'sentry': {
-            'level': 'ERROR',
-            'class': 'raven.contrib.django.handlers.SentryHandler',
-        },
-    },
-    'loggers': {
-        "post_office": {
-            "handlers": ["post_office", "sentry"],
-            "level": "INFO"
-        },
-    },
-}
-```
-
-### Threads
-
-`post-office` >= 3.0 allows you to use multiple threads to dramatically
-speed up the speed at which emails are sent. By default, `post-office`
-uses 5 threads per process. You can tweak this setting by changing
-`THREADS_PER_PROCESS` setting.
-
-This may dramatically increase the speed of bulk email delivery,
-depending on which email backends you use. In my tests, multi threading
-speeds up email backends that use HTTP based (REST) delivery mechanisms
-but doesn't seem to help SMTP based backends.
-
-```python
-# Put this in settings.py
-POST_OFFICE = {
-    'THREADS_PER_PROCESS': 10
-}
-```
-
-Performance
------------
-
-### Caching
-
-if Django's caching mechanism is configured, `post_office` will cache
-`EmailTemplate` instances . If for some reason you want to disable
-caching, set `POST_OFFICE_CACHE` to `False` in `settings.py`:
-
-```python
-## All cache key will be prefixed by post_office:template:
-## To turn OFF caching, you need to explicitly set POST_OFFICE_CACHE to False in settings
-POST_OFFICE_CACHE = False
-
-## Optional: to use a non default cache backend, add a "post_office" entry in CACHES
-CACHES = {
-    'post_office': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyLibMCCache',
-        'LOCATION': '127.0.0.1:11211',
-    }
-}
-```
-
-### send_many()
-
-`send_many()` is much more performant (generates less database queries)
-when sending a large number of emails. `send_many()` is almost identical
-to `mail.send()`, with the exception that it accepts a list of keyword
-arguments that you'd usually pass into `mail.send()`:
-
-```python
-from post_office import mail
-
-first_email = {
-    'sender': 'from@example.com',
-    'recipients': ['alice@example.com'],
-    'subject': 'Hi!',
-    'message': 'Hi Alice!'
-}
-second_email = {
-    'sender': 'from@example.com',
-    'recipients': ['bob@example.com'],
-    'subject': 'Hi!',
-    'message': 'Hi Bob!'
-}
-kwargs_list = [first_email, second_email]
-
-mail.send_many(kwargs_list)
-```
-
-Attachments are not supported with `mail.send_many()`.
-
-## Running Tests
-
-To run the test suite:
-
-    `which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
-
-You can run the full test suite with:
-
-    tox
-
-or:
-
-    python setup.py test
 
 ## Changelog
 
 Full changelog can be found [here](https://github.com/ui/django-post_office/blob/master/CHANGELOG.md).
 
-Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant CRM/loyalty
-platform.
+Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant
+CRM/loyalty platform.
