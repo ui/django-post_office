@@ -183,6 +183,9 @@ class Email(models.Model):
             if not commit:
                 raise
 
+        if disconnect_after_delivery:
+            connections.close()
+
         if commit:
             self.status = status
             self.save(update_fields=['status'])
