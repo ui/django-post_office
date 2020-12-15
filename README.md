@@ -694,6 +694,16 @@ after they have been added to the mail queue. The delivery is still
 performed in a separate and asynchronous task, which prevents sending
 emails during the request/response-cycle.
 
+In order to setup django post office with celery worker you need to add this configurations to your project settings:
+```python
+# Add this to django project settings.py
+POST_OFFICE = {
+    ...
+    'CELERY_ENABLED': True,
+}
+```
+WARNING: If you don't add this section to your settings you might face some issues with celery finding django post office's shared task!
+
 If you [configured Celery](https://docs.celeryproject.org/en/latest/userguide/application.html)
 in your project and started the [Celery worker](https://docs.celeryproject.org/en/latest/userguide/workers.html),
 you should see something such as:
