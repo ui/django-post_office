@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+from datetime import timedelta
 
 import pytz
 import re
@@ -131,8 +132,8 @@ class MailTest(TestCase):
         self.assertEqual(list(get_queued()), [queued_email])
 
         # Email scheduled for the future should not be included
-        Email.objects.create(status=STATUS.queued,
-                             scheduled_time=timezone.datetime(2020, 12, 13), **kwargs)
+        scheduled_time = timezone.now() + timedelta(days=1)
+        Email.objects.create(status=STATUS.queued, scheduled_time=scheduled_time, **kwargs)
         self.assertEqual(list(get_queued()), [queued_email])
 
         # Email scheduled in the past should be included
