@@ -217,7 +217,7 @@ content = 'Hi <strong>alice</strong>, how are you feeling today?'
 
 ### Multilingual Email Templates
 
-You can easily create email templates in various different languanges.
+You can easily create email templates in various different languages.
 For example:
 
 ```python
