@@ -33,6 +33,8 @@ class Email(models.Model):
                         (PRIORITY.high, _("high")), (PRIORITY.now, _("now"))]
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
                       (STATUS.queued, _("queued")), (STATUS.requeued, _("requeued"))]
+    # Adding enable/disable choices for mail model
+    ENABLED_CHOICES = ('enabled', 'disabled')
 
     from_email = models.CharField(_("Email From"), max_length=254,
                                   validators=[validate_email_with_name])
@@ -56,6 +58,12 @@ class Email(models.Model):
                                                 blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
+    # new enable field
+    enable = models.CharField(max_length=8,
+                              db_index=True,
+                              choices=ENABLED_CHOICES,
+                              default='enabled'),
+
     scheduled_time = models.DateTimeField(_("Scheduled Time"),
                                           blank=True, null=True, db_index=True,
                                           help_text=_("The scheduled sending time"))
@@ -168,20 +176,23 @@ class Email(models.Model):
         """
         Sends email and log the result.
         """
-        try:
-            self.email_message().send()
-            status = STATUS.sent
-            message = ''
-            exception_type = ''
-        except Exception as e:
-            status = STATUS.failed
-            message = str(e)
-            exception_type = type(e).__name__
+        if self.enable == 'enabled':
+            try:
+                self.email_message().send()
+                status = STATUS.sent
+                message = ''
+                exception_type = ''
+            except Exception as e:
+                status = STATUS.failed
+                message = str(e)
+                exception_type = type(e).__name__
 
-            # If run in a bulk sending mode, reraise and let the outer
-            # layer handle the exception
-            if not commit:
-                raise
+                # If run in a bulk sending mode, reraise and let the outer
+                # layer handle the exception
+                if not commit:
+                    raise
+        else:
+            pass
 
         if disconnect_after_delivery:
             connections.close()
