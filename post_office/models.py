@@ -21,7 +21,7 @@ from .validators import validate_email_with_name, validate_template_syntax
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
-STATUS = namedtuple('STATUS', 'sent failed queued requeued')._make(range(4))
+STATUS = namedtuple('STATUS', 'sent failed queued requeued skipped')._make(range(5))
 
 
 class Email(models.Model):
@@ -32,10 +32,7 @@ class Email(models.Model):
     PRIORITY_CHOICES = [(PRIORITY.low, _("low")), (PRIORITY.medium, _("medium")),
                         (PRIORITY.high, _("high")), (PRIORITY.now, _("now"))]
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
-                      (STATUS.queued, _("queued")), (STATUS.requeued, _("requeued"))]
-    # Adding enable/disable choices for mail model
-    ENABLED_CHOICES = ('enabled', 'disabled')
-
+                      (STATUS.queued, _("queued")), (STATUS.requeued, _("requeued")), (STATUS.skipped, _("skipped"))]
     from_email = models.CharField(_("Email From"), max_length=254,
                                   validators=[validate_email_with_name])
     to = CommaSeparatedEmailField(_("Email To"))
@@ -59,10 +56,7 @@ class Email(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
     # new enable field
-    enable = models.CharField(max_length=8,
-                              db_index=True,
-                              choices=ENABLED_CHOICES,
-                              default='enabled'),
+    enable_to_send = models.BooleanField(default=True),
 
     scheduled_time = models.DateTimeField(_("Scheduled Time"),
                                           blank=True, null=True, db_index=True,
@@ -176,23 +170,21 @@ class Email(models.Model):
         """
         Sends email and log the result.
         """
-        if self.enable == 'enabled':
-            try:
-                self.email_message().send()
-                status = STATUS.sent
-                message = ''
-                exception_type = ''
-            except Exception as e:
-                status = STATUS.failed
-                message = str(e)
-                exception_type = type(e).__name__
+        try:
+            self.email_message().send()
+            status = STATUS.sent
+            message = ''
+            exception_type = ''
+        except Exception as e:
+            status = STATUS.failed
+            message = str(e)
+            exception_type = type(e).__name__
 
-                # If run in a bulk sending mode, reraise and let the outer
-                # layer handle the exception
-                if not commit:
-                    raise
-        else:
-            pass
+            # If run in a bulk sending mode, reraise and let the outer
+            # layer handle the exception
+            if not commit:
+                status = STATUS.skipped
+                raise
 
         if disconnect_after_delivery:
             connections.close()
@@ -230,7 +222,7 @@ class Log(models.Model):
     A model to record sending email sending activities.
     """
 
-    STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed"))]
+    STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")), (STATUS.skipped, _("skipped"))]
 
     email = models.ForeignKey(Email, editable=False, related_name='logs',
                               verbose_name=_('Email address'), on_delete=models.CASCADE)

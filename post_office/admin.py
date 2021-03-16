@@ -82,7 +82,7 @@ requeue.short_description = 'Requeue selected emails'
 
 
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ['truncated_message_id', 'to_display', 'shortened_subject', 'status', 'last_updated', 'scheduled_time', 'use_template', 'enable']
+    list_display = ['truncated_message_id', 'to_display', 'shortened_subject', 'status', 'last_updated', 'scheduled_time', 'use_template', 'enable_to_send']
     search_fields = ['to', 'subject']
     readonly_fields = ['message_id', 'render_subject', 'render_plaintext_body',  'render_html_body']
     date_hierarchy = 'last_updated'
