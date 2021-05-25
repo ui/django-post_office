@@ -138,14 +138,22 @@ def parse_emails(emails):
     return emails
 
 
-def cleanup_expired_mails(cutoff_date, delete_attachments=True):
+def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=10_000):
     """
     Delete all emails before the given cutoff date.
     Optionally also delete pending attachments.
     Return the number of deleted emails and attachments.
     """
     expired_emails = Email.objects.only('id').filter(created__lt=cutoff_date)
-    emails_count, _ = expired_emails.delete()
+    total_deleted_emails = 0
+    while expired_emails:
+        email_ids = expired_emails.values_list('id', flat=True)[:batch_size]
+        
+        # Delete email and incr total_deleted_emails counter
+        _, deleted_data = Email.objects.filter(id__in=email_ids).only('id').delete()
+        total_deleted_emails += deleted_data['post_office.Email']
+        expired_emails = Email.objects.only('id').filter(created__lt=cutoff_date)\
+                                                 .exclude(id__in=email_ids)
 
     if delete_attachments:
         attachments = Attachment.objects.filter(emails=None)
@@ -156,4 +164,4 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True):
     else:
         attachments_count = 0
 
-    return emails_count, attachments_count
+    return total_deleted_emails, attachments_count
