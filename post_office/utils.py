@@ -138,7 +138,7 @@ def parse_emails(emails):
     return emails
 
 
-def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=10_000):
+def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=10000):
     """
     Delete all emails before the given cutoff date.
     Optionally also delete pending attachments.
