@@ -103,7 +103,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, expires_at=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
          log_level=None, commit=True, cc=None, bcc=None, language='',
-         backend=''):
+         backend='', save_context=False):
     try:
         recipients = parse_emails(recipients)
     except ValidationError as e:
@@ -155,7 +155,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, expires_at, headers, template, priority,
-                   render_on_delivery, commit=commit, backend=backend)
+                   render_on_delivery, commit=commit, backend=backend, save_context=save_context)
 
     if attachments:
         attachments = create_attachments(attachments)
