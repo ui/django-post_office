@@ -29,7 +29,7 @@ logger = setup_loghandlers("INFO")
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, expires_at=None, headers=None,
            template=None, priority=None, render_on_delivery=False, commit=True,
-           backend=''):
+           backend='', save_context=False):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -73,6 +73,9 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         subject = Template(subject).render(_context)
         message = Template(message).render(_context)
         html_message = Template(html_message).render(_context)
+        
+        if not save_context:
+            context = None
 
         email = Email(
             from_email=sender,
@@ -86,7 +89,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             expires_at=expires_at,
             message_id=message_id,
             headers=headers, priority=priority, status=status,
-            backend_alias=backend
+            backend_alias=backend,
+            context=context
         )
 
     if commit:
