@@ -16,8 +16,12 @@ from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
 
 from .connections import connections
+from .logutils import setup_loghandlers
 from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
+
+
+logger = setup_loghandlers("INFO")
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
@@ -178,9 +182,11 @@ class Email(models.Model):
             message = str(e)
             exception_type = type(e).__name__
 
-            # If run in a bulk sending mode, reraise and let the outer
-            # layer handle the exception
-            if not commit:
+            if commit:
+                logger.exception('Failed to send email')
+            else:
+                # If run in a bulk sending mode, re-raise and let the outer
+                # layer handle the exception
                 raise
 
         if disconnect_after_delivery:
