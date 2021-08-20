@@ -20,7 +20,7 @@ from .settings import (
 )
 from .signals import email_queued
 from .utils import (
-    create_attachments, find_public_key_for_recipient, get_email_template, parse_emails, parse_priority, split_emails, parse_public_keys,
+    create_attachments, get_email_template, parse_emails, parse_priority, split_emails, validate_public_keys,
 )
 
 logger = setup_loghandlers("INFO")
@@ -29,7 +29,7 @@ logger = setup_loghandlers("INFO")
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, expires_at=None, headers=None,
            template=None, priority=None, render_on_delivery=False, commit=True,
-           backend='', pubkey=None):
+           backend='', pubkeys=None):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -47,11 +47,6 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         context = ''
     message_id = make_msgid(domain=get_message_id_fqdn()) if get_message_id_enabled() else None
 
-    if pubkey is not None:
-        if len(recipients) > 1:
-            raise ValueError('Cannot create a GPG encrypted email with multiple recipients')
-        if render_on_delivery:
-            raise ValueError('GPG encryption is currently not supported when using on-delivery rendering')
 
     # If email is to be rendered during delivery, save all necessary
     # information
@@ -65,7 +60,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             expires_at=expires_at,
             message_id=message_id,
             headers=headers, priority=priority, status=status,
-            context=context, template=template, backend_alias=backend
+            context=context, template=template, backend_alias=backend,
+            pubkeys=pubkeys
         )
 
     else:
@@ -80,18 +76,6 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         message = Template(message).render(_context)
         html_message = Template(html_message).render(_context)
 
-        if pubkey is not None:
-            try:
-                from pgpy import PGPMessage
-            except ImportError:
-                raise ModuleNotFoundError('GPG encryption requires pgpy module')
-            message = str(pubkey.encrypt(
-                PGPMessage.new(message)
-            )) if message else message
-            html_message = str(pubkey.encrypt(
-                PGPMessage.new(html_message)
-            )) if html_message else html_message
-
         email = Email(
             from_email=sender,
             to=recipients,
@@ -104,7 +88,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             expires_at=expires_at,
             message_id=message_id,
             headers=headers, priority=priority, status=status,
-            backend_alias=backend
+            backend_alias=backend,
+            pubkeys=pubkeys
         )
 
     if commit:
@@ -134,7 +119,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         raise ValidationError('bcc: %s' % e.message)
 
     try:
-        pubkeys = parse_public_keys(pubkeys)
+        pubkeys = validate_public_keys(pubkeys)
     except ValidationError as e:
         raise ValidationError('pubkeys: %s' % e.message)
 
@@ -172,20 +157,9 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
     if backend and backend not in get_available_backends().keys():
         raise ValueError('%s is not a valid backend alias' % backend)
 
-    if len(recipients) == 1:
-        pubkey = find_public_key_for_recipient(pubkeys, recipients[0])
-        email = create(sender, recipients, cc, bcc, subject, message, html_message,
+    email = create(sender, recipients, cc, bcc, subject, message, html_message,
                     context, scheduled_time, expires_at, headers, template, priority,
-                    render_on_delivery, commit=commit, backend=backend, pubkey=pubkey)
-    else:
-        for recipient in recipients:
-            pubkey = find_public_key_for_recipient(pubkeys, recipient)
-            send([recipient], sender, template, context, subject, 
-                message, html_message, scheduled_time, expires_at, 
-                headers, priority, attachments, render_on_delivery, 
-                log_level, commit, cc, bcc, language, backend, 
-                [pubkey] if pubkey else None)
-        return None
+                    render_on_delivery, commit=commit, backend=backend, pubkeys=pubkeys)
 
     if attachments:
         attachments = create_attachments(attachments)

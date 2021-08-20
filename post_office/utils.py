@@ -159,12 +159,15 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True):
     return emails_count, attachments_count
 
 
-def parse_public_keys(pubkeys):
+def validate_public_keys(pubkeys):
     """
-    A function that returns a list of pgpy.PGPKey objects matching the recepients.
+    A function that validates a list of PGP keys.
     This function tries to parse each key from either PGPKey objects or 
     strings (armored public key). It also checks whether the parsed keys are
     not expired.
+    If the check is successful, it then returns a list of strings 
+    where each element is a key from the input list, as an armored PGP 
+    ASCII string.
     None value is also converted into an empty list.
     """
     try:
@@ -181,7 +184,7 @@ def parse_public_keys(pubkeys):
         try:
             if isinstance(pubkey, str):
                 pubkeys[i] = PGPKey.from_blob(pubkey)[0]
-                if pubkeys[i].expires_at.now() >= pubkeys[i].expires_at:
+                if pubkeys[i].is_expired:
                     raise ValueError('the given key has expired on this moment: %s' % str(pubkeys[i].expires_at))
             elif isinstance(pubkey, PGPKey):
                 pass
@@ -190,16 +193,4 @@ def parse_public_keys(pubkeys):
         except ValueError as e:
             raise ValidationError('Invalid PGP key: %s' % str(e))
 
-    return pubkeys
-
-
-def find_public_key_for_recipient(pubkeys, recipient):
-    """
-    A function that looks through a list of valid public keys (validated using parse_public_keys)
-    trying to match the email of the given recipient.
-    """
-    for pubkey in pubkeys:
-        for userid in pubkey.userids:
-            if userid.email == recipient:
-                return pubkey
-    return None
+    return [str(pubkey) for pubkey in pubkeys]

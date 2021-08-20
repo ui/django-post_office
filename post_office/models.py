@@ -18,6 +18,7 @@ from post_office.fields import CommaSeparatedEmailField
 from .connections import connections
 from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
+from .gpg import EncryptedEmailMessage, EncryptedEmailMultiAlternatives
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
@@ -71,6 +72,7 @@ class Email(models.Model):
     context = context_field_class(_('Context'), blank=True, null=True)
     backend_alias = models.CharField(_("Backend alias"), blank=True, default='',
                                      max_length=64)
+    pubkeys = JSONField(blank=True, null=True)
 
     class Meta:
         app_label = 'post_office'
@@ -126,25 +128,48 @@ class Email(models.Model):
 
         if html_message:
             if plaintext_message:
-                msg = EmailMultiAlternatives(
-                    subject=subject, body=plaintext_message, from_email=self.from_email,
-                    to=self.to, bcc=self.bcc, cc=self.cc,
-                    headers=headers, connection=connection)
-                msg.attach_alternative(html_message, "text/html")
+                if self.pubkeys:
+                    msg = EncryptedEmailMultiAlternatives(
+                        subject=subject, body=plaintext_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection,
+                        pubkeys=self.pubkeys)
+                    msg.attach_alternative(html_message, "text/html")
+                else:
+                    msg = EmailMultiAlternatives(
+                        subject=subject, body=plaintext_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection)
+                    msg.attach_alternative(html_message, "text/html")
             else:
-                msg = EmailMultiAlternatives(
-                    subject=subject, body=html_message, from_email=self.from_email,
-                    to=self.to, bcc=self.bcc, cc=self.cc,
-                    headers=headers, connection=connection)
-                msg.content_subtype = 'html'
+                if self.pubkeys:
+                    msg = EncryptedEmailMultiAlternatives(
+                        subject=subject, body=html_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection,
+                        pubkeys=self.pubkeys)
+                    msg.content_subtype = 'html'
+                else:
+                    msg = EmailMultiAlternatives(
+                        subject=subject, body=html_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection)
+                    msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
                 multipart_template.attach_related(msg)
 
         else:
-            msg = EmailMessage(
-                subject=subject, body=plaintext_message, from_email=self.from_email,
-                to=self.to, bcc=self.bcc, cc=self.cc,
-                headers=headers, connection=connection)
+            if self.pubkeys:
+                msg = EncryptedEmailMessage(
+                    subject=subject, body=plaintext_message, from_email=self.from_email,
+                    to=self.to, bcc=self.bcc, cc=self.cc,
+                    headers=headers, connection=connection,
+                    pubkeys=self.pubkeys)
+            else:
+                msg = EmailMessage(
+                    subject=subject, body=plaintext_message, from_email=self.from_email,
+                    to=self.to, bcc=self.bcc, cc=self.cc,
+                    headers=headers, connection=connection)
 
         for attachment in self.attachments.all():
             if attachment.headers:
