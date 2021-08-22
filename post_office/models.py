@@ -7,6 +7,7 @@ from email.mime.nonmultipart import MIMENonMultipart
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
+from django.db.models.fields import BooleanField
 from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
@@ -18,7 +19,7 @@ from post_office.fields import CommaSeparatedEmailField
 from .connections import connections
 from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
-from .gpg import EncryptedEmailMessage, EncryptedEmailMultiAlternatives
+from .gpg import EncryptedOrSignedEmailMessage, EncryptedOrSignedEmailMultiAlternatives, sign_with_privkey
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
@@ -72,7 +73,8 @@ class Email(models.Model):
     context = context_field_class(_('Context'), blank=True, null=True)
     backend_alias = models.CharField(_("Backend alias"), blank=True, default='',
                                      max_length=64)
-    pubkeys = JSONField(blank=True, null=True)
+    pgp_pubkeys = JSONField(blank=True, null=True)
+    pgp_signed = BooleanField(default=False)
 
     class Meta:
         app_label = 'post_office'
@@ -128,12 +130,13 @@ class Email(models.Model):
 
         if html_message:
             if plaintext_message:
-                if self.pubkeys:
-                    msg = EncryptedEmailMultiAlternatives(
+                if self.pgp_pubkeys or self.pgp_signed:
+                    msg = EncryptedOrSignedEmailMultiAlternatives(
                         subject=subject, body=plaintext_message, from_email=self.from_email,
                         to=self.to, bcc=self.bcc, cc=self.cc,
                         headers=headers, connection=connection,
-                        pubkeys=self.pubkeys)
+                        pubkeys=self.pgp_pubkeys,
+                        sign_with_privkey=self.pgp_signed)
                     msg.attach_alternative(html_message, "text/html")
                 else:
                     msg = EmailMultiAlternatives(
@@ -142,12 +145,13 @@ class Email(models.Model):
                         headers=headers, connection=connection)
                     msg.attach_alternative(html_message, "text/html")
             else:
-                if self.pubkeys:
-                    msg = EncryptedEmailMultiAlternatives(
+                if self.pgp_pubkeys or self.pgp_signed:
+                    msg = EncryptedOrSignedEmailMultiAlternatives(
                         subject=subject, body=html_message, from_email=self.from_email,
                         to=self.to, bcc=self.bcc, cc=self.cc,
                         headers=headers, connection=connection,
-                        pubkeys=self.pubkeys)
+                        pubkeys=self.pgp_pubkeys,
+                        sign_with_privkey=self.pgp_signed)
                     msg.content_subtype = 'html'
                 else:
                     msg = EmailMultiAlternatives(
@@ -159,12 +163,13 @@ class Email(models.Model):
                 multipart_template.attach_related(msg)
 
         else:
-            if self.pubkeys:
-                msg = EncryptedEmailMessage(
+            if self.pgp_pubkeys or self.pgp_signed:
+                msg = EncryptedOrSignedEmailMessage(
                     subject=subject, body=plaintext_message, from_email=self.from_email,
                     to=self.to, bcc=self.bcc, cc=self.cc,
                     headers=headers, connection=connection,
-                    pubkeys=self.pubkeys)
+                    pubkeys=self.pgp_pubkeys,
+                    sign_with_privkey=self.pgp_signed)
             else:
                 msg = EmailMessage(
                     subject=subject, body=plaintext_message, from_email=self.from_email,
