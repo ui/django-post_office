@@ -1,3 +1,9 @@
+# Copyright (c) 2021 The Document Foundation
+# The implementation of PGP Encryption support for django-post_office has been done
+# on behalf of TDF by
+# Andrea Esposito <aespositox@gmail.com>
+# Marco Marinello <contact-nothuman@marinello.bz.it>
+
 from django.core.mail import EmailMessage, EmailMultiAlternatives, SafeMIMEMultipart
 from email.mime.application import MIMEApplication
 from email.mime.text import MIMEText
@@ -47,8 +53,8 @@ def find_private_key_for_signing(primary):
     for k in primary.subkeys.keys():
         subkey = primary.subkeys[k]
         flags = subkey._get_key_flags()
-        if KeyFlags.Sign in flags and (not most_recent_signing_key or \
-                most_recent_signing_key.created < subkey.created):
+        if KeyFlags.Sign in flags and (not most_recent_signing_key or
+                                       most_recent_signing_key.created < subkey.created):
             most_recent_signing_key = subkey
 
     return most_recent_signing_key if most_recent_signing_key else primary
@@ -85,7 +91,7 @@ def encrypt_with_pubkeys(_pubkeys, payload):
 
     cipher = SymmetricKeyAlgorithm.AES256
     skey = cipher.gen_key()
-    
+
     for pubkey in pubkeys:
         payload = pubkey.encrypt(payload, cipher=cipher, sessionkey=skey)
 
@@ -104,6 +110,27 @@ def sign_with_privkey(_privkey, payload):
     return privkey.sign(payload)
 
 
+def safe_encode(mime):
+    try:
+        from pgpy import PGPMessage
+    except ImportError:
+        raise ModuleNotFoundError('GPG encryption requires pgpy module')
+    if isinstance(mime, str):
+        return str.encode('quoted-printable')
+    if mime.is_multipart:
+        for payload in mime.get_payload():
+            safe_encode(payload)
+    else:
+        if not mime:
+            return mime
+        del mime['Content-Transfer-Encoding']
+        if isinstance(mime, MIMEText):
+            encode_quopri(mime)
+        else:
+            encode_base64(mime)
+    return mime
+
+
 def process_message(msg, pubkeys, privkey):
     """
     Apply signature and/or encryption to the given message payload.
@@ -118,22 +145,6 @@ def process_message(msg, pubkeys, privkey):
         from pgpy import PGPMessage
     except ImportError:
         raise ModuleNotFoundError('GPG encryption requires pgpy module')
-
-    def safe_encode(mime):
-        if isinstance(mime, str):
-            return str.encode('quoted-printable')
-        if mime.is_multipart:
-            for payload in mime.get_payload():
-               safe_encode(payload)
-        else:
-            if not mime:
-                return mime
-            del mime['Content-Transfer-Encoding']
-            if isinstance(mime, MIMEText):
-                encode_quopri(mime)
-            else:
-                encode_base64(mime)
-        return mime
 
     msg = safe_encode(msg)
     payload = msg.as_string().replace(
@@ -169,12 +180,12 @@ def process_message(msg, pubkeys, privkey):
         )
 
         control = MIMEApplication(
-            "Version: 1", 
-            _subtype='pgp-encrypted', 
+            "Version: 1",
+            _subtype='pgp-encrypted',
             _encoder=encode_7or8bit
         )
         data = MIMEApplication(
-            str(payload),  
+            str(payload),
             _encoder=encode_7or8bit
         )
         msg = SafeMIMEMultipart(
@@ -191,6 +202,7 @@ class EncryptedOrSignedEmailMessage(EmailMessage):
     A class representing an RFC3156 compliant MIME multipart message containing
     an OpenPGP-encrypted simple email message. 
     """
+
     def __init__(self, pubkeys=None, sign_with_privkey=False, **kwargs):
         super().__init__(**kwargs)
 
@@ -200,11 +212,11 @@ class EncryptedOrSignedEmailMessage(EmailMessage):
             raise ModuleNotFoundError('GPG encryption requires pgpy module')
 
         if pubkeys:
-            self.pubkeys = [PGPKey.from_blob(pubkey)[0] \
-                for pubkey in pubkeys]
+            self.pubkeys = [PGPKey.from_blob(pubkey)[0]
+                            for pubkey in pubkeys]
         else:
             self.pubkeys = []
-        
+
         if sign_with_privkey:
             path = get_signing_key_path()
             if not path:
@@ -216,9 +228,11 @@ class EncryptedOrSignedEmailMessage(EmailMessage):
             self.privkey = None
 
         if not self.pubkeys and not self.privkey:
-            raise ValueError('EncryptedOrSignedEmailMessage requires either a non-null and non-empty list of gpg public keys or a valid private key')
+            raise ValueError(
+                'EncryptedOrSignedEmailMessage requires either a non-null and non-empty list of gpg '
+                'public keys or a valid private key')
 
-    def _create_message(self, msg):    
+    def _create_message(self, msg):
         msg = super()._create_message(msg)
         return process_message(msg, self.pubkeys, self.privkey)
 
@@ -229,6 +243,7 @@ class EncryptedOrSignedEmailMultiAlternatives(EmailMultiAlternatives):
     an OpenPGP-encrypted multipart/alternative email message (with multiple 
     versions e.g. plain text and html).
     """
+
     def __init__(self, pubkeys=None, sign_with_privkey=False, **kwargs):
         super().__init__(**kwargs)
 
@@ -238,11 +253,10 @@ class EncryptedOrSignedEmailMultiAlternatives(EmailMultiAlternatives):
             raise ModuleNotFoundError('GPG encryption requires pgpy module')
 
         if pubkeys:
-            self.pubkeys = [PGPKey.from_blob(pubkey)[0] \
-                for pubkey in pubkeys]
+            self.pubkeys = [PGPKey.from_blob(pubkey)[0] for pubkey in pubkeys]
         else:
             self.pubkeys = []
-        
+
         if sign_with_privkey:
             path = get_signing_key_path()
             if not path:
@@ -254,7 +268,9 @@ class EncryptedOrSignedEmailMultiAlternatives(EmailMultiAlternatives):
             self.privkey = None
 
         if not self.pubkeys and not self.privkey:
-            raise ValueError('EncryptedOrSignedEmailMultiAlternatives requires either a non-null and non-empty list of gpg public keys or a valid private key')
+            raise ValueError(
+                'EncryptedOrSignedEmailMultiAlternatives requires either a non-null and non-empty list of gpg '
+                'public keys or a valid private key')
 
     def _create_message(self, msg):
         msg = super()._create_message(msg)

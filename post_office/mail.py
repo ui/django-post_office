@@ -29,7 +29,7 @@ logger = setup_loghandlers("INFO")
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, expires_at=None, headers=None,
            template=None, priority=None, render_on_delivery=False, commit=True,
-           backend='', pubkeys=None, pgp_signed=False):
+           backend='', recipients_pubkeys=None, pgp_signed=False):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -47,7 +47,6 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
         context = ''
     message_id = make_msgid(domain=get_message_id_fqdn()) if get_message_id_enabled() else None
 
-
     # If email is to be rendered during delivery, save all necessary
     # information
     if render_on_delivery:
@@ -61,7 +60,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             message_id=message_id,
             headers=headers, priority=priority, status=status,
             context=context, template=template, backend_alias=backend,
-            pgp_pubkeys=pubkeys, pgp_signed=pgp_signed
+            pgp_pubkeys=recipients_pubkeys, pgp_signed=pgp_signed
         )
 
     else:
@@ -89,7 +88,7 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             message_id=message_id,
             headers=headers, priority=priority, status=status,
             backend_alias=backend,
-            pgp_pubkeys=pubkeys, pgp_signed=pgp_signed
+            pgp_pubkeys=recipients_pubkeys, pgp_signed=pgp_signed
         )
 
     if commit:
@@ -102,7 +101,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, expires_at=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
          log_level=None, commit=True, cc=None, bcc=None, language='',
-         backend='', pubkeys=None, pgp_signed=False):
+         backend='', recipients_pubkeys=None, pgp_signed=False):
     try:
         recipients = parse_emails(recipients)
     except ValidationError as e:
@@ -119,7 +118,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         raise ValidationError('bcc: %s' % e.message)
 
     try:
-        pubkeys = validate_public_keys(pubkeys)
+        recipients_pubkeys = validate_public_keys(recipients_pubkeys)
     except ValidationError as e:
         raise ValidationError('pubkeys: %s' % e.message)
 
@@ -158,9 +157,9 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
         raise ValueError('%s is not a valid backend alias' % backend)
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
-                    context, scheduled_time, expires_at, headers, template, priority,
-                    render_on_delivery, commit=commit, backend=backend, 
-                    pubkeys=pubkeys, pgp_signed=pgp_signed)
+                   context, scheduled_time, expires_at, headers, template, priority,
+                   render_on_delivery, commit=commit, backend=backend,
+                   recipients_pubkeys=recipients_pubkeys, pgp_signed=pgp_signed)
 
     if attachments:
         attachments = create_attachments(attachments)
