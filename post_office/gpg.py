@@ -1,6 +1,7 @@
 from django.core.mail import EmailMessage, EmailMultiAlternatives, SafeMIMEMultipart
 from email.mime.application import MIMEApplication
-from email.encoders import encode_7or8bit, encode_quopri
+from email.mime.text import MIMEText
+from email.encoders import encode_7or8bit, encode_quopri, encode_base64
 
 from .settings import get_signing_key_path, get_signing_key_passphrase
 
@@ -106,9 +107,9 @@ def sign_with_privkey(_privkey, payload):
 def process_message(msg, pubkeys, privkey):
     """
     Apply signature and/or encryption to the given message payload.
-    This function also applies the Quoted-Printable transfer encoding to
-    both multipart and non-multipart messages and replaces newline characters
-    with the <CR><LF> sequences, as per RFC 3156. 
+    This function also applies the Quoted-Printable or Base64 transfer 
+    encoding to both non-multipart and multipart (recursively) messages 
+    and replaces newline characters with <CR><LF> sequences, as per RFC 3156. 
     A rather rustic workaround has been put in place to prevent the leading 
     '\n ' sequence of the boundary parameter in the Content-Type header from
     invalidating the signature.
@@ -118,14 +119,23 @@ def process_message(msg, pubkeys, privkey):
     except ImportError:
         raise ModuleNotFoundError('GPG encryption requires pgpy module')
 
-    if msg.is_multipart:
-        for payload in msg.get_payload():
-            del payload['Content-Transfer-Encoding']
-            encode_quopri(payload)
-    else:
-        del msg['Content-Transfer-Encoding']
-        encode_quopri(msg)
+    def safe_encode(mime):
+        if isinstance(mime, str):
+            return str.encode('quoted-printable')
+        if mime.is_multipart:
+            for payload in mime.get_payload():
+               safe_encode(payload)
+        else:
+            if not mime:
+                return mime
+            del mime['Content-Transfer-Encoding']
+            if isinstance(mime, MIMEText):
+                encode_quopri(mime)
+            else:
+                encode_base64(mime)
+        return mime
 
+    msg = safe_encode(msg)
     payload = msg.as_string().replace(
         '\n boundary', ' boundary'
     ).replace('\n', '\r\n')
