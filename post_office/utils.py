@@ -157,3 +157,40 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True):
         attachments_count = 0
 
     return emails_count, attachments_count
+
+
+def validate_public_keys(pubkeys):
+    """
+    A function that validates a list of PGP keys.
+    This function tries to parse each key from either PGPKey objects or 
+    strings (armored public key). It also checks whether the parsed keys are
+    not expired.
+    If the check is successful, it then returns a list of strings 
+    where each element is a key from the input list, as an armored PGP 
+    ASCII string.
+    None value is also converted into an empty list.
+    """
+    try:
+        from pgpy import PGPKey
+    except ImportError:
+        raise ModuleNotFoundError('GPG encryption requires pgpy module')
+    
+    if isinstance(pubkeys, str):
+        pubkeys = [pubkeys]
+    elif pubkeys is None:
+        pubkeys = []
+
+    for i, pubkey in enumerate(pubkeys):
+        try:
+            if isinstance(pubkey, str):
+                pubkeys[i] = PGPKey.from_blob(pubkey)[0]
+                if pubkeys[i].is_expired:
+                    raise ValueError('the given key has expired on this moment: %s' % str(pubkeys[i].expires_at))
+            elif isinstance(pubkey, PGPKey):
+                pass
+            else:
+                raise ValueError('the given key is either null or of an invalid type')
+        except ValueError as e:
+            raise ValidationError('Invalid PGP key: %s' % str(e))
+
+    return [str(pubkey) for pubkey in pubkeys]

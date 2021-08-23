@@ -28,6 +28,11 @@ With this optional dependency, HTML emails are nicely rendered
 inside the Django admin backend. Without this library, all HTML tags
 will otherwise be stripped for security reasons.
 
+-   [PGPy](https://pgpy.readthedocs.io)
+
+Allow to send encrypted and signed mails as per [RFC3156](https://datatracker.ietf.org/doc/html/rfc3156)
+and [RFC4880](https://datatracker.ietf.org/doc/html/rfc4880).
+
 ## Installation
 
 [![Build
@@ -125,6 +130,8 @@ these arguments:
 | priority | No | `high`, `medium`, `low` or `now` (sent immediately) |
 | backend | No | Alias of the backend you want to use, `default` will be used if not specified. |
 | render_on_delivery | No | Setting this to `True` causes email to be lazily rendered during delivery. `template` is required when `render_on_delivery` is True. With this option, the full email content is never stored in the DB. May result in significant space savings if you're sending many emails using the same template. |
+| recipients_pubkeys | No | Array of PGP keys of the recipients to be used to encrypt the message. Can be a list of strings containing the armorized public key or PGPKey objects. |
+| pgp_signed | No | Whether the email should be signed with a configuration-provided key. |
 
 Here are a few examples.
 
@@ -610,6 +617,22 @@ POST_OFFICE = {
     'THREADS_PER_PROCESS': 10,
 }
 ```
+
+### Signature
+
+`post-office` >= 3.6 allows you to send singed encrypted emails via PGPy.
+
+To configure the private key to be used for sign, add the following to your
+`settings.py`:
+
+```python
+POST_OFFICE = {
+    ...
+    'PGP_SIGNING_KEY_PATH': '/path/to/my/key.asc',
+    'PGP_SIGNING_KEY_PASSPHRASE': 'mysecretpassphrase', # Only required when the private key is blocked with a passphrase
+}
+```
+
 
 Performance
 -----------

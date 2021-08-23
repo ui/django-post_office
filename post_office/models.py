@@ -7,6 +7,7 @@ from email.mime.nonmultipart import MIMENonMultipart
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
+from django.db.models.fields import BooleanField
 from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
@@ -19,6 +20,7 @@ from .connections import connections
 from .logutils import setup_loghandlers
 from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
+from .gpg import EncryptedOrSignedEmailMessage, EncryptedOrSignedEmailMultiAlternatives, sign_with_privkey
 
 
 logger = setup_loghandlers("INFO")
@@ -75,6 +77,8 @@ class Email(models.Model):
     context = context_field_class(_('Context'), blank=True, null=True)
     backend_alias = models.CharField(_("Backend alias"), blank=True, default='',
                                      max_length=64)
+    pgp_pubkeys = JSONField(blank=True, null=True)
+    pgp_signed = BooleanField(default=False)
 
     class Meta:
         app_label = 'post_office'
@@ -130,25 +134,51 @@ class Email(models.Model):
 
         if html_message:
             if plaintext_message:
-                msg = EmailMultiAlternatives(
-                    subject=subject, body=plaintext_message, from_email=self.from_email,
-                    to=self.to, bcc=self.bcc, cc=self.cc,
-                    headers=headers, connection=connection)
-                msg.attach_alternative(html_message, "text/html")
+                if self.pgp_pubkeys or self.pgp_signed:
+                    msg = EncryptedOrSignedEmailMultiAlternatives(
+                        subject=subject, body=plaintext_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection,
+                        pubkeys=self.pgp_pubkeys,
+                        sign_with_privkey=self.pgp_signed)
+                    msg.attach_alternative(html_message, "text/html")
+                else:
+                    msg = EmailMultiAlternatives(
+                        subject=subject, body=plaintext_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection)
+                    msg.attach_alternative(html_message, "text/html")
             else:
-                msg = EmailMultiAlternatives(
-                    subject=subject, body=html_message, from_email=self.from_email,
-                    to=self.to, bcc=self.bcc, cc=self.cc,
-                    headers=headers, connection=connection)
-                msg.content_subtype = 'html'
+                if self.pgp_pubkeys or self.pgp_signed:
+                    msg = EncryptedOrSignedEmailMultiAlternatives(
+                        subject=subject, body=html_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection,
+                        pubkeys=self.pgp_pubkeys,
+                        sign_with_privkey=self.pgp_signed)
+                    msg.content_subtype = 'html'
+                else:
+                    msg = EmailMultiAlternatives(
+                        subject=subject, body=html_message, from_email=self.from_email,
+                        to=self.to, bcc=self.bcc, cc=self.cc,
+                        headers=headers, connection=connection)
+                    msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
                 multipart_template.attach_related(msg)
 
         else:
-            msg = EmailMessage(
-                subject=subject, body=plaintext_message, from_email=self.from_email,
-                to=self.to, bcc=self.bcc, cc=self.cc,
-                headers=headers, connection=connection)
+            if self.pgp_pubkeys or self.pgp_signed:
+                msg = EncryptedOrSignedEmailMessage(
+                    subject=subject, body=plaintext_message, from_email=self.from_email,
+                    to=self.to, bcc=self.bcc, cc=self.cc,
+                    headers=headers, connection=connection,
+                    pubkeys=self.pgp_pubkeys,
+                    sign_with_privkey=self.pgp_signed)
+            else:
+                msg = EmailMessage(
+                    subject=subject, body=plaintext_message, from_email=self.from_email,
+                    to=self.to, bcc=self.bcc, cc=self.cc,
+                    headers=headers, connection=connection)
 
         for attachment in self.attachments.all():
             if attachment.headers:

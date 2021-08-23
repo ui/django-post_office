@@ -124,6 +124,14 @@ def get_message_id_fqdn():
     return get_config().get('MESSAGE_ID_FQDN', DNS_NAME)
 
 
+def get_signing_key_path():
+    return get_config().get('PGP_SIGNING_KEY_PATH', None)
+
+
+def get_signing_key_passphrase():
+    return get_config().get('PGP_SIGNING_KEY_PASSPHRASE', None)
+
+
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
                                        'jsonfield.JSONField')
 context_field_class = import_string(CONTEXT_FIELD_CLASS)
