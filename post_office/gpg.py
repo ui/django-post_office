@@ -1,14 +1,8 @@
-from email.mime.multipart import MIMEMultipart
 from django.core.mail import EmailMessage, EmailMultiAlternatives, SafeMIMEMultipart
 from email.mime.application import MIMEApplication
 from email.encoders import encode_7or8bit, encode_quopri
-from email import charset
 
 from .settings import get_signing_key_path, get_signing_key_passphrase
-
-
-utf8_charset_qp = charset.Charset('utf-8')
-utf8_charset_qp.body_encoding = charset.QP
 
 
 def find_public_keys_for_encryption(primary):
@@ -116,8 +110,8 @@ def process_message(msg, pubkeys, privkey):
     both multipart and non-multipart messages and replaces newline characters
     with the <CR><LF> sequences, as per RFC 3156. 
     A rather rustic workaround has been put in place to prevent the leading 
-    '\n ' sequence of the boundary parameter in the Content-Type header to
-    invalidate the signature.
+    '\n ' sequence of the boundary parameter in the Content-Type header from
+    invalidating the signature.
     """
     try:
         from pgpy import PGPMessage
