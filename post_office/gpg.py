@@ -1,8 +1,14 @@
+from email.mime.multipart import MIMEMultipart
 from django.core.mail import EmailMessage, EmailMultiAlternatives, SafeMIMEMultipart
 from email.mime.application import MIMEApplication
-from email.encoders import encode_7or8bit
+from email.encoders import encode_7or8bit, encode_quopri
+from email import charset
 
 from .settings import get_signing_key_path, get_signing_key_passphrase
+
+
+utf8_charset_qp = charset.Charset('utf-8')
+utf8_charset_qp.body_encoding = charset.QP
 
 
 def find_public_keys_for_encryption(primary):
@@ -105,14 +111,30 @@ def sign_with_privkey(_privkey, payload):
 
 def process_message(msg, pubkeys, privkey):
     """
-    Apply signature and/or encryption to the given message payload
+    Apply signature and/or encryption to the given message payload.
+    This function also applies the Quoted-Printable transfer encoding to
+    both multipart and non-multipart messages and replaces newline characters
+    with the <CR><LF> sequences, as per RFC 3156. 
+    A rather rustic workaround has been put in place to prevent the leading 
+    '\n ' sequence of the boundary parameter in the Content-Type header to
+    invalidate the signature.
     """
     try:
         from pgpy import PGPMessage
     except ImportError:
         raise ModuleNotFoundError('GPG encryption requires pgpy module')
 
-    payload = PGPMessage.new(msg.as_string())
+    if msg.is_multipart:
+        for payload in msg.get_payload():
+            del payload['Content-Transfer-Encoding']
+            encode_quopri(payload)
+    else:
+        del msg['Content-Transfer-Encoding']
+        encode_quopri(msg)
+
+    payload = msg.as_string().replace(
+        '\n boundary', ' boundary'
+    ).replace('\n', '\r\n')
 
     if privkey:
         if privkey.is_unlocked:
@@ -127,11 +149,13 @@ def process_message(msg, pubkeys, privkey):
 
         signature = MIMEApplication(
             str(signature),
-            _subtype='pgp-signature'
+            _subtype='pgp-signature',
+            _encoder=encode_7or8bit
         )
         msg = SafeMIMEMultipart(
             _subtype='signed',
             _subparts=[msg, signature],
+            micalg='pgp-sha256',
             protocol='application/pgp-signature'
         )
 
