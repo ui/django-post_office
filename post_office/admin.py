@@ -215,7 +215,7 @@ class EmailAdmin(admin.ModelAdmin):
             message=instance.message,
             html_message=instance.html_message,
         )
-        messages.info(request, "Email has been send again")
+        messages.info(request, "Email has been sent again")
         return HttpResponseRedirect(reverse('admin:post_office_email_change', args=[instance.pk]))
 
 
