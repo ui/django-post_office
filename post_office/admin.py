@@ -1,23 +1,30 @@
 import re
 
 from django import forms
-from django.db import models
-from django.contrib import admin
 from django.conf import settings
-from django.conf.urls import re_path
+from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.core.mail.message import SafeMIMEText
+from django.db import models
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
-from django.http.response import HttpResponse, HttpResponseNotFound
-from django.template import Context, Template
+from django.http.response import HttpResponse
+from django.http.response import HttpResponseNotFound
+from django.template import Context
+from django.template import Template
+from django.urls import re_path
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
+from . import settings as post_office_settings
 from .fields import CommaSeparatedEmailField
-from .models import Attachment, Log, Email, EmailTemplate, STATUS
+from .models import Attachment
+from .models import Email
+from .models import EmailTemplate
+from .models import Log
+from .models import STATUS
 from .sanitizer import clean_html
 
 
@@ -249,15 +256,42 @@ class EmailTemplateAdminForm(forms.ModelForm):
             self.fields['language'].disabled = True
 
 
+def _create_iframe(src, height):
+    return format_html('''
+        <iframe
+            style="width: 80%; height: {height}px;"
+            src="{src}">'
+            sandbox
+        </iframe>
+        ''', height=height, src=src)
+
+
 class EmailTemplateInline(admin.StackedInline):
     form = EmailTemplateAdminForm
     formset = EmailTemplateAdminFormSet
     model = EmailTemplate
     extra = 0
-    fields = ('language', 'subject', 'content', 'html_content',)
+    fields = ('language', 'subject', 'content', 'html_content',
+              'rendered_content', 'rendered_html_content',)
+    readonly_fields = ('rendered_content', 'rendered_html_content',)
     formfield_overrides = {
         models.CharField: {'widget': SubjectField}
     }
+
+    def rendered_content(self, instance):
+        if instance.content:
+            src = '?preview=text&language={}'.format(instance.language)
+            height = instance.content.count('\n') * 25
+            return _create_iframe(src, height)
+        else:
+            return ''
+
+    def rendered_html_content(self, instance):
+        if instance.html_content:
+            src = '?preview=text&language={}'.format(instance.language)
+            return _create_iframe(src, 800)
+        else:
+            return ''
 
     def get_max_num(self, request, obj=None, **kwargs):
         return len(settings.LANGUAGES)
@@ -265,8 +299,11 @@ class EmailTemplateInline(admin.StackedInline):
 
 class EmailTemplateAdmin(admin.ModelAdmin):
     form = EmailTemplateAdminForm
-    list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
+    list_display = (
+        'name', 'description_shortened', 'subject', 'languages_compact',
+        'created')
     search_fields = ('name', 'description', 'subject')
+    readonly_fields = ('rendered_content', 'rendered_html_content')
     fieldsets = [
         (None, {
             'fields': ('name', 'description'),
@@ -274,11 +311,56 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         (_("Default Content"), {
             'fields': ('subject', 'content', 'html_content'),
         }),
+        (_("Preview"), {
+            'fields': ('example_context', 'rendered_content',
+                       'rendered_html_content'),
+        }),
     ]
     inlines = (EmailTemplateInline,) if settings.USE_I18N else ()
     formfield_overrides = {
         models.CharField: {'widget': SubjectField}
     }
+    change_form_template = 'admin/post_office/EmailTemplate/change_form.html'
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        if request.GET.get('preview'):
+            instance = self.model.objects.get(id=object_id)
+            engine = post_office_settings.get_template_engine()
+
+            if request.GET.get('language'):
+                template_instance = instance.translated_templates.filter(
+                    language=request.GET.get('language'),
+                ).first()
+            else:
+                template_instance = instance
+
+            if request.GET.get('preview') == 'html':
+                template = engine.from_string(
+                    template_instance.html_content
+                        .replace('inline_image', 'static')
+                        .replace(' post_office ', ' static '))
+            else:
+                template = engine.from_string(
+                    '<pre>%s</pre>' % template_instance.content)
+
+            return HttpResponse(clean_html(template.render(
+                instance.example_context)))
+
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def rendered_content(self, instance):
+        if instance.content:
+            src = '?preview=text'
+            height = instance.content.count('\n') * 25
+            return _create_iframe(src, height)
+        else:
+            return ''
+
+    def rendered_html_content(self, instance):
+        if instance.html_content:
+            return _create_iframe('?preview=html', 800)
+        else:
+            return ''
 
     def get_queryset(self, request):
         return self.model.objects.filter(default_template__isnull=True)
