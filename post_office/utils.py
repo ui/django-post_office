@@ -152,8 +152,8 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
         # Delete email and incr total_deleted_emails counter
         _, deleted_data = Email.objects.filter(id__in=email_ids).delete()
         total_deleted_emails += deleted_data['post_office.Email']
-        expired_emails = Email.objects.only('id').filter(created__lt=cutoff_date)\
-                                                 .values_list('id', flat=True)
+        expired_emails = Email.objects.filter(created__lt=cutoff_date)\
+                                      .values_list('id', flat=True)
 
     if delete_attachments:
         attachments = Attachment.objects.filter(emails=None)
