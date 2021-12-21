@@ -17,9 +17,11 @@ class Command(BaseCommand):
         parser.add_argument('-da', '--delete-attachments', action='store_true',
                             help="Delete orphaned attachments.")
 
-    def handle(self, verbosity, days, delete_attachments, **options):
+        parser.add_argument('-b', '--batch-size', type=int, default=1000, help="Batch size for cleanup.")
+
+    def handle(self, verbosity, days, delete_attachments, batch_size, **options):
         # Delete mails and their related logs and queued created before X days
         cutoff_date = now() - datetime.timedelta(days)
-        num_emails, num_attachments = cleanup_expired_mails(cutoff_date, delete_attachments)
+        num_emails, num_attachments = cleanup_expired_mails(cutoff_date, delete_attachments, batch_size)
         msg = "Deleted {0} mails created before {1} and {2} attachments."
         self.stdout.write(msg.format(num_emails, cutoff_date, num_attachments))
