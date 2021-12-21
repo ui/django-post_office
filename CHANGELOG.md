@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 3.6.0 (2021-12-21)
+--------------------------
+* Support for Django 4.0. Thanks @domdinicola!
+* `cleanup_mail` now deletes emails in batches, which is much nicer to DB when deleting millions of emails. Thanks @stevemc4!
+* Failure to send an email are now logged as an exception. Thanks @SaturnFromTitan!
+* Added `es` locale. Thanks @ahmontero!
+* Fixed admin template discovery issue for case-sensitive filesystems. Thanks @fasih!
+* Fixes: `SMTPServerDisconnected` error. Thanks @weimens!
+* Various maintenance work by @jrief and @mogost.
+
 Version 3.5.3 (2020-12-04)
 --------------------------
 * Fixed an issue with Celery integration that could cause duplicate emails. Thanks @jrief!
