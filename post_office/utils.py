@@ -58,6 +58,8 @@ def split_emails(emails, split_count=1):
     if list(emails):
         return [emails[i::split_count] for i in range(split_count)]
 
+    return []
+
 
 def create_attachments(attachment_files):
     """
@@ -144,16 +146,15 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
     Optionally also delete pending attachments.
     Return the number of deleted emails and attachments.
     """
-    expired_emails = Email.objects.only('id').filter(created__lt=cutoff_date).values_list('id', flat=True)
+    expired_emails = Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)
+    expired_emails_batch = split_emails(expired_emails, batch_size)
     total_deleted_emails = 0
-    while expired_emails:
-        email_ids = expired_emails[:batch_size]
-        
+    
+    for email_ids in expired_emails_batch:
         # Delete email and incr total_deleted_emails counter
         _, deleted_data = Email.objects.filter(id__in=email_ids).delete()
-        total_deleted_emails += deleted_data['post_office.Email']
-        expired_emails = Email.objects.filter(created__lt=cutoff_date)\
-                                      .values_list('id', flat=True)
+        if deleted_data:
+            total_deleted_emails += deleted_data['post_office.Email']
 
     if delete_attachments:
         attachments = Attachment.objects.filter(emails=None)
