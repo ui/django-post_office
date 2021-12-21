@@ -4,14 +4,13 @@ from django import forms
 from django.db import models
 from django.contrib import admin
 from django.conf import settings
-from django.conf.urls import re_path
 from django.core.exceptions import ValidationError
 from django.core.mail.message import SafeMIMEText
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
 from django.http.response import HttpResponse, HttpResponseNotFound
 from django.template import Context, Template
-from django.urls import reverse
+from django.urls import re_path, reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _

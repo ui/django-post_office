@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 from post_office import cache
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
@@ -16,7 +16,7 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     ``send_mail`` core email method.
     """
 
-    subject = force_text(subject)
+    subject = force_str(subject)
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = [
         Email.objects.create(

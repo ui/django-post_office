@@ -31,6 +31,7 @@ ghostdriver.log
 .python-version
 .ruby-version
 .settings/
+.idea/
 
 ## generic files to ignore
 *~
