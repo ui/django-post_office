@@ -19,9 +19,6 @@ Django. Some awesome features are:
 
 -   [django \>= 2.2](https://djangoproject.com/)
 -   [jsonfield](https://github.com/rpkilby/jsonfield)
-
-### Optional Dependency
-
 -   [bleach](https://bleach.readthedocs.io/)
 
 With this optional dependency, HTML emails are nicely rendered
