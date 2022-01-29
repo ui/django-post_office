@@ -37,11 +37,15 @@ class UtilsTest(TestCase):
 
         # Should also support international domains
         validate_email_with_name('Alice Bob <email@example.co.id>')
+        validate_email_with_name('email@example.android', validate_tld=True)
 
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_email_with_name, 'invalid')
         self.assertRaises(ValidationError, validate_email_with_name, 'Al <ab>')
         self.assertRaises(ValidationError, validate_email_with_name, 'Al <>')
+        self.assertRaises(ValidationError, validate_email_with_name, 'email@example.com1', validate_tld=True)
+        self.assertRaises(ValidationError, validate_email_with_name, 'Al <ab@exampel.1com>', validate_tld=True)
+        self.assertRaises(ValidationError, validate_email_with_name, 'email@example.cccom', validate_tld=True)
 
     def test_comma_separated_email_list_validator(self):
         # These should validate
@@ -57,6 +61,9 @@ class UtilsTest(TestCase):
         # These should raise ValidationError
         self.assertRaises(ValidationError, validate_comma_separated_emails,
                           ['email@example.com', 'invalid_mail', 'email@example.com'])
+        self.assertRaises(ValidationError, validate_comma_separated_emails,
+                          ['email@example.com', 'email@example.com1', 'email@example.com'],
+                          validate_tld=True)
 
     def test_get_template_email(self):
         # Sanity Check
