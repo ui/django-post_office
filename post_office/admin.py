@@ -87,7 +87,7 @@ requeue.short_description = 'Requeue selected emails'
 class EmailAdmin(admin.ModelAdmin):
     list_display = ['truncated_message_id', 'to_display', 'shortened_subject', 'status', 'last_updated', 'scheduled_time', 'use_template']
     search_fields = ['to', 'subject']
-    readonly_fields = ['message_id', 'render_subject', 'render_plaintext_body',  'render_html_body']
+    readonly_fields = ['message_id', 'render_subject', 'render_plaintext_body',  'render_html_body', 'metadata']
     date_hierarchy = 'last_updated'
     inlines = [AttachmentInline, LogInline]
     list_filter = ['status', 'template__language', 'template__name']
@@ -145,7 +145,7 @@ class EmailAdmin(admin.ModelAdmin):
     use_template.boolean = True
 
     def get_fieldsets(self, request, obj=None):
-        fields = ['from_email', 'to', 'cc', 'bcc', 'priority', ('status', 'scheduled_time')]
+        fields = ['from_email', 'to', 'cc', 'bcc', 'priority', ('status', 'scheduled_time'), 'metadata']
         if obj.message_id:
             fields.insert(0, 'message_id')
         fieldsets = [(None, {'fields': fields})]

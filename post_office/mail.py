@@ -29,7 +29,7 @@ logger = setup_loghandlers("INFO")
 def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
            html_message='', context=None, scheduled_time=None, expires_at=None, headers=None,
            template=None, priority=None, render_on_delivery=False, commit=True,
-           backend=''):
+           backend='', metadata=None):
     """
     Creates an email from supplied keyword arguments. If template is
     specified, email subject and content will be rendered during delivery.
@@ -59,7 +59,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             expires_at=expires_at,
             message_id=message_id,
             headers=headers, priority=priority, status=status,
-            context=context, template=template, backend_alias=backend
+            context=context, template=template, backend_alias=backend,
+            metadata=metadata
         )
 
     else:
@@ -86,7 +87,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             expires_at=expires_at,
             message_id=message_id,
             headers=headers, priority=priority, status=status,
-            backend_alias=backend
+            backend_alias=backend,
+            metadata=metadata
         )
 
     if commit:
@@ -99,7 +101,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
          message='', html_message='', scheduled_time=None, expires_at=None, headers=None,
          priority=None, attachments=None, render_on_delivery=False,
          log_level=None, commit=True, cc=None, bcc=None, language='',
-         backend=''):
+         backend='', metadata=None):
     try:
         recipients = parse_emails(recipients)
     except ValidationError as e:
@@ -151,7 +153,7 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
 
     email = create(sender, recipients, cc, bcc, subject, message, html_message,
                    context, scheduled_time, expires_at, headers, template, priority,
-                   render_on_delivery, commit=commit, backend=backend)
+                   render_on_delivery, commit=commit, backend=backend, metadata=metadata)
 
     if attachments:
         attachments = create_attachments(attachments)
