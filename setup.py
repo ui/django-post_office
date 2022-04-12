@@ -47,7 +47,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     package_data={'': ['README.rst']},
-    install_requires=['django>=2.2', 'jsonfield>=3.0', 'bleach', 'pytz'],
+    install_requires=['django>=2.2', 'jsonfield>=3.0', 'bleach<=4.1.0', 'pytz'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
