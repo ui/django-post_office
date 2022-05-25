@@ -29,6 +29,9 @@ class EmailBackend(BaseEmailBackend):
             subject = email_message.subject
             from_email = email_message.from_email
             headers = email_message.extra_headers
+            if email_message.reply_to:
+                reply_to_header = ", ".join(str(v) for v in email_message.reply_to)
+                headers.setdefault("Reply-To", reply_to_header)
             message = email_message.message()
 
             # Look for first 'text/plain' and 'text/html' alternative in email
