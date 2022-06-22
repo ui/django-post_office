@@ -90,6 +90,35 @@ class BackendTest(TestCase):
         self.assertEqual(email.headers, {'Reply-To': 'reply@example.com'})
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_reply_to_added_as_header(self):
+        """
+        Test that 'Reply-To' headers are correctly set on the outgoing emails,
+        when EmailMessage property reply_to is set.
+        """
+        message = EmailMessage('subject', 'body', 'from@example.com',
+                               ['recipient@example.com'],
+                               reply_to=['replyto@example.com', ],)
+        message.send()
+        email = Email.objects.latest('id')
+        self.assertEqual(email.headers, {'Reply-To': 'replyto@example.com'})
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_reply_to_favors_explict_header(self):
+        """
+        Test that 'Reply-To' headers are correctly set, when reply_to property of
+        the message object is set and "Reply-To" is also set explictly as a header.
+        Then the explicit header value is favored over the message property reply_to,
+        adopting the behaviour of message() in django.core.mail.message.EmailMessage.
+        """
+        message = EmailMessage('subject', 'body', 'from@example.com',
+                               ['recipient@example.com'],
+                               reply_to=['replyto-from-property@example.com'],
+                               headers={'Reply-To': 'replyto-from-header@example.com'})
+        message.send()
+        email = Email.objects.latest('id')
+        self.assertEqual(email.headers, {'Reply-To': 'replyto-from-header@example.com'})
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_backend_attachments(self):
         message = EmailMessage('subject', 'body', 'from@example.com',
                                ['recipient@example.com'])
