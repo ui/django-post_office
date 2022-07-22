@@ -25,19 +25,18 @@ logger = setup_loghandlers("INFO")
 
 
 PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
-STATUS = namedtuple('STATUS', 'sent failed queued requeued')._make(range(4))
+STATUS = namedtuple('STATUS', 'sent failed queued requeued draft')._make(range(5))
 
 
 class Email(models.Model):
     """
     A model to hold email information.
     """
-
     PRIORITY_CHOICES = [(PRIORITY.low, _("low")), (PRIORITY.medium, _("medium")),
                         (PRIORITY.high, _("high")), (PRIORITY.now, _("now"))]
     STATUS_CHOICES = [(STATUS.sent, _("sent")), (STATUS.failed, _("failed")),
-                      (STATUS.queued, _("queued")), (STATUS.requeued, _("requeued"))]
-
+                      (STATUS.queued, _("queued")), (STATUS.requeued, _("requeued")), (STATUS.draft, _("draft"))]
+        
     from_email = models.CharField(_("Email From"), max_length=254,
                                   validators=[validate_email_with_name])
     to = CommaSeparatedEmailField(_("Email To"))
