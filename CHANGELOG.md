@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 3.6.1 (2022-07-04)
+--------------------------
+* Support for bleach >= 5.0. Thanks @franciscobmacedo!
+* Ensure that `Reply-To` headers are correctly set. Thanks @christophmeissner!
+* Add a `Resend` button in admin to easily resend an email. Thanks @domdinicola!
+
+
 Version 3.6.0 (2021-12-21)
 --------------------------
 * Support for Django 4.0. Thanks @domdinicola!

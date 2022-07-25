@@ -2,35 +2,31 @@ import re
 
 from django import forms
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.core.mail.message import SafeMIMEText
 from django.db import models
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
-from django.http.response import HttpResponse
-from django.http.response import HttpResponseNotFound
-from django.template import Context
-from django.template import Template
-from django.urls import re_path
-from django.urls import reverse
+from django.http.response import (HttpResponse, HttpResponseNotFound,
+                                  HttpResponseRedirect)
+from django.template import Context, Template
+from django.urls import re_path, reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from . import settings as post_office_settings
 from .fields import CommaSeparatedEmailField
-from .models import Attachment
-from .models import Email
-from .models import EmailTemplate
-from .models import Log
-from .models import STATUS
+from .mail import send
+from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
 
 
 def get_message_preview(instance):
     return ('{0}...'.format(instance.message[:25]) if len(instance.message) > 25
             else instance.message)
+
 
 get_message_preview.short_description = 'Message'
 
@@ -85,6 +81,7 @@ def requeue(modeladmin, request, queryset):
     """An admin action to requeue emails."""
     queryset.update(status=STATUS.queued)
 
+
 requeue.short_description = 'Requeue selected emails'
 
 
@@ -103,6 +100,7 @@ class EmailAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = [
             re_path(r'^(?P<pk>\d+)/image/(?P<content_id>[0-9a-f]{32})$', self.fetch_email_image, name='post_office_email_image'),
+            re_path(r'^(?P<pk>\d+)/resend/$', self.resend, name='resend'),
         ]
         urls.extend(super().get_urls())
         return urls
@@ -207,6 +205,12 @@ class EmailAdmin(admin.ModelAdmin):
             if message.get_content_maintype() == 'image' and message.get('Content-Id')[1:33] == content_id:
                 return HttpResponse(message.get_payload(decode=True), content_type=message.get_content_type())
         return HttpResponseNotFound()
+
+    def resend(self, request, pk):
+        instance = self.get_object(request, pk)
+        instance.dispatch()
+        messages.info(request, "Email has been sent again")
+        return HttpResponseRedirect(reverse('admin:post_office_email_change', args=[instance.pk]))
 
 
 class LogAdmin(admin.ModelAdmin):
@@ -386,6 +390,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ['name', 'file']
     filter_horizontal = ['emails']
+
 
 admin.site.register(Email, EmailAdmin)
 admin.site.register(Log, LogAdmin)
