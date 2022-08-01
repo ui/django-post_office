@@ -86,7 +86,8 @@ def create(sender, recipients=None, cc=None, bcc=None, subject='', message='',
             expires_at=expires_at,
             message_id=message_id,
             headers=headers, priority=priority, status=status,
-            backend_alias=backend
+            backend_alias=backend,
+            template=template,
         )
 
     if commit:
