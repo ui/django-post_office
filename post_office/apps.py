@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 class PostOfficeConfig(AppConfig):
     name = 'post_office'
     verbose_name = _("Post Office")
+    default_auto_field = 'django.db.models.AutoField'
 
     def ready(self):
         from post_office import tasks
