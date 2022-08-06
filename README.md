@@ -230,7 +230,7 @@ indonesian_template = template.translated_templates.create(
 )
 ```
 
-Sending an email using template in a non default languange is similarly easy:
+Sending an email using template in a non default language is similarly easy:
 
 ```python
 mail.send(
@@ -503,7 +503,7 @@ POST_OFFICE = {
 
 ### Log Level
 
-Logs are stored in the database and is browseable via Django admin.
+Logs are stored in the database and is browsable via Django admin.
 The default log level is 2 (logs both successful and failed deliveries)
 This behavior can be changed by setting `LOG_LEVEL`.
 
@@ -741,10 +741,10 @@ app.conf.beat_schedule = {
 
 The email queue now will be processed every 10 minutes. If you are using
 [Django Celery Beat](https://django-celery-beat.readthedocs.io/en/latest/),
-then use the Django-Admin backend and add a periodic taks for `post_office.tasks.send_queued_mail`.
+then use the Django-Admin backend and add a periodic tasks for `post_office.tasks.send_queued_mail`.
 
 Depending on your policy, you may also want to remove expired emails from the queue. This can be
-done by adding another periodic taks for `post_office.tasks.cleanup_mail`, which may run once a
+done by adding another periodic tasks for `post_office.tasks.cleanup_mail`, which may run once a
 week or month.
 
 
