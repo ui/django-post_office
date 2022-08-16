@@ -140,6 +140,7 @@ class Email(models.Model):
                     subject=subject, body=html_message, from_email=self.from_email,
                     to=self.to, bcc=self.bcc, cc=self.cc,
                     headers=headers, connection=connection)
+                msg.attach_alternative(html_message, "text/html")
                 msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
                 multipart_template.attach_related(msg)
