@@ -12,4 +12,7 @@ def render_to_string(template_name, context=None, request=None, using=None):
         template = select_template(template_name, using=using)
     else:
         template = get_template(template_name, using=using)
-    return template.render(context, request), template.template._attached_images
+    try:
+        return template.render(context, request), template.template._attached_images
+    except Exception as a:
+        return template.render(context, request)
