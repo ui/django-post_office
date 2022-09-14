@@ -33,6 +33,11 @@ get_message_preview.short_description = 'Message'
 class AttachmentInline(admin.StackedInline):
     model = Attachment.emails.through
     extra = 0
+    autocomplete_fields = ["attachment"]
+
+    def get_formset(self, request, obj=None, **kwargs):
+        self.parent_obj = obj
+        return super().get_formset(request, obj, **kwargs)
 
     def get_queryset(self, request):
         """
@@ -40,6 +45,9 @@ class AttachmentInline(admin.StackedInline):
         are displayed anyway.
         """
         queryset = super().get_queryset(request)
+        if self.parent_obj:
+            queryset = queryset.filter(email=self.parent_obj)
+
         inlined_attachments = [
             a.id
             for a in queryset
@@ -314,6 +322,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ['name', 'file']
     filter_horizontal = ['emails']
+    search_fields = ["name"]
 
 
 admin.site.register(Email, EmailAdmin)
