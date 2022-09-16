@@ -40,9 +40,19 @@ class AttachmentInline(admin.StackedInline):
         are displayed anyway.
         """
         queryset = super().get_queryset(request)
+
+        # The queryset does not have the Email FK filter applied at this point.
+        # That happens later when the inline formset is created as part of the
+        # admin view. Here we explicitly add the Email filter to avoid selecting
+        # every row in the table during this special filtering step.
+        email = request.resolver_match.kwargs.get("object_id", None)
+        if email is None:
+            return queryset
+        email_filter = queryset.filter(email=email).select_related("attachment")
+
         inlined_attachments = [
             a.id
-            for a in queryset
+            for a in email_filter
             if isinstance(a.attachment.headers, dict)
             and a.attachment.headers.get("Content-Disposition", "").startswith("inline")
         ]
