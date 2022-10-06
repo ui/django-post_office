@@ -135,7 +135,7 @@ else:
         'tr': ['class', 'id', 'style', 'align', 'bgcolor', 'dir', 'style', 'valign'],
         'u': ['class', 'id', 'style'],
         'ul': ['class', 'id', 'style', 'dir', 'type'],
-    },
+    }
     try:
         from bleach.css_sanitizer import CSSSanitizer
         css_sanitizer = CSSSanitizer(
