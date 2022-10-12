@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 3.6.2 (2022-10-12)
+--------------------------
+* Improvement to attachment handling in admin interface. Thanks @petrprikryl!
+* Fixed a bug where HTML body is not displayed in admin interface. Thanks @robbieadi!
+* Explicitly specify `default_auto_field` to supress migration warnings. Thanks @CirXe0N!
+* Fixed a bug where `email.template` is not saved in certain cases. Thanks @franciscobmacedo!
+
 Version 3.6.1 (2022-07-04)
 --------------------------
 * Support for bleach >= 5.0. Thanks @franciscobmacedo!
