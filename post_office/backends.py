@@ -42,9 +42,7 @@ class EmailBackend(BaseEmailBackend):
                         break
                 if part.get_content_type() == 'text/html':
 
-                    html_body = part.get_payload()
-                    if part['Content-Transfer-Encoding'] == 'quoted-printable':
-                        html_body = quopri.decodestring(html_body).decode('utf-8')
+                    html_body = part.get_payload(decode=True).decode('utf-8')
 
                     if plaintext_body:
                         break
