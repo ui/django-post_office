@@ -5,7 +5,6 @@ from django.core.mail.backends.base import BaseEmailBackend
 import quopri
 from .settings import get_default_priority
 
-
 class EmailBackend(BaseEmailBackend):
 
     def open(self):
@@ -45,9 +44,8 @@ class EmailBackend(BaseEmailBackend):
 
                     html_body = part.get_payload()
                     if part['Content-Transfer-Encoding'] == 'quoted-printable':
-                        html_body = quopri.decodestring(html_body)
-                    
-                    
+                        html_body = quopri.decodestring(html_body).decode('utf-8')
+
                     if plaintext_body:
                         break
 
