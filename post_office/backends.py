@@ -2,7 +2,7 @@ from collections import OrderedDict
 from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
-
+import quopri
 from .settings import get_default_priority
 
 
@@ -42,7 +42,12 @@ class EmailBackend(BaseEmailBackend):
                     if html_body:
                         break
                 if part.get_content_type() == 'text/html':
+
                     html_body = part.get_payload()
+                    if part['Content-Transfer-Encoding'] == 'quoted-printable':
+                        html_body = quopri.decodestring(html_body)
+                    
+                    
                     if plaintext_body:
                         break
 
