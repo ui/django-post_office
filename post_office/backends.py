@@ -33,7 +33,9 @@ class EmailBackend(BaseEmailBackend):
                 headers.setdefault("Reply-To", reply_to_header)
             message = email_message.body # The plaintext message is called body
             if hasattr(email_message, 'alternatives') and len(email_message.alternatives) > 0:
-                html_body  = email_message.alternatives[0]
+                for alternative in email_message.alternatives:
+                    if alternative[1] == 'text/html':
+                        html_body  = alternative[0]
 
             attachment_files = {}
             for attachment in email_message.attachments:
@@ -49,7 +51,7 @@ class EmailBackend(BaseEmailBackend):
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
                            bcc=email_message.bcc, subject=subject,
-                           message=plaintext_body, html_message=html_body,
+                           message=message, html_message=html_body,
                            headers=headers)
 
             if attachment_files:
