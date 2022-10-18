@@ -31,21 +31,9 @@ class EmailBackend(BaseEmailBackend):
             if email_message.reply_to:
                 reply_to_header = ", ".join(str(v) for v in email_message.reply_to)
                 headers.setdefault("Reply-To", reply_to_header)
-            message = email_message.message()
-
-            # Look for first 'text/plain' and 'text/html' alternative in email
-            plaintext_body = html_body = ''
-            for part in message.walk():
-                if part.get_content_type() == 'text/plain':
-                    plaintext_body = part.get_payload()
-                    if html_body:
-                        break
-                if part.get_content_type() == 'text/html':
-
-                    html_body = part.get_payload(decode=True).decode('utf-8')
-
-                    if plaintext_body:
-                        break
+            message = email_message.body # The plaintext message is called body
+            if hasattr(email_message, 'alternatives') and len(email_message.alternatives) > 0:
+                html_body  = email_message.alternatives[0]
 
             attachment_files = {}
             for attachment in email_message.attachments:
