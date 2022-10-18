@@ -105,7 +105,7 @@ class Email(models.Model):
         if get_override_recipients():
             self.to = get_override_recipients()
 
-        if self.template is not None:
+        if self.context is not None:
             engine = get_template_engine()
             subject = engine.from_string(self.template.subject).render(self.context)
             plaintext_message = engine.from_string(self.template.content).render(self.context)
