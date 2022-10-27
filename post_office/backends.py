@@ -20,11 +20,13 @@ class EmailBackend(BaseEmailBackend):
         email messages sent.
         """
         from .mail import create
+        from .models import STATUS
         from .utils import create_attachments
 
         if not email_messages:
             return
 
+        num_sent = 0
         for email_message in email_messages:
             subject = email_message.subject
             from_email = email_message.from_email
@@ -69,4 +71,7 @@ class EmailBackend(BaseEmailBackend):
                 email.attachments.add(*attachments)
 
             if get_default_priority() == 'now':
-                email.dispatch()
+                status = email.dispatch()
+                if status == STATUS.sent:
+                    num_sent += 1
+        return num_sent

@@ -160,6 +160,7 @@ class BackendTest(TestCase):
     )
     def test_default_priority_now(self):
         # If DEFAULT_PRIORITY is "now", mails should be sent right away
-        send_mail('Test', 'Message', 'from1@example.com', ['to@example.com'])
+        num_sent = send_mail('Test', 'Message', 'from1@example.com', ['to@example.com'])
         email = Email.objects.latest('id')
         self.assertEqual(email.status, STATUS.sent)
+        self.assertEqual(num_sent, 1)
