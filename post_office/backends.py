@@ -32,6 +32,7 @@ class EmailBackend(BaseEmailBackend):
                 reply_to_header = ", ".join(str(v) for v in email_message.reply_to)
                 headers.setdefault("Reply-To", reply_to_header)
             message = email_message.body # The plaintext message is called body
+            html_body = ''  # The default if no html body can be found
             if hasattr(email_message, 'alternatives') and len(email_message.alternatives) > 0:
                 for alternative in email_message.alternatives:
                     if alternative[1] == 'text/html':
