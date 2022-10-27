@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 3.6.3 (2022-10-27)
+--------------------------
+* Fixed an issue where emails may not be rendered with context. Thanks @zagl!
+* Fixed a few packaging issues. Thanks @zagl and @adamchainz!
+* `send_messages()` now mimics Django's SMTP Backend return value. Thanks @JiriKr!
+
 Version 3.6.2 (2022-10-12)
 --------------------------
 * Improvement to attachment handling in admin interface. Thanks @petrprikryl!
