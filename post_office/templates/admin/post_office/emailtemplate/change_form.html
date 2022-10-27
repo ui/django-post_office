@@ -19,6 +19,7 @@
             integrity="sha256-nLr6+psgWgm4BnA7O+W9T0gldFRHCI+H3cByx/TSabE=" crossorigin="anonymous"></script>
 
     <script>
+      (function($) {
         var options = {
             mode: 'django',
             theme: "mdn-like",
@@ -30,5 +31,7 @@
         CodeMirror.fromTextArea($('#id_html_content')[0], options);
 
         $('.CodeMirror').css('height', 'auto');
+      })(django.jQuery);
     </script>
 {% endblock %}
+
