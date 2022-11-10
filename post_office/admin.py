@@ -131,7 +131,7 @@ class EmailAdmin(admin.ModelAdmin):
         return False
 
     def shortened_subject(self, instance):
-        if instance.template:
+        if instance.context:
             template_cache_key = '_subject_template_' + str(instance.template_id)
             template = getattr(self, template_cache_key, None)
             if template is None:
