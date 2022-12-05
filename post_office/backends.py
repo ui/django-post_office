@@ -2,9 +2,8 @@ from collections import OrderedDict
 from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
-
+import quopri
 from .settings import get_default_priority
-
 
 class EmailBackend(BaseEmailBackend):
 
@@ -34,19 +33,12 @@ class EmailBackend(BaseEmailBackend):
             if email_message.reply_to:
                 reply_to_header = ", ".join(str(v) for v in email_message.reply_to)
                 headers.setdefault("Reply-To", reply_to_header)
-            message = email_message.message()
-
-            # Look for first 'text/plain' and 'text/html' alternative in email
-            plaintext_body = html_body = ''
-            for part in message.walk():
-                if part.get_content_type() == 'text/plain':
-                    plaintext_body = part.get_payload()
-                    if html_body:
-                        break
-                if part.get_content_type() == 'text/html':
-                    html_body = part.get_payload()
-                    if plaintext_body:
-                        break
+            message = email_message.body # The plaintext message is called body
+            html_body = ''  # The default if no html body can be found
+            if hasattr(email_message, 'alternatives') and len(email_message.alternatives) > 0:
+                for alternative in email_message.alternatives:
+                    if alternative[1] == 'text/html':
+                        html_body  = alternative[0]
 
             attachment_files = {}
             for attachment in email_message.attachments:
@@ -62,7 +54,7 @@ class EmailBackend(BaseEmailBackend):
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
                            bcc=email_message.bcc, subject=subject,
-                           message=plaintext_body, html_message=html_body,
+                           message=message, html_message=html_body,
                            headers=headers)
 
             if attachment_files:
