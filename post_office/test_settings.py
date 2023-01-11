@@ -83,6 +83,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.i18n',
                 'django.template.context_processors.media',
+                'django.template.context_processors.request',
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
@@ -107,3 +108,6 @@ TEMPLATES = [
 ]
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'tests/static')]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+

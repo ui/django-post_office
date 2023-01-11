@@ -1,23 +1,24 @@
 import re
 
 from django import forms
-from django.db import models
-from django.contrib import admin
 from django.conf import settings
-from django.conf.urls import re_path
+from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.core.mail.message import SafeMIMEText
+from django.db import models
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
-from django.http.response import HttpResponse, HttpResponseNotFound
+from django.http.response import (HttpResponse, HttpResponseNotFound,
+                                  HttpResponseRedirect)
 from django.template import Context, Template
-from django.urls import reverse
+from django.urls import re_path, reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
-from .models import Attachment, Log, Email, EmailTemplate, STATUS
+from .mail import send
+from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
 
 
@@ -25,12 +26,18 @@ def get_message_preview(instance):
     return ('{0}...'.format(instance.message[:25]) if len(instance.message) > 25
             else instance.message)
 
+
 get_message_preview.short_description = 'Message'
 
 
 class AttachmentInline(admin.StackedInline):
     model = Attachment.emails.through
     extra = 0
+    autocomplete_fields = ["attachment"]
+
+    def get_formset(self, request, obj=None, **kwargs):
+        self.parent_obj = obj
+        return super().get_formset(request, obj, **kwargs)
 
     def get_queryset(self, request):
         """
@@ -38,6 +45,9 @@ class AttachmentInline(admin.StackedInline):
         are displayed anyway.
         """
         queryset = super().get_queryset(request)
+        if self.parent_obj:
+            queryset = queryset.filter(email=self.parent_obj)
+
         inlined_attachments = [
             a.id
             for a in queryset
@@ -78,6 +88,7 @@ def requeue(modeladmin, request, queryset):
     """An admin action to requeue emails."""
     queryset.update(status=STATUS.queued)
 
+
 requeue.short_description = 'Requeue selected emails'
 
 
@@ -96,6 +107,7 @@ class EmailAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = [
             re_path(r'^(?P<pk>\d+)/image/(?P<content_id>[0-9a-f]{32})$', self.fetch_email_image, name='post_office_email_image'),
+            re_path(r'^(?P<pk>\d+)/resend/$', self.resend, name='resend'),
         ]
         urls.extend(super().get_urls())
         return urls
@@ -119,7 +131,7 @@ class EmailAdmin(admin.ModelAdmin):
         return False
 
     def shortened_subject(self, instance):
-        if instance.template:
+        if instance.context:
             template_cache_key = '_subject_template_' + str(instance.template_id)
             template = getattr(self, template_cache_key, None)
             if template is None:
@@ -200,6 +212,12 @@ class EmailAdmin(admin.ModelAdmin):
             if message.get_content_maintype() == 'image' and message.get('Content-Id')[1:33] == content_id:
                 return HttpResponse(message.get_payload(decode=True), content_type=message.get_content_type())
         return HttpResponseNotFound()
+
+    def resend(self, request, pk):
+        instance = self.get_object(request, pk)
+        instance.dispatch()
+        messages.info(request, "Email has been sent again")
+        return HttpResponseRedirect(reverse('admin:post_office_email_change', args=[instance.pk]))
 
 
 class LogAdmin(admin.ModelAdmin):
@@ -304,6 +322,8 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ['name', 'file']
     filter_horizontal = ['emails']
+    search_fields = ["name"]
+
 
 admin.site.register(Email, EmailAdmin)
 admin.site.register(Log, LogAdmin)

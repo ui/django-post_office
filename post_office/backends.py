@@ -2,9 +2,8 @@ from collections import OrderedDict
 from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
-
+import quopri
 from .settings import get_default_priority
-
 
 class EmailBackend(BaseEmailBackend):
 
@@ -20,28 +19,26 @@ class EmailBackend(BaseEmailBackend):
         email messages sent.
         """
         from .mail import create
+        from .models import STATUS
         from .utils import create_attachments
 
         if not email_messages:
             return
 
+        num_sent = 0
         for email_message in email_messages:
             subject = email_message.subject
             from_email = email_message.from_email
             headers = email_message.extra_headers
-            message = email_message.message()
-
-            # Look for first 'text/plain' and 'text/html' alternative in email
-            plaintext_body = html_body = ''
-            for part in message.walk():
-                if part.get_content_type() == 'text/plain':
-                    plaintext_body = part.get_payload()
-                    if html_body:
-                        break
-                if part.get_content_type() == 'text/html':
-                    html_body = part.get_payload()
-                    if plaintext_body:
-                        break
+            if email_message.reply_to:
+                reply_to_header = ", ".join(str(v) for v in email_message.reply_to)
+                headers.setdefault("Reply-To", reply_to_header)
+            message = email_message.body # The plaintext message is called body
+            html_body = ''  # The default if no html body can be found
+            if hasattr(email_message, 'alternatives') and len(email_message.alternatives) > 0:
+                for alternative in email_message.alternatives:
+                    if alternative[1] == 'text/html':
+                        html_body  = alternative[0]
 
             attachment_files = {}
             for attachment in email_message.attachments:
@@ -57,7 +54,7 @@ class EmailBackend(BaseEmailBackend):
             email = create(sender=from_email,
                            recipients=email_message.to, cc=email_message.cc,
                            bcc=email_message.bcc, subject=subject,
-                           message=plaintext_body, html_message=html_body,
+                           message=message, html_message=html_body,
                            headers=headers)
 
             if attachment_files:
@@ -66,4 +63,7 @@ class EmailBackend(BaseEmailBackend):
                 email.attachments.add(*attachments)
 
             if get_default_priority() == 'now':
-                email.dispatch()
+                status = email.dispatch()
+                if status == STATUS.sent:
+                    num_sent += 1
+        return num_sent

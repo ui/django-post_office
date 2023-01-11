@@ -1,6 +1,36 @@
 Changelog
 =========
 
+Version 3.6.3 (2022-10-27)
+--------------------------
+* Fixed an issue where emails may not be rendered with context. Thanks @zagl!
+* Fixed a few packaging issues. Thanks @zagl and @adamchainz!
+* `send_messages()` now mimics Django's SMTP Backend return value. Thanks @JiriKr!
+
+Version 3.6.2 (2022-10-12)
+--------------------------
+* Improvement to attachment handling in admin interface. Thanks @petrprikryl!
+* Fixed a bug where HTML body is not displayed in admin interface. Thanks @robbieadi!
+* Explicitly specify `default_auto_field` to supress migration warnings. Thanks @CirXe0N!
+* Fixed a bug where `email.template` is not saved in certain cases. Thanks @franciscobmacedo!
+
+Version 3.6.1 (2022-07-04)
+--------------------------
+* Support for bleach >= 5.0. Thanks @franciscobmacedo!
+* Ensure that `Reply-To` headers are correctly set. Thanks @christophmeissner!
+* Add a `Resend` button in admin to easily resend an email. Thanks @domdinicola!
+
+
+Version 3.6.0 (2021-12-21)
+--------------------------
+* Support for Django 4.0. Thanks @domdinicola!
+* `cleanup_mail` now deletes emails in batches, which is much nicer to DB when deleting millions of emails. Thanks @stevemc4!
+* Failure to send an email are now logged as an exception. Thanks @SaturnFromTitan!
+* Added `es` locale. Thanks @ahmontero!
+* Fixed admin template discovery issue for case-sensitive filesystems. Thanks @fasih!
+* Fixes: `SMTPServerDisconnected` error. Thanks @weimens!
+* Various maintenance work by @jrief and @mogost.
+
 Version 3.5.3 (2020-12-04)
 --------------------------
 * Fixed an issue with Celery integration that could cause duplicate emails. Thanks @jrief!

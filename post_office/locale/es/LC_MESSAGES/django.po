@@ -1,0 +1,127 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-07-14 09:53+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Antonio Hinojo <antoniohm2004@gmail.com>\n"
+"Language-Team: Antonio Hinojo <antoniohm2004@gmail.com>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: admin.py:97
+msgid "Default Content"
+msgstr "Contenido por defecto"
+
+#: admin.py:111
+msgid "Description"
+msgstr "Descripción"
+
+#: admin.py:117
+msgid "Languages"
+msgstr "Idiomas"
+
+#: fields.py:11
+msgid "Comma-separated emails"
+msgstr "Emails separados por comas"
+
+#: fields.py:20
+msgid "Only comma separated emails are allowed."
+msgstr "Sólo están permitidos emails separados por coma."
+
+#: models.py:38
+msgid "low"
+msgstr "baja"
+
+#: models.py:38
+msgid "medium"
+msgstr "media"
+
+#: models.py:39
+msgid "high"
+msgstr "alta"
+
+#: models.py:39
+msgid "now"
+msgstr "ahora"
+
+#: models.py:40 models.py:169
+msgid "sent"
+msgstr "enviar"
+
+#: models.py:40 models.py:169
+msgid "failed"
+msgstr "falló"
+
+#: models.py:41
+msgid "queued"
+msgstr "encolado"
+
+#: models.py:44
+msgid "Email From"
+msgstr "Remitente"
+
+#: models.py:45
+msgid "Email To"
+msgstr "Destinatario"
+
+#: models.py:46
+msgid "Cc"
+msgstr "Copia"
+
+#: models.py:47
+msgid "Bcc"
+msgstr "Bcc"
+
+#: models.py:48 models.py:194
+msgid "Subject"
+msgstr "Asunto"
+
+#: models.py:49
+msgid "Message"
+msgstr "Mensaje"
+
+#: models.py:50
+msgid "HTML Message"
+msgstr "Mensaje en HTML"
+
+#: models.py:188
+msgid "e.g: 'welcome_email'"
+msgstr "per ej. 'email_bienvenida'"
+
+#: models.py:190
+msgid "Description of this template."
+msgstr "Descripción de esta template."
+
+#: models.py:196
+msgid "Content"
+msgstr "Contenido"
+
+#: models.py:198
+msgid "HTML content"
+msgstr "Contenido en HTML"
+
+#: models.py:200
+msgid "Render template in alternative language"
+msgstr "Renderizar la template en idioma alternativo"
+
+#: models.py:208
+msgid "Email Template"
+msgstr "Template de correo"
+
+#: models.py:209
+msgid "Email Templates"
+msgstr "Templates de correos"
+
+#: models.py:236
+msgid "The original filename"
+msgstr "Nombre del archivo original"

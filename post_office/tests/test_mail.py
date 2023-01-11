@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+from datetime import timedelta
 
 import pytz
 import re
@@ -131,8 +132,8 @@ class MailTest(TestCase):
         self.assertEqual(list(get_queued()), [queued_email])
 
         # Email scheduled for the future should not be included
-        Email.objects.create(status=STATUS.queued,
-                             scheduled_time=timezone.datetime(2020, 12, 13), **kwargs)
+        scheduled_time = timezone.now() + timedelta(days=1)
+        Email.objects.create(status=STATUS.queued, scheduled_time=scheduled_time, **kwargs)
         self.assertEqual(list(get_queued()), [queued_email])
 
         # Email scheduled in the past should be included
@@ -322,7 +323,7 @@ class MailTest(TestCase):
         self.assertEqual(email.message, 'Content %d' % current_year)
         self.assertEqual(email.html_message, 'HTML %d' % current_year)
         self.assertEqual(email.context, None)
-        self.assertEqual(email.template, None)
+        self.assertIsNotNone(email.template)
 
     def test_backend_alias(self):
         """Test backend_alias field is properly set."""
@@ -368,7 +369,7 @@ class MailTest(TestCase):
         self.assertEqual(email.message, 'Content test')
         self.assertEqual(email.html_message, 'HTML test')
         self.assertEqual(email.context, None)
-        self.assertEqual(email.template, None)
+        self.assertIsNotNone(email.template)
 
         # check, if we use the Russian version
         email = send(recipients=['to@example.com'], sender='from@example.com',
@@ -378,7 +379,7 @@ class MailTest(TestCase):
         self.assertEqual(email.message, 'содержание test')
         self.assertEqual(email.html_message, 'HTML test')
         self.assertEqual(email.context, None)
-        self.assertEqual(email.template, None)
+        self.assertIsNotNone(email.template)
 
         # Check that send picks template with the right language
         email = send(recipients=['to@example.com'], sender='from@example.com',
@@ -401,7 +402,7 @@ class MailTest(TestCase):
                                      template=template, status=STATUS.queued)
         _send_bulk([email], uses_multiprocessing=False)
         email = Email.objects.get(id=email.id)
-        self.assertEqual(email.status, STATUS.requeued)
+        self.assertEqual(email.status, STATUS.sent)
 
     def test_retry_failed(self):
         self.assertEqual(get_retry_timedelta(), timezone.timedelta(minutes=15))

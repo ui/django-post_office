@@ -5,3 +5,4 @@ include post_office/version.txt
 recursive-include post_office *.py
 recursive-include post_office/locale *.po
 recursive-include post_office/locale *.mo
+recursive-include post_office/templates *.html
