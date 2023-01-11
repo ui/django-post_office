@@ -27,10 +27,11 @@ will otherwise be stripped for security reasons.
 
 ## Installation
 
-[![Build
-Status](https://travis-ci.org/ui/django-post_office.png?branch=master)](https://travis-ci.org/ui/django-post_office) [![PyPI version](https://img.shields.io/pypi/v/django-post_office.svg)](https://pypi.org/project/django-post_office/) ![Software license](https://img.shields.io/pypi/l/django-post_office.svg)
+[![Build Status](https://github.com/ui/django-post_office/actions/workflows/test.yml/badge.svg)](https://github.com/ui/django-post_office/actions)
+[![PyPI](https://img.shields.io/pypi/pyversions/django-post_office.svg)]()
+[![PyPI version](https://img.shields.io/pypi/v/django-post_office.svg)](https://pypi.python.org/pypi/django-post_office)
+[![PyPI](https://img.shields.io/pypi/l/django-post_office.svg)]()
 
-Install from PyPI (or [manually download from PyPI](http://pypi.python.org/pypi/django-post_office)):
 
 ```sh
 pip install django-post_office
