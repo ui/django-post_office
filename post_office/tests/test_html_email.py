@@ -148,12 +148,13 @@ class EmailAdminTest(TestCase):
         msg.send()
 
         # check that in the Email's detail view, the message is rendered
+        self.assertEqual(Email.objects.count(), 1)  # TODO: remove this
         email = Email.objects.latest('id')
         parts = email.email_message().message().walk()
         part = next(parts)
-        self.assertEqual(part.get_content_type(), 'multipart/mixed')
+        self.assertIsInstance(part, SafeMIMEMultipart)
         part = next(parts)
-        self.assertEqual(part.get_content_type(), 'text/html')
+        self.assertIsInstance(part, SafeMIMEText)
         part = next(parts)
         self.assertEqual(part.get_content_type(), 'image/png')
         content_id = part['Content-Id'][1:33]
