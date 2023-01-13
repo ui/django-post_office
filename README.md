@@ -312,6 +312,7 @@ inlined images, use the following code snippet:
 
 ```python
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import get_template
 
 subject, body = "Hello", "Plain text body"
 from_email, to_email = "no-reply@example.com", "john@example.com"
@@ -329,6 +330,7 @@ plain text body, use this code snippet:
 
 ```python
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import get_template
 
 subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
 template = get_template('email-template-name.html', using='post_office')
