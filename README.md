@@ -553,7 +553,7 @@ POST_OFFICE = {
 }
 ```
 
-`CONTEXT_FIELD_CLASS` defaults to `jsonfield.JSONField`.
+`CONTEXT_FIELD_CLASS` defaults to `django.db.models.JSONField`.
 
 ### Logging
 

@@ -125,5 +125,5 @@ def get_message_id_fqdn():
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
-                                       'jsonfield.JSONField')
+                                       'django.db.models.JSONField')
 context_field_class = import_string(CONTEXT_FIELD_CLASS)
