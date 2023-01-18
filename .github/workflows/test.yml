@@ -18,6 +18,11 @@ jobs:
       matrix:
         python-version: ["3.7", "3.10"]
         django-version: ["3.2", "4.0", "4.1"]
+        exclude:
+          - python-version: 3.7
+            django-version: 4.0
+          - python-version: 3.7
+            django-version: 4.1
 
     steps:
     - uses: actions/checkout@v3
