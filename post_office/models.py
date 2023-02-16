@@ -10,7 +10,6 @@ from django.db import models
 from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
-from jsonfield import JSONField
 
 from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
@@ -68,7 +67,7 @@ class Email(models.Model):
                                       help_text=_("Email won't be sent after this timestamp"))
     message_id = models.CharField("Message-ID", null=True, max_length=255, editable=False)
     number_of_retries = models.PositiveIntegerField(null=True, blank=True)
-    headers = JSONField(_('Headers'), blank=True, null=True)
+    headers = models.JSONField(_('Headers'), blank=True, null=True)
     template = models.ForeignKey('post_office.EmailTemplate', blank=True,
                                  null=True, verbose_name=_("Email template"),
                                  on_delete=models.CASCADE)
@@ -316,7 +315,7 @@ class Attachment(models.Model):
     emails = models.ManyToManyField(Email, related_name='attachments',
                                     verbose_name=_('Emails'))
     mimetype = models.CharField(max_length=255, default='', blank=True)
-    headers = JSONField(_('Headers'), blank=True, null=True)
+    headers = models.JSONField(_('Headers'), blank=True, null=True)
 
     class Meta:
         app_label = 'post_office'

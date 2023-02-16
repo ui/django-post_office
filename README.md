@@ -27,10 +27,11 @@ will otherwise be stripped for security reasons.
 
 ## Installation
 
-[![Build
-Status](https://travis-ci.org/ui/django-post_office.png?branch=master)](https://travis-ci.org/ui/django-post_office) [![PyPI version](https://img.shields.io/pypi/v/django-post_office.svg)](https://pypi.org/project/django-post_office/) ![Software license](https://img.shields.io/pypi/l/django-post_office.svg)
+[![Build Status](https://github.com/ui/django-post_office/actions/workflows/test.yml/badge.svg)](https://github.com/ui/django-post_office/actions)
+[![PyPI](https://img.shields.io/pypi/pyversions/django-post_office.svg)]()
+[![PyPI version](https://img.shields.io/pypi/v/django-post_office.svg)](https://pypi.python.org/pypi/django-post_office)
+[![PyPI](https://img.shields.io/pypi/l/django-post_office.svg)]()
 
-Install from PyPI (or [manually download from PyPI](http://pypi.python.org/pypi/django-post_office)):
 
 ```sh
 pip install django-post_office
@@ -311,6 +312,7 @@ inlined images, use the following code snippet:
 
 ```python
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import get_template
 
 subject, body = "Hello", "Plain text body"
 from_email, to_email = "no-reply@example.com", "john@example.com"
@@ -328,6 +330,7 @@ plain text body, use this code snippet:
 
 ```python
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import get_template
 
 subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
 template = get_template('email-template-name.html', using='post_office')
@@ -550,7 +553,7 @@ POST_OFFICE = {
 }
 ```
 
-`CONTEXT_FIELD_CLASS` defaults to `jsonfield.JSONField`.
+`CONTEXT_FIELD_CLASS` defaults to `django.db.models.JSONField`.
 
 ### Logging
 
