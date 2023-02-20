@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='attachment',
             name='headers',
-            field=models.JSONField(blank=True, null=True, verbose_name='Headers'),
+            field=models.TextField(blank=True, null=True, verbose_name='Headers'),
         ),
     ]

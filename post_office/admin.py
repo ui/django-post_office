@@ -17,7 +17,6 @@ from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
-from .mail import send
 from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
 
@@ -34,6 +33,7 @@ class AttachmentInline(admin.StackedInline):
     model = Attachment.emails.through
     extra = 0
     autocomplete_fields = ["attachment"]
+    parent_obj = None
 
     def get_formset(self, request, obj=None, **kwargs):
         self.parent_obj = obj
@@ -48,13 +48,9 @@ class AttachmentInline(admin.StackedInline):
         if self.parent_obj:
             queryset = queryset.filter(email=self.parent_obj)
 
-        inlined_attachments = [
-            a.id
-            for a in queryset
-            if isinstance(a.attachment.headers, dict)
-            and a.attachment.headers.get("Content-Disposition", "").startswith("inline")
-        ]
-        return queryset.exclude(id__in=inlined_attachments)
+        return queryset.exclude(
+            **{"attachment__headers__Content-Disposition__startswith": "inline"}
+        )
 
 
 class LogInline(admin.TabularInline):
