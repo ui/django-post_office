@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 3.7.0 (2023-05-30)
+--------------------------
+* Changed JSON columns to use Django's `JSONField` and drop `jsonfield` dependency. Thanks @jrief!
+* Fixed saving HTML emails that have `quoted_printable`. Thanks @gabn88!
+* Fixes an issue where emails are rendered without context in Django's admin interface. Thanks @zagl!
+* This version no longer supports Django 3.1.
+
 Version 3.6.3 (2022-10-27)
 --------------------------
 * Fixed an issue where emails may not be rendered with context. Thanks @zagl!
