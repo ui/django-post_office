@@ -16,15 +16,15 @@ jobs:
     name: Python${{ matrix.python-version }}/Django${{ matrix.django-version }}
     strategy:
       matrix:
-        python-version: ["3.7", "3.10"]
+        python-version: ["3.8", "3.10"]
         django-version: ["3.2", "4.0", "4.1", "4.2"]
-        exclude:
-          - python-version: 3.7
-            django-version: 4.0
-          - python-version: 3.7
-            django-version: 4.1
-          - python-version: 3.8
-            django-version: 4.2
+        # exclude:
+        #   - python-version: 3.7
+        #     django-version: 4.0
+        #   - python-version: 3.7
+        #     django-version: 4.1
+        #   - python-version: 3.8
+        #     django-version: 4.2
 
     steps:
     - uses: actions/checkout@v3
