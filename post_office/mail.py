@@ -186,11 +186,10 @@ def get_queued():
     """
     now = timezone.now()
     query = (
-        (Q(status=STATUS.queued) | Q(status=STATUS.requeued)) &
-        (Q(scheduled_time__lte=now) | Q(scheduled_time__isnull=True)) &
-        (Q(expires_at__gt=now) | Q(expires_at__isnull=True))
+        (Q(scheduled_time__lte=now) | Q(scheduled_time=None)) &
+        (Q(expires_at__gt=now) | Q(expires_at=None))
     )
-    return Email.objects.filter(query) \
+    return Email.objects.filter(query, status__in=[STATUS.queued, STATUS.requeued]) \
                 .select_related('template') \
                 .order_by(*get_sending_order()).prefetch_related('attachments')[:get_batch_size()]
 
