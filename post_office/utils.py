@@ -157,13 +157,13 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
         if deleted_data:
             total_deleted_emails += deleted_data['post_office.Email']
 
-    if delete_attachments:
-        attachments = Attachment.objects.filter(emails=None)
-        for attachment in attachments:
-            # Delete the actual file
-            attachment.file.delete()
-        attachments_count, _ = attachments.delete()
-    else:
-        attachments_count = 0
+        if delete_attachments:
+            attachments = Attachment.objects.filter(emails=None)
+            for attachment in attachments:
+                # Delete the actual file
+                attachment.file.delete()
+            attachments_count, _ = attachments.delete()
+        else:
+            attachments_count = 0
 
     return total_deleted_emails, attachments_count
