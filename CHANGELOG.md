@@ -1,5 +1,10 @@
 Changelog
 =========
+Version 3.7.1 (2023-08-08)
+--------------------------
+* Optimized a  queryset in `get_queued()` that doesn't use indexes in Postgres. Thanks @marsha97!
+* Removed `date_hierarchy` option which causes admin to load slowly on DBs with a large number of emails. Thanks @selwin!
+* Optimized `cleanup_expired_mails()` so that deletes emails in smaller batches. Thanks @marsha97!
 
 Version 3.7.0 (2023-05-30)
 --------------------------
