@@ -165,4 +165,4 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
             attachments_count, _ = attachments.delete()
             total_attachments_count += attachments_count
 
-    return total_deleted_emails, attachments_count
+    return total_deleted_emails, total_attachments_count
