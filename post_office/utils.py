@@ -146,23 +146,29 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
     Optionally also delete pending attachments.
     Return the number of deleted emails and attachments.
     """
-    expired_emails_ids = Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)
-    email_id_batches = split_emails(expired_emails_ids, batch_size)
     total_deleted_emails = 0
-    
-    for email_ids in email_id_batches:
-        # Delete email and incr total_deleted_emails counter
+
+    while True:
+        email_ids = Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)[:batch_size]
+        if not email_ids:
+            break
+
         _, deleted_data = Email.objects.filter(id__in=email_ids).delete()
         if deleted_data:
             total_deleted_emails += deleted_data['post_office.Email']
 
+    attachments_count = 0
     if delete_attachments:
-        attachments = Attachment.objects.filter(emails=None)
-        for attachment in attachments:
-            # Delete the actual file
-            attachment.file.delete()
-        attachments_count, _ = attachments.delete()
-    else:
-        attachments_count = 0
+        while True:
+            attachments = Attachment.objects.filter(emails=None)[:batch_size]
+            if not attachments:
+                break
+            attachment_ids = set()
+            for attachment in attachments:
+                # Delete the actual file
+                attachment.file.delete()
+                attachment_ids.add(attachment.id)
+            deleted_count, _ = Attachment.objects.filter(id__in=attachment_ids).delete()
+            attachments_count += deleted_count
 
     return total_deleted_emails, attachments_count
