@@ -147,7 +147,7 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
     Return the number of deleted emails and attachments.
     """
     total_deleted_emails = 0
-
+    total_attachments_count = 0
     while True:
         email_ids = Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)[:batch_size]
         if not email_ids:
@@ -163,7 +163,6 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
                 # Delete the actual file
                 attachment.file.delete()
             attachments_count, _ = attachments.delete()
-        else:
-            attachments_count = 0
+            total_attachments_count += attachments_count
 
     return total_deleted_emails, attachments_count
