@@ -143,7 +143,11 @@ def send(recipients=None, sender=None, template=None, context=None, subject='',
             template = template
             # If language is specified, ensure template uses the right language
             if language and template.language != language:
-                template = template.translated_templates.get(language=language)
+                try:
+                    template = template.translated_templates.get(language=language)
+                except EmailTemplate.DoesNotExist:
+                    # If language version does not exist - use current template
+                    pass
         else:
             template = get_email_template(template, language)
 
