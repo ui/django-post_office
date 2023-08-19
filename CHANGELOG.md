@@ -47,6 +47,11 @@ Version 3.5.3 (2020-12-04)
 --------------------------
 * Fixed an issue with Celery integration that could cause duplicate emails. Thanks @jrief!
 
+next
+----
+* Add unique `identifier` field to model `EmailTemplate`. It can be used to access templates from Python code
+  and leaves the `name` field as a human readable representation of that template.
+
 Version 3.5.2 (2020-11-05)
 --------------------------
 * Fixed an issue where Post Office's admin interface doesn't show. Thanks @christianciu!

@@ -254,6 +254,8 @@ class EmailTemplate(models.Model):
     name = models.CharField(_('Name'), max_length=255, help_text=_("e.g: 'welcome_email'"))
     description = models.TextField(_('Description'), blank=True,
                                    help_text=_("Description of this template."))
+    identifier = models.CharField(_('Identifier'), max_length=50, unique=True, blank=True, null=True,
+                                  help_text=_("Unique template identifier"))
     created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     subject = models.CharField(max_length=255, blank=True,
@@ -273,7 +275,6 @@ class EmailTemplate(models.Model):
 
     class Meta:
         app_label = 'post_office'
-        unique_together = ('name', 'language', 'default_template')
         verbose_name = _("Email Template")
         verbose_name_plural = _("Email Templates")
         ordering = ['name']
@@ -285,10 +286,6 @@ class EmailTemplate(models.Model):
         return (self.name, self.language, self.default_template)
 
     def save(self, *args, **kwargs):
-        # If template is a translation, use default template's name
-        if self.default_template and not self.name:
-            self.name = self.default_template.name
-
         template = super().save(*args, **kwargs)
         cache.delete(self.name)
         return template

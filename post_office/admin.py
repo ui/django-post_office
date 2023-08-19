@@ -14,7 +14,7 @@ from django.template import Context, Template
 from django.urls import re_path, reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, get_language
 
 from .fields import CommaSeparatedEmailField
 from .mail import send
@@ -256,7 +256,7 @@ class EmailTemplateAdminForm(forms.ModelForm):
 
     class Meta:
         model = EmailTemplate
-        fields = ['name', 'description', 'subject', 'content', 'html_content', 'language',
+        fields = ['language', 'name', 'description', 'subject', 'content', 'html_content',
                   'default_template']
 
     def __init__(self, *args, **kwargs):
@@ -265,13 +265,21 @@ class EmailTemplateAdminForm(forms.ModelForm):
         if instance and instance.language:
             self.fields['language'].disabled = True
 
+    def get_initial_for_field(self, field, field_name):
+        """
+        For new translated templates, copy the name from the default email template.
+        """
+        if field_name == 'name' and self.instance and self.instance.id is None and 'default_template' in self.fields:
+            return self.fields['default_template'].parent_instance.name
+        return super().get_initial_for_field(field, field_name)
+
 
 class EmailTemplateInline(admin.StackedInline):
     form = EmailTemplateAdminForm
     formset = EmailTemplateAdminFormSet
     model = EmailTemplate
     extra = 0
-    fields = ('language', 'subject', 'content', 'html_content',)
+    fields = ['language', 'name', 'description', 'subject', 'content', 'html_content']
     formfield_overrides = {
         models.CharField: {'widget': SubjectField}
     }
@@ -282,11 +290,11 @@ class EmailTemplateInline(admin.StackedInline):
 
 class EmailTemplateAdmin(admin.ModelAdmin):
     form = EmailTemplateAdminForm
-    list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
-    search_fields = ('name', 'description', 'subject')
+    list_display = ['translated_name', 'identifier', 'subject', 'languages_compact', 'created']
+    search_fields = ['name', 'identifier', 'description', 'subject']
     fieldsets = [
         (None, {
-            'fields': ('name', 'description'),
+            'fields': ('name', 'description', 'identifier'),
         }),
         (_("Default Content"), {
             'fields': ('subject', 'content', 'html_content'),
@@ -300,10 +308,13 @@ class EmailTemplateAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return self.model.objects.filter(default_template__isnull=True)
 
-    def description_shortened(self, instance):
-        return Truncator(instance.description.split('\n')[0]).chars(200)
-    description_shortened.short_description = _("Description")
-    description_shortened.admin_order_field = 'description'
+    def translated_name(self, instance):
+        try:
+            return instance.translated_templates.get(language=get_language()).name
+        except EmailTemplate.DoesNotExist:
+            return instance.name
+    translated_name.short_description = _("Name")
+    translated_name.admin_order_field = 'name'
 
     def languages_compact(self, instance):
         languages = [tt.language for tt in instance.translated_templates.order_by('language')]
