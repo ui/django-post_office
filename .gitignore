@@ -37,5 +37,6 @@ ghostdriver.log
 *~
 *.lock
 .mypy_cache
+*.sqlite3
 
 post_office_attachments
