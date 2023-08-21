@@ -1,0 +1,20 @@
+name: Close stale issues and pull requests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Run every day at midnight
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v8
+        with:
+          days-before-stale: 30
+          exempt-issue-labels: |
+            in-progress
+            help-wanted
+            pinned
+            security
+            enhancement
