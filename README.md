@@ -668,7 +668,7 @@ Attachments are not supported with `mail.send_many()`.
 To run the test suite:
 
 ```python
-`which django-admin.py` test post_office --settings=post_office.test_settings --pythonpath=.
+`which django-admin` test post_office --settings=post_office.test_settings --pythonpath=.
 ```
 
 You can run the full test suite for all supported versions of Django and Python with:
