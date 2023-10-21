@@ -124,6 +124,10 @@ def get_message_id_fqdn():
     return get_config().get('MESSAGE_ID_FQDN', DNS_NAME)
 
 
+def get_batch_delivery_timeout():
+    return get_config().get('BATCH_DELIVERY_TIMEOUT', 180)
+
+
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
                                        'django.db.models.JSONField')
 context_field_class = import_string(CONTEXT_FIELD_CLASS)
