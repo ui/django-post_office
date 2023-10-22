@@ -40,7 +40,7 @@ class SlowTestBackend(mail.backends.base.BaseEmailBackend):
     '''
 
     def send_messages(self, email_messages):
-        time.sleep(10)
+        time.sleep(5)
 
 
 class MailTest(TestCase):
@@ -496,8 +496,14 @@ class MailTest(TestCase):
         email = Email.objects.create(to=['to@example.com'],
                                      from_email='bob@example.com', subject='',
                                      message='', status=STATUS.queued, backend_alias='slow_backend')
-        send_queued()
-        
+        start_time = timezone.now()
+        # slow backend sleeps for 5 seconds, so we should get a timeout error since we set
+        # BATCH_DELIVERY_TIMEOUT timeout to 2 seconds in test_settings.py
+        with self.assertRaises(TimeoutError):
+            send_queued()
+        end_time = timezone.now()
+        # Assert that running time is less than 3 seconds (2 seconds timeout + 1 second buffer)
+        self.assertTrue(end_time - start_time < timezone.timedelta(seconds=3))
 
     @patch('post_office.signals.email_queued.send')
     def test_backend_signal(self, mock):

@@ -304,16 +304,22 @@ def send_queued(processes=1, log_level=None):
  
             timeout = get_batch_delivery_timeout()
             results = []
-            try:
-                # Wait for all tasks to complete with a timeout
-                # The get method is used with a timeout to wait for each result
-                for task in tasks:
-                    results.append(task.get(timeout=timeout))
-            except (TimeoutError, ContextTimeoutError):
-                logger.exception("Process timed out after %d seconds" % timeout)
 
-            # results = pool.map(_send_bulk, email_lists)
+            # Wait for all tasks to complete with a timeout
+            # The get method is used with a timeout to wait for each result
+            for task in tasks:
+                results.append(task.get(timeout=timeout))
+            # for task in tasks:
+            #     try:
+            #         # Wait for all tasks to complete with a timeout
+            #         # The get method is used with a timeout to wait for each result            
+            #         results.append(task.get(timeout=timeout))
+            #     except (TimeoutError, ContextTimeoutError):
+            #         logger.exception("Process timed out after %d seconds" % timeout)
+
+            # results = pool.map(_send_bulk, email_lists)            
             pool.terminate()
+            pool.join()
 
             total_sent = sum(result[0] for result in results)
             total_failed = sum(result[1] for result in results)
@@ -377,13 +383,17 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     timeout = get_batch_delivery_timeout()
 
-    try:
-        # Wait for all tasks to complete with a timeout
-        # The get method is used with a timeout to wait for each result
-        for result in results:
-            result.get(timeout=timeout)
-    except TimeoutError:
-        logger.exception("Process timed out after %d seconds" % timeout)
+    # Wait for all tasks to complete with a timeout
+    # The get method is used with a timeout to wait for each result        
+    for result in results:
+        result.get(timeout=timeout)
+    # for result in results:
+    #     try:
+    #         # Wait for all tasks to complete with a timeout
+    #         # The get method is used with a timeout to wait for each result        
+    #         result.get(timeout=timeout)
+    #     except TimeoutError:
+    #         logger.exception("Process timed out after %d seconds" % timeout)
 
     pool.close()
     pool.join()
