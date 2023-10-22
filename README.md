@@ -412,15 +412,28 @@ put in Django's `settings.py` to fine tune `post-office`'s behavior.
 
 ### Batch Size
 
-If you may want to limit the number of emails sent in a batch (sometimes
+If you may want to limit the number of emails sent in a batch (
 useful in a low memory environment), use the `BATCH_SIZE` argument to
-limit the number of queued emails fetched in one batch.
+limit the number of queued emails fetched in one batch. `BATCH_SIZE` defaults to 100.
 
 ```python
 # Put this in settings.py
 POST_OFFICE = {
     ...
-    'BATCH_SIZE': 50,
+    'BATCH_SIZE': 100,
+}
+```
+
+Version 3.8 introduces a companion setting called `BATCH_DELIVERY_TIMEOUT`. This setting
+specifies the maximum time allowed for each batch to be delivered. Defaults to 180.
+
+If you send a large number of emails in a single batch on a slow connection, consider increasing this number.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'BATCH_DELIVERY_TIMEOUT': 180,
 }
 ```
 
