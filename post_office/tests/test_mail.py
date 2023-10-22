@@ -1,23 +1,22 @@
-from unittest.mock import patch, MagicMock
+import re
+import time
 from datetime import timedelta
+from multiprocessing.context import TimeoutError
+from unittest.mock import MagicMock, patch
 
 import pytz
-import re
-
+from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.conf import settings
-
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from ..settings import get_batch_size, get_log_level, get_threads_per_process, get_max_retries, get_retry_timedelta
-from ..models import Email, EmailTemplate, Attachment, PRIORITY, STATUS
-from ..mail import (create, get_queued,
-                    send, send_many, send_queued, _send_bulk)
-
+from ..mail import _send_bulk, create, get_queued, send, send_many, send_queued
+from ..models import PRIORITY, STATUS, Attachment, Email, EmailTemplate
+from ..settings import (get_batch_size, get_log_level, get_max_retries,
+                        get_retry_timedelta, get_threads_per_process)
 
 connection_counter = 0
 
@@ -33,6 +32,15 @@ class ConnectionTestingBackend(mail.backends.base.BaseEmailBackend):
 
     def send_messages(self, email_messages):
         pass
+
+
+class SlowTestBackend(mail.backends.base.BaseEmailBackend):
+    '''
+    An EmailBackend that sleeps for 10 seconds when sending messages
+    '''
+
+    def send_messages(self, email_messages):
+        time.sleep(5)
 
 
 class MailTest(TestCase):
@@ -480,6 +488,22 @@ class MailTest(TestCase):
                            message='message',
                            scheduled_time=timezone.datetime(2020, 5, 18, 9, 0, 1),
                            expires_at=timezone.datetime(2020, 5, 18, 9, 0, 0))
+
+    def test_batch_delivery_timeout(self):
+        """
+        Ensure that batch delivery timeout is respected.
+        """
+        email = Email.objects.create(to=['to@example.com'],
+                                     from_email='bob@example.com', subject='',
+                                     message='', status=STATUS.queued, backend_alias='slow_backend')
+        start_time = timezone.now()
+        # slow backend sleeps for 5 seconds, so we should get a timeout error since we set
+        # BATCH_DELIVERY_TIMEOUT timeout to 2 seconds in test_settings.py
+        with self.assertRaises(TimeoutError):
+            send_queued()
+        end_time = timezone.now()
+        # Assert that running time is less than 3 seconds (2 seconds timeout + 1 second buffer)
+        self.assertTrue(end_time - start_time < timezone.timedelta(seconds=3))
 
     @patch('post_office.signals.email_queued.send')
     def test_backend_signal(self, mock):

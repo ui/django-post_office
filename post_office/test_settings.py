@@ -39,10 +39,12 @@ POST_OFFICE = {
         'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
         'smtp': 'django.core.mail.backends.smtp.EmailBackend',
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
+        'slow_backend': 'post_office.tests.test_mail.SlowTestBackend',
     },
     'CELERY_ENABLED': False,
     'MAX_RETRIES': 2,
     'MESSAGE_ID_ENABLED': True,
+    'BATCH_DELIVERY_TIMEOUT': 2,
     'MESSAGE_ID_FQDN': 'example.com',
 }
 
