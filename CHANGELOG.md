@@ -3,7 +3,7 @@ Changelog
 
 Version 3.8.0 (2023-10-22)
 --------------------------
-* 
+* Added `BATCH_DELIVERY_TIMEOUT` that specifies the maximum time allowed for each batch to be delivered. Defaults to 180 seconds. Thanks @selwin!
 
 Version 3.7.1 (2023-08-08)
 --------------------------

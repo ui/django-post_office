@@ -425,7 +425,8 @@ POST_OFFICE = {
 ```
 
 Version 3.8 introduces a companion setting called `BATCH_DELIVERY_TIMEOUT`. This setting
-specifies the maximum time allowed for each batch to be delivered. Defaults to 180.
+specifies the maximum time allowed for each batch to be delivered, this is useful to guard against
+cases where delivery process never terminates. Defaults to 180.
 
 If you send a large number of emails in a single batch on a slow connection, consider increasing this number.
 
