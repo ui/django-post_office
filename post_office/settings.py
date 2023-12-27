@@ -83,6 +83,10 @@ def get_celery_enabled():
     return get_config().get('CELERY_ENABLED', False)
 
 
+def get_lock_file_name():
+    return get_config().get('LOCK_FILE_NAME', 'post_office')
+
+
 def get_threads_per_process():
     return get_config().get('THREADS_PER_PROCESS', 5)
 
