@@ -23,6 +23,8 @@ import platform
 import tempfile
 import time
 
+from post_office.settings import get_lock_file_name
+
 
 class FileLocked(Exception):
     pass
@@ -152,4 +154,4 @@ class FileLock:
         self.release()
 
 
-default_lockfile = os.path.join(tempfile.gettempdir(), 'post_office')
+default_lockfile = os.path.join(tempfile.gettempdir(), get_lock_file_name())
