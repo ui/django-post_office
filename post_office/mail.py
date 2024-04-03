@@ -166,7 +166,7 @@ def send(
     except ValidationError as e:
         raise ValidationError("bcc: %s" % e.message)
 
-    if sender is None:
+    if not sender:
         sender = settings.DEFAULT_FROM_EMAIL
 
     priority = parse_priority(priority)
