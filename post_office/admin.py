@@ -322,6 +322,7 @@ class AttachmentAdmin(admin.ModelAdmin):
     list_display = ['name', 'file']
     filter_horizontal = ['emails']
     search_fields = ["name"]
+    autocomplete_fields = ["emails"]
 
 
 admin.site.register(Email, EmailAdmin)
