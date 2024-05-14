@@ -6,6 +6,7 @@ from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.core.mail.message import SafeMIMEText
 from django.db import models
+from django.db.models.functions import Cast
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
 from django.http.response import (HttpResponse, HttpResponseNotFound,
@@ -48,13 +49,14 @@ class AttachmentInline(admin.StackedInline):
         if self.parent_obj:
             queryset = queryset.filter(email=self.parent_obj)
 
-        inlined_attachments = [
-            a.id
-            for a in queryset
-            if isinstance(a.attachment.headers, dict)
-            and a.attachment.headers.get("Content-Disposition", "").startswith("inline")
-        ]
-        return queryset.exclude(id__in=inlined_attachments)
+        # explicit cast is needed because JSON could be stored in TEXT type due incomplete migration introduced in
+        #   https://github.com/ui/django-post_office/pull/438
+        return queryset.annotate(
+            _headers=Cast("attachment__headers", output_field=models.JSONField()),
+        ).exclude(**{
+            "_headers__Content-Disposition__isnull": False,
+            "_headers__Content-Disposition__startswith": "inline"
+        })
 
 
 class LogInline(admin.TabularInline):
