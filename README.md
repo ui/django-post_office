@@ -452,6 +452,17 @@ POST_OFFICE = {
 }
 ```
 
+### Lock File Name
+The default lock file name is `post_office`, but this can be altered by setting `LOCK_FILE_NAME` in the configuration.
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'LOCK_FILE_NAME': 'custom_lock_file',
+}
+```
+
 ### Override Recipients
 
 Defaults to `None`. This option is useful if you want to redirect all
