@@ -453,7 +453,7 @@ POST_OFFICE = {
 ```
 
 ### Lock File Name
-The default lock file name is 'post_office', but this can be altered by setting `LOCK_FILE_NAME` in the configuration.
+The default lock file name is `post_office`, but this can be altered by setting `LOCK_FILE_NAME` in the configuration.
 
 ```python
 # Put this in settings.py
