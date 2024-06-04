@@ -1,5 +1,7 @@
 import os
 from email.mime.image import MIMEImage
+from unittest import mock
+
 from django.conf import settings
 from django.core.files.images import File
 from django.core.mail import EmailMultiAlternatives, send_mail, EmailMessage
@@ -164,3 +166,18 @@ class BackendTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.status, STATUS.sent)
         self.assertEqual(num_sent, 1)
+
+    @override_settings(
+        EMAIL_BACKEND='post_office.EmailBackend',
+        POST_OFFICE={
+            'DEFAULT_PRIORITY': 'medium',
+            'BACKENDS': {'default': 'django.core.mail.backends.dummy.EmailBackend'}
+        }
+    )
+    @mock.patch('post_office.signals.email_queued.send')
+    def test_email_queued_signal(self, mock):
+        # If DEFAULT_PRIORITY is not "now", the email_queued signal should be sent
+        send_mail('Test', 'Message', 'from1@example.com', ['to@example.com'])
+        email = Email.objects.latest('id')
+        self.assertEqual(email.status, STATUS.queued)
+        self.assertEqual(mock.call_count, 1)

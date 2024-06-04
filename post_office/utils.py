@@ -6,6 +6,7 @@ from django.utils.encoding import force_str
 from post_office import cache
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_default_priority
+from .signals import email_queued
 from .validators import validate_email_with_name
 
 
@@ -28,6 +29,8 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     if priority == PRIORITY.now:
         for email in emails:
             email.dispatch()
+    else:
+        email_queued.send(sender=Email, emails=emails)
     return emails
 
 

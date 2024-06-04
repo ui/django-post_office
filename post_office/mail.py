@@ -231,7 +231,8 @@ def send(
 
     if priority == PRIORITY.now:
         email.dispatch(log_level=log_level)
-    email_queued.send(sender=Email, emails=[email])
+    elif commit:
+        email_queued.send(sender=Email, emails=[email])
 
     return email
 
