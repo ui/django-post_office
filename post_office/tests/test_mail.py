@@ -2,9 +2,9 @@ import re
 import time
 from datetime import timedelta
 from multiprocessing.context import TimeoutError
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
-import pytz
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
@@ -412,6 +412,7 @@ class MailTest(TestCase):
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.status, STATUS.sent)
 
+    @override_settings(USE_TZ=False)
     def test_retry_failed(self):
         self.assertEqual(get_retry_timedelta(), timezone.timedelta(minutes=15))
         self.assertEqual(get_max_retries(), 2)
@@ -460,12 +461,12 @@ class MailTest(TestCase):
 
     @override_settings(USE_TZ=True)
     def test_expired(self):
-        tzinfo = pytz.timezone('Asia/Jakarta')
+        tzinfo = ZoneInfo('Asia/Jakarta')
         email = create('from@example.com', recipients=['to@example.com'], subject='subject', message='message',
                        expires_at=timezone.datetime(2020, 5, 18, 9, 0, 1, tzinfo=tzinfo))
         self.assertEqual(email.expires_at, timezone.datetime(2020, 5, 18, 9, 0, 1, tzinfo=tzinfo))
         msg = email.prepare_email_message()
-        self.assertEqual(msg.extra_headers['Expires'], 'Mon, 18 May 09:00:01 +0707')
+        self.assertEqual(msg.extra_headers['Expires'], 'Mon, 18 May 09:00:01 +0700')
 
         # check that email is not sent after its expire_at date
         with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 2, tzinfo=tzinfo)):

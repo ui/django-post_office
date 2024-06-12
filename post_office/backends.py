@@ -2,7 +2,6 @@ from collections import OrderedDict
 from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
-import quopri
 from .settings import get_default_priority
 
 class EmailBackend(BaseEmailBackend):

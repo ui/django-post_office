@@ -11,6 +11,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterUniqueTogether(
             name='emailtemplate',
-            unique_together=set([('name', 'language', 'default_template')]),
+            unique_together={('name', 'language', 'default_template')},
         ),
     ]

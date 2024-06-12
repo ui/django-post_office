@@ -14,5 +14,5 @@ def render_to_string(template_name, context=None, request=None, using=None):
         template = get_template(template_name, using=using)
     try:
         return template.render(context, request), template.template._attached_images
-    except Exception as a:
+    except Exception:
         return template.render(context, request)
