@@ -19,13 +19,16 @@ class EmailBackend(BaseEmailBackend):
         email messages sent.
         """
         from .mail import create
-        from .models import STATUS
+        from .models import STATUS, Email
         from .utils import create_attachments
+        from .signals import email_queued
 
         if not email_messages:
             return
 
+        default_priority = get_default_priority()
         num_sent = 0
+        emails = []
         for email_message in email_messages:
             subject = email_message.subject
             from_email = email_message.from_email
@@ -62,8 +65,14 @@ class EmailBackend(BaseEmailBackend):
 
                 email.attachments.add(*attachments)
 
-            if get_default_priority() == 'now':
+            emails.append(email)
+
+            if default_priority == 'now':
                 status = email.dispatch()
                 if status == STATUS.sent:
                     num_sent += 1
+
+        if default_priority != 'now':
+            email_queued.send(sender=Email, emails=emails)
+
         return num_sent
