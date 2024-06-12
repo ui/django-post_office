@@ -65,6 +65,20 @@ class ModelTest(TestCase):
         self.assertEqual(message.body, 'Content test')
         self.assertEqual(message.alternatives[0][0], 'HTML test')
 
+    def test_email_message_prepare_without_template_and_with_context(self):
+        """
+        Ensure Email instance without template but with context is properly prepared.
+        """
+        context = {'name': 'test'}
+        email = Email.objects.create(to=['to@example.com'], template=None,
+                                     subject='Subject test', message='Content test',
+                                     html_message='HTML test',
+                                     from_email='from@e.com', context=context)
+        message = email.email_message()
+        self.assertEqual(message.subject, 'Subject test')
+        self.assertEqual(message.body, 'Content test')
+        self.assertEqual(message.alternatives[0][0], 'HTML test')
+
     def test_dispatch(self):
         """
         Ensure that email.dispatch() actually sends out the email
