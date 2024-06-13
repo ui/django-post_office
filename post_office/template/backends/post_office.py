@@ -12,7 +12,7 @@ class Template(DjangoTemplate):
         super().__init__(template, backend)
 
     def attach_related(self, email_message):
-        assert isinstance(email_message, EmailMultiAlternatives), "Parameter must be of type EmailMultiAlternatives"
+        assert isinstance(email_message, EmailMultiAlternatives), 'Parameter must be of type EmailMultiAlternatives'
         email_message.mixed_subtype = 'related'
         for attachment in self.template._attached_images:
             email_message.attach(attachment)
@@ -23,6 +23,7 @@ class PostOfficeTemplates(BaseEngine):
     Customized Template Engine which keeps track on referenced images and stores them as attachments
     to be used in multipart email messages.
     """
+
     app_dirname = 'templates'
 
     def __init__(self, params):
@@ -32,9 +33,7 @@ class PostOfficeTemplates(BaseEngine):
         options.setdefault('debug', settings.DEBUG)
         options.setdefault(
             'file_charset',
-            settings.FILE_CHARSET
-            if settings.is_overridden('FILE_CHARSET')
-            else 'utf-8',
+            settings.FILE_CHARSET if settings.is_overridden('FILE_CHARSET') else 'utf-8',
         )
         libraries = options.get('libraries', {})
         options['libraries'] = self.get_templatetag_libraries(libraries)

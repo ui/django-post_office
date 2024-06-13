@@ -16,7 +16,7 @@ def get_backend(alias='default'):
 
 
 def get_available_backends():
-    """ Returns a dictionary of defined backend classes. For example:
+    """Returns a dictionary of defined backend classes. For example:
     {
         'default': 'django.core.mail.backends.smtp.EmailBackend',
         'locmem': 'django.core.mail.backends.locmem.EmailBackend',
@@ -33,16 +33,13 @@ def get_available_backends():
     # }
     backend = get_config().get('EMAIL_BACKEND')
     if backend:
-        warnings.warn('Please use the new POST_OFFICE["BACKENDS"] settings',
-                      DeprecationWarning)
+        warnings.warn('Please use the new POST_OFFICE["BACKENDS"] settings', DeprecationWarning)
 
         backends['default'] = backend
         return backends
 
     # Fall back to Django's EMAIL_BACKEND definition
-    backends['default'] = getattr(
-        settings, 'EMAIL_BACKEND',
-        'django.core.mail.backends.smtp.EmailBackend')
+    backends['default'] = getattr(settings, 'EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 
     # If EMAIL_BACKEND is set to use PostOfficeBackend
     # and POST_OFFICE_BACKEND is not set, fall back to SMTP
@@ -54,12 +51,12 @@ def get_available_backends():
 
 def get_cache_backend():
     if hasattr(settings, 'CACHES'):
-        if "post_office" in settings.CACHES:
-            return caches["post_office"]
+        if 'post_office' in settings.CACHES:
+            return caches['post_office']
         else:
             # Sometimes this raises InvalidCacheBackendError, which is ok too
             try:
-                return caches["default"]
+                return caches['default']
             except InvalidCacheBackendError:
                 pass
     return None
@@ -133,6 +130,5 @@ def get_batch_delivery_timeout():
     return get_config().get('BATCH_DELIVERY_TIMEOUT', 180)
 
 
-CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS',
-                                       'django.db.models.JSONField')
+CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS', 'django.db.models.JSONField')
 context_field_class = import_string(CONTEXT_FIELD_CLASS)

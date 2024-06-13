@@ -17,7 +17,6 @@ def setup_fake_lock(lock_file_name):
 
 
 class LockTest(TestCase):
-
     def test_process_killed_force_unlock(self):
         pid = os.getpid()
         lockfile = '%s.lock' % pid

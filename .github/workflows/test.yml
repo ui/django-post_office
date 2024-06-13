@@ -7,7 +7,16 @@ on:
 permissions:
   contents: read
 
-jobs:    
+jobs:
+  ruff-format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v3
+      - uses: chartboost/ruff-action@v1
+        with:
+          version: 0.4.8
+          args: 'format --check'    
 
   build:
     runs-on: ubuntu-latest

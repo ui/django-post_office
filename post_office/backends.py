@@ -4,8 +4,8 @@ from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
 from .settings import get_default_priority
 
-class EmailBackend(BaseEmailBackend):
 
+class EmailBackend(BaseEmailBackend):
     def open(self):
         pass
 
@@ -33,14 +33,14 @@ class EmailBackend(BaseEmailBackend):
             from_email = email_message.from_email
             headers = email_message.extra_headers
             if email_message.reply_to:
-                reply_to_header = ", ".join(str(v) for v in email_message.reply_to)
-                headers.setdefault("Reply-To", reply_to_header)
-            message = email_message.body # The plaintext message is called body
+                reply_to_header = ', '.join(str(v) for v in email_message.reply_to)
+                headers.setdefault('Reply-To', reply_to_header)
+            message = email_message.body  # The plaintext message is called body
             html_body = ''  # The default if no html body can be found
             if hasattr(email_message, 'alternatives') and len(email_message.alternatives) > 0:
                 for alternative in email_message.alternatives:
                     if alternative[1] == 'text/html':
-                        html_body  = alternative[0]
+                        html_body = alternative[0]
 
             attachment_files = {}
             for attachment in email_message.attachments:
@@ -53,11 +53,16 @@ class EmailBackend(BaseEmailBackend):
                 else:
                     attachment_files[attachment[0]] = ContentFile(attachment[1])
 
-            email = create(sender=from_email,
-                           recipients=email_message.to, cc=email_message.cc,
-                           bcc=email_message.bcc, subject=subject,
-                           message=message, html_message=html_body,
-                           headers=headers)
+            email = create(
+                sender=from_email,
+                recipients=email_message.to,
+                cc=email_message.cc,
+                bcc=email_message.bcc,
+                subject=subject,
+                message=message,
+                html_message=html_body,
+                headers=headers,
+            )
 
             if attachment_files:
                 attachments = create_attachments(attachment_files)

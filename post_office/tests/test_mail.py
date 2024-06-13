@@ -15,16 +15,15 @@ from django.utils import timezone
 
 from ..mail import _send_bulk, create, get_queued, send, send_many, send_queued
 from ..models import PRIORITY, STATUS, Attachment, Email, EmailTemplate
-from ..settings import (get_batch_size, get_log_level, get_max_retries,
-                        get_retry_timedelta, get_threads_per_process)
+from ..settings import get_batch_size, get_log_level, get_max_retries, get_retry_timedelta, get_threads_per_process
 
 connection_counter = 0
 
 
 class ConnectionTestingBackend(mail.backends.base.BaseEmailBackend):
-    '''
+    """
     An EmailBackend that increments a global counter when connection is opened
-    '''
+    """
 
     def open(self):
         global connection_counter
@@ -35,16 +34,15 @@ class ConnectionTestingBackend(mail.backends.base.BaseEmailBackend):
 
 
 class SlowTestBackend(mail.backends.base.BaseEmailBackend):
-    '''
+    """
     An EmailBackend that sleeps for 10 seconds when sending messages
-    '''
+    """
 
     def send_messages(self, email_messages):
         time.sleep(5)
 
 
 class MailTest(TestCase):
-
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_send_queued_mail(self):
         """
@@ -76,7 +74,7 @@ class MailTest(TestCase):
             'from_email': 'bob@example.com',
             'subject': 'Test',
             'message': 'Message',
-            'status': STATUS.queued
+            'status': STATUS.queued,
         }
 
         # All three emails should be sent
@@ -91,9 +89,13 @@ class MailTest(TestCase):
         Ensure _send_bulk() properly sends out emails.
         """
         email = Email.objects.create(
-            to=['to@example.com'], from_email='bob@example.com',
-            subject='send bulk', message='Message', status=STATUS.queued,
-            backend_alias='locmem')
+            to=['to@example.com'],
+            from_email='bob@example.com',
+            subject='send bulk',
+            message='Message',
+            status=STATUS.queued,
+            backend_alias='locmem',
+        )
         _send_bulk([email], uses_multiprocessing=False)
         self.assertEqual(Email.objects.get(id=email.id).status, STATUS.sent)
         self.assertEqual(len(mail.outbox), 1)
@@ -106,13 +108,22 @@ class MailTest(TestCase):
         """
         global connection_counter
         self.assertEqual(connection_counter, 0)
-        email = Email.objects.create(to=['to@example.com'],
-                                     from_email='bob@example.com', subject='',
-                                     message='', status=STATUS.queued, backend_alias='connection_tester')
-        email_2 = Email.objects.create(to=['to@example.com'],
-                                       from_email='bob@example.com', subject='',
-                                       message='', status=STATUS.queued,
-                                       backend_alias='connection_tester')
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='connection_tester',
+        )
+        email_2 = Email.objects.create(
+            to=['to@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='connection_tester',
+        )
         _send_bulk([email, email_2])
         self.assertEqual(connection_counter, 1)
 
@@ -135,8 +146,7 @@ class MailTest(TestCase):
         self.assertEqual(list(get_queued()), [])
 
         # Email with queued status and None as scheduled_time should be included
-        queued_email = Email.objects.create(status=STATUS.queued,
-                                            scheduled_time=None, **kwargs)
+        queued_email = Email.objects.create(status=STATUS.queued, scheduled_time=None, **kwargs)
         self.assertEqual(list(get_queued()), [queued_email])
 
         # Email scheduled for the future should not be included
@@ -145,8 +155,9 @@ class MailTest(TestCase):
         self.assertEqual(list(get_queued()), [queued_email])
 
         # Email scheduled in the past should be included
-        past_email = Email.objects.create(status=STATUS.queued,
-                                          scheduled_time=timezone.datetime(2010, 12, 13), **kwargs)
+        past_email = Email.objects.create(
+            status=STATUS.queued, scheduled_time=timezone.datetime(2010, 12, 13), **kwargs
+        )
         self.assertEqual(list(get_queued()), [queued_email, past_email])
 
     def test_get_batch_size(self):
@@ -187,27 +198,15 @@ class MailTest(TestCase):
         """
 
         # Test that email is persisted only when commit=True
-        email = create(
-            sender='from@example.com', recipients=['to@example.com'],
-            commit=False
-        )
+        email = create(sender='from@example.com', recipients=['to@example.com'], commit=False)
         self.assertEqual(email.id, None)
-        email = create(
-            sender='from@example.com', recipients=['to@example.com'],
-            commit=True
-        )
+        email = create(sender='from@example.com', recipients=['to@example.com'], commit=True)
         self.assertNotEqual(email.id, None)
 
         # Test that email is created with the right status
-        email = create(
-            sender='from@example.com', recipients=['to@example.com'],
-            priority=PRIORITY.now
-        )
+        email = create(sender='from@example.com', recipients=['to@example.com'], priority=PRIORITY.now)
         self.assertEqual(email.status, None)
-        email = create(
-            sender='from@example.com', recipients=['to@example.com'],
-            priority=PRIORITY.high
-        )
+        email = create(sender='from@example.com', recipients=['to@example.com'], priority=PRIORITY.high)
         self.assertEqual(email.status, STATUS.queued)
 
         # Test that email is created with the right content
@@ -218,10 +217,14 @@ class MailTest(TestCase):
         }
         scheduled_time = timezone.now()
         email = create(
-            sender='from@example.com', recipients=['to@example.com'],
-            subject='Test {{ subject }}', message='Test {{ message }}',
-            html_message='Test {{ html }}', context=context,
-            scheduled_time=scheduled_time, headers={'header': 'Test header'},
+            sender='from@example.com',
+            recipients=['to@example.com'],
+            subject='Test {{ subject }}',
+            message='Test {{ message }}',
+            html_message='Test {{ html }}',
+            context=context,
+            scheduled_time=scheduled_time,
+            headers={'header': 'Test header'},
         )
         self.assertEqual(email.from_email, 'from@example.com')
         self.assertEqual(email.to, ['to@example.com'])
@@ -233,7 +236,7 @@ class MailTest(TestCase):
         self.assertTrue(re.match(r'<\d+\.\d+\.\d+@example.com>', email.message_id))
 
     def test_send_many(self):
-        """Test send_many creates the right emails """
+        """Test send_many creates the right emails"""
         kwargs_list = [
             {'sender': 'from@example.com', 'recipients': ['a@example.com']},
             {'sender': 'from@example.com', 'recipients': ['b@example.com']},
@@ -246,9 +249,13 @@ class MailTest(TestCase):
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         }
-        email = send(recipients=['a@example.com', 'b@example.com'],
-                     sender='from@example.com', message='message',
-                     subject='subject', attachments=attachments)
+        email = send(
+            recipients=['a@example.com', 'b@example.com'],
+            sender='from@example.com',
+            message='message',
+            subject='subject',
+            attachments=attachments,
+        )
 
         self.assertTrue(email.pk)
         self.assertEqual(email.attachments.count(), 2)
@@ -259,23 +266,19 @@ class MailTest(TestCase):
         fields being saved
         """
         template = EmailTemplate.objects.create(
-            subject='Subject {{ name }}',
-            content='Content {{ name }}',
-            html_content='HTML {{ name }}'
+            subject='Subject {{ name }}', content='Content {{ name }}', html_content='HTML {{ name }}'
         )
         context = {'name': 'test'}
-        email = send(recipients=['a@example.com', 'b@example.com'],
-                     template=template, context=context,
-                     render_on_delivery=True)
+        email = send(
+            recipients=['a@example.com', 'b@example.com'], template=template, context=context, render_on_delivery=True
+        )
         self.assertEqual(email.subject, '')
         self.assertEqual(email.message, '')
         self.assertEqual(email.html_message, '')
         self.assertEqual(email.template, template)
 
         # context shouldn't be persisted when render_on_delivery = False
-        email = send(recipients=['a@example.com'],
-                     template=template, context=context,
-                     render_on_delivery=False)
+        email = send(recipients=['a@example.com'], template=template, context=context, render_on_delivery=False)
         self.assertEqual(email.context, None)
 
     def test_send_with_attachments_multiple_recipients(self):
@@ -284,9 +287,13 @@ class MailTest(TestCase):
             'attachment_file1.txt': ContentFile('content'),
             'attachment_file2.txt': ContentFile('content'),
         }
-        email = send(recipients=['a@example.com', 'b@example.com'],
-                     sender='from@example.com', message='message',
-                     subject='subject', attachments=attachments)
+        email = send(
+            recipients=['a@example.com', 'b@example.com'],
+            sender='from@example.com',
+            message='message',
+            subject='subject',
+            attachments=attachments,
+        )
 
         self.assertEqual(email.attachments.count(), 2)
         self.assertEqual(Attachment.objects.count(), 2)
@@ -296,14 +303,15 @@ class MailTest(TestCase):
         won't be rendered, context also won't be saved."""
 
         template = EmailTemplate.objects.create(
-            subject='Subject {{ name }}',
-            content='Content {{ name }}',
-            html_content='HTML {{ name }}'
+            subject='Subject {{ name }}', content='Content {{ name }}', html_content='HTML {{ name }}'
         )
         context = {'name': 'test'}
         email = create(
-            sender='from@example.com', recipients=['to@example.com'],
-            template=template, context=context, render_on_delivery=True
+            sender='from@example.com',
+            recipients=['to@example.com'],
+            template=template,
+            context=context,
+            render_on_delivery=True,
         )
         self.assertEqual(email.subject, '')
         self.assertEqual(email.message, '')
@@ -316,15 +324,10 @@ class MailTest(TestCase):
         will be rendered, context won't be saved."""
 
         template = EmailTemplate.objects.create(
-            subject='Subject {% now "Y" %}',
-            content='Content {% now "Y" %}',
-            html_content='HTML {% now "Y" %}'
+            subject='Subject {% now "Y" %}', content='Content {% now "Y" %}', html_content='HTML {% now "Y" %}'
         )
         context = None
-        email = create(
-            sender='from@example.com', recipients=['to@example.com'],
-            template=template, context=context
-        )
+        email = create(sender='from@example.com', recipients=['to@example.com'], template=template, context=context)
         today = timezone.datetime.today()
         current_year = today.year
         self.assertEqual(email.subject, 'Subject %d' % current_year)
@@ -336,19 +339,26 @@ class MailTest(TestCase):
     def test_backend_alias(self):
         """Test backend_alias field is properly set."""
 
-        email = send(recipients=['a@example.com'],
-                     sender='from@example.com', message='message',
-                     subject='subject')
+        email = send(recipients=['a@example.com'], sender='from@example.com', message='message', subject='subject')
         self.assertEqual(email.backend_alias, '')
 
-        email = send(recipients=['a@example.com'],
-                     sender='from@example.com', message='message',
-                     subject='subject', backend='locmem')
+        email = send(
+            recipients=['a@example.com'],
+            sender='from@example.com',
+            message='message',
+            subject='subject',
+            backend='locmem',
+        )
         self.assertEqual(email.backend_alias, 'locmem')
 
         with self.assertRaises(ValueError):
-            send(recipients=['a@example.com'], sender='from@example.com',
-                 message='message', subject='subject', backend='foo')
+            send(
+                recipients=['a@example.com'],
+                sender='from@example.com',
+                message='message',
+                subject='subject',
+                backend='foo',
+            )
 
     @override_settings(LANGUAGES=(('en', 'English'), ('ru', 'Russian')))
     def test_send_with_template(self):
@@ -356,22 +366,19 @@ class MailTest(TestCase):
         will be rendered, context won't be saved."""
 
         template = EmailTemplate.objects.create(
-            subject='Subject {{ name }}',
-            content='Content {{ name }}',
-            html_content='HTML {{ name }}'
+            subject='Subject {{ name }}', content='Content {{ name }}', html_content='HTML {{ name }}'
         )
         russian_template = EmailTemplate(
             default_template=template,
             language='ru',
             subject='предмет {{ name }}',
             content='содержание {{ name }}',
-            html_content='HTML {{ name }}'
+            html_content='HTML {{ name }}',
         )
         russian_template.save()
 
         context = {'name': 'test'}
-        email = send(recipients=['to@example.com'], sender='from@example.com',
-                     template=template, context=context)
+        email = send(recipients=['to@example.com'], sender='from@example.com', template=template, context=context)
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'Subject test')
         self.assertEqual(email.message, 'Content test')
@@ -380,8 +387,9 @@ class MailTest(TestCase):
         self.assertIsNotNone(email.template)
 
         # check, if we use the Russian version
-        email = send(recipients=['to@example.com'], sender='from@example.com',
-                     template=russian_template, context=context)
+        email = send(
+            recipients=['to@example.com'], sender='from@example.com', template=russian_template, context=context
+        )
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'предмет test')
         self.assertEqual(email.message, 'содержание test')
@@ -390,24 +398,29 @@ class MailTest(TestCase):
         self.assertIsNotNone(email.template)
 
         # Check that send picks template with the right language
-        email = send(recipients=['to@example.com'], sender='from@example.com',
-                     template=template, context=context, language='ru')
+        email = send(
+            recipients=['to@example.com'], sender='from@example.com', template=template, context=context, language='ru'
+        )
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.subject, 'предмет test')
 
-        email = send(recipients=['to@example.com'], sender='from@example.com',
-                     template=template, context=context, language='ru',
-                     render_on_delivery=True)
+        email = send(
+            recipients=['to@example.com'],
+            sender='from@example.com',
+            template=template,
+            context=context,
+            language='ru',
+            render_on_delivery=True,
+        )
         self.assertEqual(email.template.language, 'ru')
 
     def test_send_bulk_with_faulty_template(self):
         template = EmailTemplate.objects.create(
-            subject='{% if foo %}Subject {{ name }}',
-            content='Content {{ name }}',
-            html_content='HTML {{ name }}'
+            subject='{% if foo %}Subject {{ name }}', content='Content {{ name }}', html_content='HTML {{ name }}'
         )
-        email = Email.objects.create(to='to@example.com', from_email='from@example.com',
-                                     template=template, status=STATUS.queued)
+        email = Email.objects.create(
+            to='to@example.com', from_email='from@example.com', template=template, status=STATUS.queued
+        )
         _send_bulk([email], uses_multiprocessing=False)
         email = Email.objects.get(id=email.id)
         self.assertEqual(email.status, STATUS.sent)
@@ -419,8 +432,9 @@ class MailTest(TestCase):
 
         # attempt to send email for the first time
         with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 8, 0, 0)):
-            email = create('from@example.com', recipients=['to@example.com'], subject='subject', message='message',
-                            backend='error')
+            email = create(
+                'from@example.com', recipients=['to@example.com'], subject='subject', message='message', backend='error'
+            )
             self.assertIsNotNone(email.pk)
             self.assertEqual(email.created, timezone.datetime(2020, 5, 18, 8, 0, 0))
             self.assertEqual(email.status, STATUS.queued)
@@ -462,21 +476,30 @@ class MailTest(TestCase):
     @override_settings(USE_TZ=True)
     def test_expired(self):
         tzinfo = ZoneInfo('Asia/Jakarta')
-        email = create('from@example.com', recipients=['to@example.com'], subject='subject', message='message',
-                       expires_at=timezone.datetime(2020, 5, 18, 9, 0, 1, tzinfo=tzinfo))
+        email = create(
+            'from@example.com',
+            recipients=['to@example.com'],
+            subject='subject',
+            message='message',
+            expires_at=timezone.datetime(2020, 5, 18, 9, 0, 1, tzinfo=tzinfo),
+        )
         self.assertEqual(email.expires_at, timezone.datetime(2020, 5, 18, 9, 0, 1, tzinfo=tzinfo))
         msg = email.prepare_email_message()
         self.assertEqual(msg.extra_headers['Expires'], 'Mon, 18 May 09:00:01 +0700')
 
         # check that email is not sent after its expire_at date
-        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 2, tzinfo=tzinfo)):
+        with patch(
+            'django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 2, tzinfo=tzinfo)
+        ):
             self.assertEqual(email.status, STATUS.queued)
             result = send_queued()
             self.assertTupleEqual(result, (0, 0, 0))
             email.refresh_from_db()
 
         # check that email is sent before its expire_at date
-        with patch('django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 0, tzinfo=tzinfo)):
+        with patch(
+            'django.utils.timezone.now', side_effect=lambda: timezone.datetime(2020, 5, 18, 9, 0, 0, tzinfo=tzinfo)
+        ):
             self.assertEqual(email.status, STATUS.queued)
             result = send_queued()
             self.assertTupleEqual(result, (1, 0, 0))
@@ -485,18 +508,27 @@ class MailTest(TestCase):
 
     def test_invalid_expired(self):
         with self.assertRaises(ValidationError):
-            create('from@example.com', recipients=['to@example.com'], subject='subject',
-                           message='message',
-                           scheduled_time=timezone.datetime(2020, 5, 18, 9, 0, 1),
-                           expires_at=timezone.datetime(2020, 5, 18, 9, 0, 0))
+            create(
+                'from@example.com',
+                recipients=['to@example.com'],
+                subject='subject',
+                message='message',
+                scheduled_time=timezone.datetime(2020, 5, 18, 9, 0, 1),
+                expires_at=timezone.datetime(2020, 5, 18, 9, 0, 0),
+            )
 
     def test_batch_delivery_timeout(self):
         """
         Ensure that batch delivery timeout is respected.
         """
-        email = Email.objects.create(to=['to@example.com'],
-                                     from_email='bob@example.com', subject='',
-                                     message='', status=STATUS.queued, backend_alias='slow_backend')
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='slow_backend',
+        )
         start_time = timezone.now()
         # slow backend sleeps for 5 seconds, so we should get a timeout error since we set
         # BATCH_DELIVERY_TIMEOUT timeout to 2 seconds in test_settings.py
@@ -511,7 +543,5 @@ class MailTest(TestCase):
         """
         Check that the post_office signal handler is fired
         """
-        email = send(recipients=['a@example.com'],
-                     sender='from@example.com', message='message',
-                     subject='subject')
+        email = send(recipients=['a@example.com'], sender='from@example.com', message='message', subject='subject')
         mock.assert_called_once_with(sender=Email, emails=[email])
