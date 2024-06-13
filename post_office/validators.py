@@ -4,7 +4,7 @@ from django.template import Template, TemplateSyntaxError, TemplateDoesNotExist
 from django.utils.encoding import force_str
 
 
-def validate_email_with_name(value):
+def validate_email_with_name(value, validate_tld=False):
     """
     Validate email address.
 
@@ -19,10 +19,16 @@ def validate_email_with_name(value):
         if start < end:
             recipient = value[start:end]
 
+    if validate_tld:
+        from .tlds import TLD
+        tld = recipient.rsplit('.', 1)[-1].upper()
+        if tld not in TLD:
+            raise ValidationError('Invalid top level domain.')
+
     validate_email(recipient)
 
 
-def validate_comma_separated_emails(value):
+def validate_comma_separated_emails(value, validate_tld=False):
     """
     Validate every email address in a comma separated list of emails.
     """
@@ -31,7 +37,7 @@ def validate_comma_separated_emails(value):
 
     for email in value:
         try:
-            validate_email_with_name(email)
+            validate_email_with_name(email, validate_tld)
         except ValidationError:
             raise ValidationError('Invalid email: %s' % email, code='invalid')
 
