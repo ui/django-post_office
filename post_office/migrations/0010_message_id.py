@@ -14,7 +14,7 @@ def forwards(apps, schema_editor):
         if email.status in [STATUS.queued, STATUS.requeued]:
             # create a unique Message-ID for all emails which have not been send yet
             randint1, randint2 = random.getrandbits(64), random.getrandbits(16)
-            email.message_id = '<{}.{}.{}@{}>'.format(email.id, randint1, randint2, msg_id_fqdn)
+            email.message_id = f'<{email.id}.{randint1}.{randint2}@{msg_id_fqdn}>'
             email.save()
 
 

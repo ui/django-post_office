@@ -17,13 +17,12 @@ from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
-from .mail import send
 from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
 
 
 def get_message_preview(instance):
-    return ('{0}...'.format(instance.message[:25]) if len(instance.message) > 25
+    return (f'{instance.message[:25]}...' if len(instance.message) > 25
             else instance.message)
 
 

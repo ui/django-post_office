@@ -1,4 +1,3 @@
-import sys
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -7,8 +6,7 @@ from django.db.models import Q
 from django.template import Context, Template
 from django.utils import timezone
 from email.utils import make_msgid
-from multiprocessing import Pool, TimeoutError
-from multiprocessing.context import TimeoutError as ContextTimeoutError
+from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
 from .connections import connections

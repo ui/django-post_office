@@ -27,7 +27,7 @@ class Tox(TestCommand):
         sys.exit(errno)
 
 
-with open(join(dirname(__file__), 'post_office/version.txt'), 'r') as fh:
+with open(join(dirname(__file__), 'post_office/version.txt')) as fh:
     VERSION = '.'.join(map(str, literal_eval(fh.read())))
 
 TESTS_REQUIRE = ['tox >= 2.3']
@@ -47,25 +47,27 @@ setup(
     zip_safe=False,
     include_package_data=True,
     package_data={'': ['README.rst']},
+    python_requires='>=3.9',
     install_requires=[
         'bleach[css]',
-        'django>=3.2',
-        'pytz',
+        'django>=4.2',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Framework :: Django',
+        'Framework :: Django :: 4.2',
+        'Framework :: Django :: 5.0',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Topic :: Communications :: Email',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules',

@@ -13,7 +13,7 @@ from django.urls import reverse
 from post_office.models import Email, EmailTemplate, STATUS
 from post_office.template import render_to_string
 from post_office.template.backends.post_office import PostOfficeTemplates
-from post_office.mail import create, send, send_queued
+from post_office.mail import send, send_queued
 
 
 class HTMLMailTest(TestCase):
@@ -165,7 +165,7 @@ class EmailAdminTest(TestCase):
         try:
             import bleach
             self.assertContains(response, "<h3>Testing image attachments</h3>")
-            self.assertContains(response, '<img src="{}" width="200"'.format(email_image_url))
+            self.assertContains(response, f'<img src="{email_image_url}" width="200"')
         except ImportError:
             self.assertContains(response, "Testing image attachments")
 
