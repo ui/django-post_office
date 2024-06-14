@@ -31,17 +31,13 @@ class FileLocked(Exception):
 
 
 class FileLock:
-
     def __init__(self, lock_filename, timeout=None, force=False):
         self.lock_filename = '%s.lock' % lock_filename
         self.timeout = timeout
         self.force = force
         self._pid = str(os.getpid())
         # Store pid in a file in the same directory as desired lockname
-        self.pid_filename = os.path.join(
-            os.path.dirname(self.lock_filename),
-            self._pid,
-        ) + '.lock'
+        self.pid_filename = os.path.join(os.path.dirname(self.lock_filename), self._pid) + '.lock'
 
     def get_lock_pid(self):
         try:
@@ -97,14 +93,14 @@ class FileLock:
                 raise FileLocked()
 
         # Locked, but want to wait for an unlock
-        interval = .1
+        interval = 0.1
         intervals = int(self.timeout / interval)
 
         while intervals:
             if self.valid_lock():
                 intervals -= 1
                 time.sleep(interval)
-                #print('stopping %s' % intervals)
+                # print('stopping %s' % intervals)
             else:
                 return True
 

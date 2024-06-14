@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
@@ -34,7 +33,7 @@ from .utils import (
     split_emails,
 )
 
-logger = setup_loghandlers("INFO")
+logger = setup_loghandlers('INFO')
 
 
 def create(
@@ -42,9 +41,9 @@ def create(
     recipients=None,
     cc=None,
     bcc=None,
-    subject="",
-    message="",
-    html_message="",
+    subject='',
+    message='',
+    html_message='',
     context=None,
     scheduled_time=None,
     expires_at=None,
@@ -53,7 +52,7 @@ def create(
     priority=None,
     render_on_delivery=False,
     commit=True,
-    backend="",
+    backend='',
 ):
     """
     Creates an email from supplied keyword arguments. If template is
@@ -69,10 +68,8 @@ def create(
     if bcc is None:
         bcc = []
     if context is None:
-        context = ""
-    message_id = (
-        make_msgid(domain=get_message_id_fqdn()) if get_message_id_enabled() else None
-    )
+        context = ''
+    message_id = make_msgid(domain=get_message_id_fqdn()) if get_message_id_enabled() else None
 
     # If email is to be rendered during delivery, save all necessary
     # information
@@ -133,9 +130,9 @@ def send(
     sender=None,
     template=None,
     context=None,
-    subject="",
-    message="",
-    html_message="",
+    subject='',
+    message='',
+    html_message='',
     scheduled_time=None,
     expires_at=None,
     headers=None,
@@ -146,23 +143,23 @@ def send(
     commit=True,
     cc=None,
     bcc=None,
-    language="",
-    backend="",
+    language='',
+    backend='',
 ):
     try:
         recipients = parse_emails(recipients)
     except ValidationError as e:
-        raise ValidationError("recipients: %s" % e.message)
+        raise ValidationError('recipients: %s' % e.message)
 
     try:
         cc = parse_emails(cc)
     except ValidationError as e:
-        raise ValidationError("c: %s" % e.message)
+        raise ValidationError('c: %s' % e.message)
 
     try:
         bcc = parse_emails(bcc)
     except ValidationError as e:
-        raise ValidationError("bcc: %s" % e.message)
+        raise ValidationError('bcc: %s' % e.message)
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
@@ -180,17 +177,11 @@ def send(
 
     if template:
         if subject:
-            raise ValueError(
-                'You can\'t specify both "template" and "subject" arguments'
-            )
+            raise ValueError('You can\'t specify both "template" and "subject" arguments')
         if message:
-            raise ValueError(
-                'You can\'t specify both "template" and "message" arguments'
-            )
+            raise ValueError('You can\'t specify both "template" and "message" arguments')
         if html_message:
-            raise ValueError(
-                'You can\'t specify both "template" and "html_message" arguments'
-            )
+            raise ValueError('You can\'t specify both "template" and "html_message" arguments')
 
         # template can be an EmailTemplate instance or name
         if isinstance(template, EmailTemplate):
@@ -202,7 +193,7 @@ def send(
             template = get_email_template(template, language)
 
     if backend and backend not in get_available_backends().keys():
-        raise ValueError("%s is not a valid backend alias" % backend)
+        raise ValueError('%s is not a valid backend alias' % backend)
 
     email = create(
         sender,
@@ -255,14 +246,12 @@ def get_queued():
      - Has expires_at after the current time or is None
     """
     now = timezone.now()
-    query = (Q(scheduled_time__lte=now) | Q(scheduled_time=None)) & (
-        Q(expires_at__gt=now) | Q(expires_at=None)
-    )
+    query = (Q(scheduled_time__lte=now) | Q(scheduled_time=None)) & (Q(expires_at__gt=now) | Q(expires_at=None))
     return (
         Email.objects.filter(query, status__in=[STATUS.queued, STATUS.requeued])
-        .select_related("template")
+        .select_related('template')
         .order_by(*get_sending_order())
-        .prefetch_related("attachments")[: get_batch_size()]
+        .prefetch_related('attachments')[: get_batch_size()]
     )
 
 
@@ -274,9 +263,7 @@ def send_queued(processes=1, log_level=None):
     total_sent, total_failed, total_requeued = 0, 0, 0
     total_email = len(queued_emails)
 
-    logger.info(
-        "Started sending %s emails with %s processes." % (total_email, processes)
-    )
+    logger.info('Started sending %s emails with %s processes.' % (total_email, processes))
 
     if log_level is None:
         log_level = get_log_level()
@@ -300,7 +287,7 @@ def send_queued(processes=1, log_level=None):
             tasks = []
             for email_list in email_lists:
                 tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
- 
+
             timeout = get_batch_delivery_timeout()
             results = []
 
@@ -311,12 +298,12 @@ def send_queued(processes=1, log_level=None):
             # for task in tasks:
             #     try:
             #         # Wait for all tasks to complete with a timeout
-            #         # The get method is used with a timeout to wait for each result            
+            #         # The get method is used with a timeout to wait for each result
             #         results.append(task.get(timeout=timeout))
             #     except (TimeoutError, ContextTimeoutError):
             #         logger.exception("Process timed out after %d seconds" % timeout)
 
-            # results = pool.map(_send_bulk, email_lists)            
+            # results = pool.map(_send_bulk, email_lists)
             pool.terminate()
             pool.join()
 
@@ -325,7 +312,7 @@ def send_queued(processes=1, log_level=None):
             total_requeued = [result[2] for result in results]
 
     logger.info(
-        "%s emails attempted, %s sent, %s failed, %s requeued",
+        '%s emails attempted, %s sent, %s failed, %s requeued',
         total_email,
         total_sent,
         total_failed,
@@ -349,17 +336,15 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     failed_emails = []  # This is a list of two tuples (email, exception)
     email_count = len(emails)
 
-    logger.info("Process started, sending %s emails" % email_count)
+    logger.info('Process started, sending %s emails' % email_count)
 
     def send(email):
         try:
-            email.dispatch(
-                log_level=log_level, commit=False, disconnect_after_delivery=False
-            )
+            email.dispatch(log_level=log_level, commit=False, disconnect_after_delivery=False)
             sent_emails.append(email)
-            logger.debug("Successfully sent email #%d" % email.id)
+            logger.debug('Successfully sent email #%d' % email.id)
         except Exception as e:
-            logger.exception("Failed to send email #%d" % email.id)
+            logger.exception('Failed to send email #%d' % email.id)
             failed_emails.append((email, e))
 
     # Prepare emails before we send these to threads for sending
@@ -370,7 +355,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
         try:
             email.prepare_email_message()
         except Exception as e:
-            logger.exception("Failed to prepare email #%d" % email.id)
+            logger.exception('Failed to prepare email #%d' % email.id)
             failed_emails.append((email, e))
 
     number_of_threads = min(get_threads_per_process(), email_count)
@@ -383,13 +368,13 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     timeout = get_batch_delivery_timeout()
 
     # Wait for all tasks to complete with a timeout
-    # The get method is used with a timeout to wait for each result        
+    # The get method is used with a timeout to wait for each result
     for result in results:
         result.get(timeout=timeout)
     # for result in results:
     #     try:
     #         # Wait for all tasks to complete with a timeout
-    #         # The get method is used with a timeout to wait for each result        
+    #         # The get method is used with a timeout to wait for each result
     #         result.get(timeout=timeout)
     #     except TimeoutError:
     #         logger.exception("Process timed out after %d seconds" % timeout)
@@ -421,9 +406,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
             email.status = STATUS.failed
             num_failed += 1
 
-    Email.objects.bulk_update(
-        emails_failed, ["status", "scheduled_time", "number_of_retries"]
-    )
+    Email.objects.bulk_update(emails_failed, ['status', 'scheduled_time', 'number_of_retries'])
 
     # If log level is 0, log nothing, 1 logs only sending failures
     # and 2 means log both successes and failures
@@ -451,7 +434,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
             Log.objects.bulk_create(logs)
 
     logger.info(
-        "Process finished, %s attempted, %s sent, %s failed, %s requeued",
+        'Process finished, %s attempted, %s sent, %s failed, %s requeued',
         email_count,
         len(sent_emails),
         num_failed,
@@ -467,12 +450,12 @@ def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_leve
     """
     try:
         with FileLock(lockfile):
-            logger.info("Acquired lock for sending queued emails at %s.lock", lockfile)
+            logger.info('Acquired lock for sending queued emails at %s.lock', lockfile)
             while True:
                 try:
                     send_queued(processes, log_level)
                 except Exception as e:
-                    logger.exception(e, extra={"status_code": 500})
+                    logger.exception(e, extra={'status_code': 500})
                     raise
 
                 # Close DB connection to avoid multiprocessing errors
@@ -481,4 +464,4 @@ def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_leve
                 if not get_queued().exists():
                     break
     except FileLocked:
-        logger.info("Failed to acquire lock, terminating now.")
+        logger.info('Failed to acquire lock, terminating now.')

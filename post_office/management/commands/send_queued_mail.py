@@ -7,18 +7,21 @@ from ...mail import send_queued_mail_until_done
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
-            '-p', '--processes',
+            '-p',
+            '--processes',
             type=int,
             default=1,
             help='Number of processes used to send emails',
         )
         parser.add_argument(
-            '-L', '--lockfile',
+            '-L',
+            '--lockfile',
             default=default_lockfile,
             help='Absolute path of lockfile to acquire',
         )
         parser.add_argument(
-            '-l', '--log-level',
+            '-l',
+            '--log-level',
             type=int,
             help='"0" to log nothing, "1" to only log errors',
         )

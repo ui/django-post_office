@@ -10,8 +10,16 @@ from .signals import email_queued
 from .validators import validate_email_with_name
 
 
-def send_mail(subject, message, from_email, recipient_list, html_message='',
-              scheduled_time=None, headers=None, priority=PRIORITY.medium):
+def send_mail(
+    subject,
+    message,
+    from_email,
+    recipient_list,
+    html_message='',
+    scheduled_time=None,
+    headers=None,
+    priority=PRIORITY.medium,
+):
     """
     Add a new message to the mail queue. This is a replacement for Django's
     ``send_mail`` core email method.
@@ -21,10 +29,17 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = [
         Email.objects.create(
-            from_email=from_email, to=address, subject=subject,
-            message=message, html_message=html_message, status=status,
-            headers=headers, priority=priority, scheduled_time=scheduled_time
-        ) for address in recipient_list
+            from_email=from_email,
+            to=address,
+            subject=subject,
+            message=message,
+            html_message=html_message,
+            status=status,
+            headers=headers,
+            priority=priority,
+            scheduled_time=scheduled_time,
+        )
+        for address in recipient_list
     ]
     if priority == PRIORITY.now:
         for email in emails:
@@ -76,7 +91,6 @@ def create_attachments(attachment_files):
     """
     attachments = []
     for filename, filedata in attachment_files.items():
-
         if isinstance(filedata, dict):
             content = filedata.get('file', None)
             mimetype = filedata.get('mimetype', None)
@@ -116,8 +130,7 @@ def parse_priority(priority):
         priority = getattr(PRIORITY, priority, None)
 
         if priority is None:
-            raise ValueError('Invalid priority, must be one of: %s' %
-                             ', '.join(PRIORITY._fields))
+            raise ValueError('Invalid priority, must be one of: %s' % ', '.join(PRIORITY._fields))
     return priority
 
 

@@ -12,6 +12,7 @@ class ConnectionHandler:
 
     Ensures only one instance of each alias exists per thread.
     """
+
     def __init__(self):
         self._connections = local()
 

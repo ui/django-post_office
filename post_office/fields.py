@@ -6,7 +6,7 @@ from .validators import validate_comma_separated_emails
 
 class CommaSeparatedEmailField(TextField):
     default_validators = [validate_comma_separated_emails]
-    description = _("Comma-separated emails")
+    description = _('Comma-separated emails')
 
     def __init__(self, *args, **kwargs):
         kwargs['blank'] = True
@@ -52,6 +52,7 @@ class CommaSeparatedEmailField(TextField):
         Taken from smiley chris' easy_thumbnails
         """
         from south.modelsinspector import introspector
+
         field_class = 'django.db.models.fields.TextField'
         args, kwargs = introspector(self)
         return (field_class, args, kwargs)

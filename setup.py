@@ -6,7 +6,6 @@ from setuptools.command.test import test as TestCommand
 
 
 class Tox(TestCommand):
-
     def initialize_options(self):
         TestCommand.initialize_options(self)
         self.tox_args = None
@@ -20,6 +19,7 @@ class Tox(TestCommand):
         # import here, cause outside the eggs aren't loaded
         import tox
         import shlex
+
         args = self.tox_args
         if args:
             args = shlex.split(self.tox_args)
@@ -77,5 +77,5 @@ setup(
         'test': TESTS_REQUIRE,
         'prevent-XSS': ['bleach'],
     },
-    cmdclass={'test': Tox}
+    cmdclass={'test': Tox},
 )
