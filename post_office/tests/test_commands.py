@@ -7,7 +7,9 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils.timezone import now
 
-from ..models import Attachment, Email, STATUS
+from ..models import STATUS
+from ..models import Attachment
+from ..models import Email
 
 
 class CommandTest(TestCase):

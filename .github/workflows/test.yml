@@ -16,7 +16,16 @@ jobs:
       - uses: chartboost/ruff-action@v1
         with:
           version: 0.4.8
-          args: 'format --check'    
+          args: 'format --check'
+
+  ruff-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chartboost/ruff-action@v1
+        with:
+          version: 0.4.8
 
   build:
     runs-on: ubuntu-latest

@@ -2,18 +2,23 @@ import os
 from email.mime.image import MIMEImage
 
 from django.contrib.auth import get_user_model
-from django.core.mail import EmailMultiAlternatives
-from django.core.mail.message import SafeMIMEMultipart, SafeMIMEText
 from django.core.files.images import ImageFile
+from django.core.mail import EmailMultiAlternatives
+from django.core.mail.message import SafeMIMEMultipart
+from django.core.mail.message import SafeMIMEText
 from django.template.loader import get_template
-from django.test import Client, TestCase
+from django.test import Client
+from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 
-from post_office.models import Email, EmailTemplate, STATUS
+from post_office.mail import send
+from post_office.mail import send_queued
+from post_office.models import STATUS
+from post_office.models import Email
+from post_office.models import EmailTemplate
 from post_office.template import render_to_string
 from post_office.template.backends.post_office import PostOfficeTemplates
-from post_office.mail import send, send_queued
 
 
 class HTMLMailTest(TestCase):

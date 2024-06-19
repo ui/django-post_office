@@ -4,7 +4,12 @@ from django.core.files import File
 from django.utils.encoding import force_str
 
 from post_office import cache
-from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
+
+from .models import PRIORITY
+from .models import STATUS
+from .models import Attachment
+from .models import Email
+from .models import EmailTemplate
 from .settings import get_default_priority
 from .signals import email_queued
 from .validators import validate_email_with_name

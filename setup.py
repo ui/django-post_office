@@ -1,6 +1,8 @@
-from ast import literal_eval
 import sys
-from os.path import dirname, join
+from ast import literal_eval
+from os.path import dirname
+from os.path import join
+
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
@@ -17,8 +19,9 @@ class Tox(TestCommand):
 
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
-        import tox
         import shlex
+
+        import tox
 
         args = self.tox_args
         if args:

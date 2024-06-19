@@ -1,37 +1,41 @@
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.db import connection as db_connection
-from django.db.models import Q
-from django.template import Context, Template
-from django.utils import timezone
 from email.utils import make_msgid
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import connection as db_connection
+from django.db.models import Q
+from django.template import Context
+from django.template import Template
+from django.utils import timezone
+
 from .connections import connections
-from .lockfile import default_lockfile, FileLock, FileLocked
+from .lockfile import FileLock
+from .lockfile import FileLocked
+from .lockfile import default_lockfile
 from .logutils import setup_loghandlers
-from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
-from .settings import (
-    get_available_backends,
-    get_batch_delivery_timeout,
-    get_batch_size,
-    get_log_level,
-    get_max_retries,
-    get_message_id_enabled,
-    get_message_id_fqdn,
-    get_retry_timedelta,
-    get_sending_order,
-    get_threads_per_process,
-)
+from .models import PRIORITY
+from .models import STATUS
+from .models import Email
+from .models import EmailTemplate
+from .models import Log
+from .settings import get_available_backends
+from .settings import get_batch_delivery_timeout
+from .settings import get_batch_size
+from .settings import get_log_level
+from .settings import get_max_retries
+from .settings import get_message_id_enabled
+from .settings import get_message_id_fqdn
+from .settings import get_retry_timedelta
+from .settings import get_sending_order
+from .settings import get_threads_per_process
 from .signals import email_queued
-from .utils import (
-    create_attachments,
-    get_email_template,
-    parse_emails,
-    parse_priority,
-    split_emails,
-)
+from .utils import create_attachments
+from .utils import get_email_template
+from .utils import parse_emails
+from .utils import parse_priority
+from .utils import split_emails
 
 logger = setup_loghandlers('INFO')
 

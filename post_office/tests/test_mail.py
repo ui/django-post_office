@@ -13,9 +13,22 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from ..mail import _send_bulk, create, get_queued, send, send_many, send_queued
-from ..models import PRIORITY, STATUS, Attachment, Email, EmailTemplate
-from ..settings import get_batch_size, get_log_level, get_max_retries, get_retry_timedelta, get_threads_per_process
+from ..mail import _send_bulk
+from ..mail import create
+from ..mail import get_queued
+from ..mail import send
+from ..mail import send_many
+from ..mail import send_queued
+from ..models import PRIORITY
+from ..models import STATUS
+from ..models import Attachment
+from ..models import Email
+from ..models import EmailTemplate
+from ..settings import get_batch_size
+from ..settings import get_log_level
+from ..settings import get_max_retries
+from ..settings import get_retry_timedelta
+from ..settings import get_threads_per_process
 
 connection_counter = 0
 

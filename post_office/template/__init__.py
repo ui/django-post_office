@@ -1,4 +1,5 @@
-from django.template.loader import get_template, select_template
+from django.template.loader import get_template
+from django.template.loader import select_template
 
 
 def render_to_string(template_name, context=None, request=None, using=None):
