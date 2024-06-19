@@ -1,6 +1,6 @@
-from email.mime.image import MIMEImage
 import hashlib
 import os
+from email.mime.image import MIMEImage
 
 from django import template
 from django.conf import settings

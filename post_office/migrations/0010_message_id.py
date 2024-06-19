@@ -1,8 +1,11 @@
 import random
-from django.db import migrations, models
+
+from django.db import migrations
+from django.db import models
 
 from post_office.models import STATUS
-from post_office.settings import get_message_id_enabled, get_message_id_fqdn
+from post_office.settings import get_message_id_enabled
+from post_office.settings import get_message_id_fqdn
 
 
 def forwards(apps, schema_editor):

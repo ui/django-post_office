@@ -1,9 +1,10 @@
-import time
 import os
+import time
 
 from django.test import TestCase
 
-from ..lockfile import FileLock, FileLocked
+from ..lockfile import FileLock
+from ..lockfile import FileLocked
 
 
 def setup_fake_lock(lock_file_name):

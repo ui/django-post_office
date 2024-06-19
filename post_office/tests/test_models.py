@@ -1,19 +1,26 @@
 import json
 import os
+from datetime import datetime
+from datetime import timedelta
 
-from datetime import datetime, timedelta
-
-from django.conf import settings as django_settings, settings
+from django.conf import settings
+from django.conf import settings as django_settings
 from django.core import mail
 from django.core import serializers
 from django.core.files.base import ContentFile
-from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.utils import timezone
 
-from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from ..mail import send
+from ..models import PRIORITY
+from ..models import STATUS
+from ..models import Attachment
+from ..models import Email
+from ..models import EmailTemplate
+from ..models import Log
 
 
 class ModelTest(TestCase):

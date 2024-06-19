@@ -1,3 +1,4 @@
+import datetime
 import warnings
 
 from django.conf import settings
@@ -5,10 +6,7 @@ from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
 from django.core.mail.utils import DNS_NAME
 from django.template import engines as template_engines
-
 from django.utils.module_loading import import_string
-
-import datetime
 
 
 def get_backend(alias='default'):

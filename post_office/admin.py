@@ -2,21 +2,30 @@ import re
 
 from django import forms
 from django.conf import settings
-from django.contrib import admin, messages
+from django.contrib import admin
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.mail.message import SafeMIMEText
 from django.db import models
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
-from django.http.response import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
-from django.template import Context, Template
-from django.urls import re_path, reverse
+from django.http.response import HttpResponse
+from django.http.response import HttpResponseNotFound
+from django.http.response import HttpResponseRedirect
+from django.template import Context
+from django.template import Template
+from django.urls import re_path
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
-from .models import STATUS, Attachment, Email, EmailTemplate, Log
+from .models import STATUS
+from .models import Attachment
+from .models import Email
+from .models import EmailTemplate
+from .models import Log
 from .sanitizer import clean_html
 
 

@@ -1,11 +1,10 @@
 from django.contrib.auth.models import User
-from django.test.client import Client
 from django.test import TestCase
+from django.test.client import Client
 from django.urls import reverse
 
 from post_office import mail
 from post_office.models import Email
-
 
 admin_username = 'real_test_admin'
 admin_email = 'read@admin.com'

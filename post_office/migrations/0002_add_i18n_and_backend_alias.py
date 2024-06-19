@@ -1,6 +1,8 @@
-from django.db import models, migrations
-import post_office.validators
+from django.db import migrations
+from django.db import models
+
 import post_office.fields
+import post_office.validators
 
 
 class Migration(migrations.Migration):

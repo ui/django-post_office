@@ -1,12 +1,21 @@
-from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
-
+from django.core.files.base import ContentFile
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
-from ..utils import create_attachments, get_email_template, parse_emails, parse_priority, send_mail, split_emails
-from ..validators import validate_email_with_name, validate_comma_separated_emails
+from ..models import PRIORITY
+from ..models import STATUS
+from ..models import Attachment
+from ..models import Email
+from ..models import EmailTemplate
+from ..utils import create_attachments
+from ..utils import get_email_template
+from ..utils import parse_emails
+from ..utils import parse_priority
+from ..utils import send_mail
+from ..utils import split_emails
+from ..validators import validate_comma_separated_emails
+from ..validators import validate_email_with_name
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')

@@ -4,12 +4,16 @@ from unittest import mock
 
 from django.conf import settings
 from django.core.files.images import File
-from django.core.mail import EmailMultiAlternatives, send_mail, EmailMessage
+from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
+from django.core.mail import send_mail
 from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, STATUS, PRIORITY
+from ..models import PRIORITY
+from ..models import STATUS
+from ..models import Email
 from ..settings import get_backend
 
 

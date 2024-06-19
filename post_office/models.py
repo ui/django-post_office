@@ -1,24 +1,28 @@
 import os
-
 from collections import namedtuple
-from uuid import uuid4
 from email.mime.nonmultipart import MIMENonMultipart
+from uuid import uuid4
 
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.db import models
-from django.utils.encoding import smart_str
-from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
+from django.utils.encoding import smart_str
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
 
 from .connections import connections
 from .logutils import setup_loghandlers
-from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
-from .validators import validate_email_with_name, validate_template_syntax
-
+from .settings import context_field_class
+from .settings import get_log_level
+from .settings import get_override_recipients
+from .settings import get_template_engine
+from .validators import validate_email_with_name
+from .validators import validate_template_syntax
 
 logger = setup_loghandlers('INFO')
 

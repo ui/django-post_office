@@ -1,8 +1,8 @@
 from django.core.mail import backends
 from django.test import TestCase
 
-from .test_backends import ErrorRaisingBackend
 from ..connections import connections
+from .test_backends import ErrorRaisingBackend
 
 
 class ConnectionTest(TestCase):
