@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 3.9.0 (2024-06-19)
+--------------------------
+* Added a new `LOCK_FILE_NAME` which lets you change post office's lock file name. Thanks @mogost!
+* Fixes a bug where `email_queued` signal is not sent in certain cases. Thanks @diesieben07!
+* Fixes an issue where attachment admin page would not render with large number of emails. Thanks @petrprikryl!
+* Fixes a crash when email instances are made with context, but without a template. Thanks @pacahon!
+* Other miscellaneous fixes and house keeping tasks by @mogost!
+
 Version 3.8.0 (2023-10-22)
 --------------------------
 * Added `BATCH_DELIVERY_TIMEOUT` that specifies the maximum time allowed for each batch to be delivered. Defaults to 180 seconds. Thanks @selwin!
