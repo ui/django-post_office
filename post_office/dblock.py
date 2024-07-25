@@ -58,7 +58,7 @@ class db_lock:
     # Use a decorator to mark a whole function as critical
     @db_lock('my_lock')
     def do_something():
-        # do somethinge here
+        # do something here
     ```
     This function may raise a ``LockedException`` or a ``TimeoutException``.
 
