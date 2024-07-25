@@ -11,7 +11,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATABASES = {
     'default': {
+        'NAME': 'empty.sqlite3', #  required, but unused
         'ENGINE': 'django.db.backends.sqlite3',
+        'TEST': {
+            'NAME': 'testdb.sqlite3',
+        }
     },
 }
 

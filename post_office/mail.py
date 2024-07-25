@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 
 from .connections import connections
-from .lockfile import default_lockfile, FileLock, FileLocked
+from .dblock import db_lock, TimeoutException, LockedException
 from .logutils import setup_loghandlers
 from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
 from .settings import (
@@ -444,13 +444,13 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     return len(sent_emails), num_failed, num_requeued
 
 
-def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_level=None):
+def send_queued_mail_until_done(processes=1, log_level=None):
     """
     Send mail in queue batch by batch, until all emails have been processed.
     """
     try:
-        with FileLock(lockfile):
-            logger.info('Acquired lock for sending queued emails at %s.lock', lockfile)
+        with db_lock('send_queued_mail_until_done'):
+            logger.info('Acquired lock for sending queued emails')
             while True:
                 try:
                     send_queued(processes, log_level)
@@ -463,5 +463,7 @@ def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_leve
 
                 if not get_queued().exists():
                     break
-    except FileLocked:
+    except TimeoutException:
+        logger.info('Sending queued mail required too long, terminating now.')
+    except LockedException:
         logger.info('Failed to acquire lock, terminating now.')
