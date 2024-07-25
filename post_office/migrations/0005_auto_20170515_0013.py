@@ -3,7 +3,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('post_office', '0004_auto_20160607_0901'),
     ]
@@ -11,6 +10,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterUniqueTogether(
             name='emailtemplate',
-            unique_together=set([('name', 'language', 'default_template')]),
+            unique_together={('name', 'language', 'default_template')},
         ),
     ]

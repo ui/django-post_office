@@ -13,8 +13,9 @@ register = template.Library()
 
 @register.simple_tag(takes_context=True)
 def inline_image(context, file):
-    assert hasattr(context.template, '_attached_images'), \
-        "You must use template engine 'post_office' when rendering images using templatetag 'inline_image'."
+    assert hasattr(
+        context.template, '_attached_images'
+    ), "You must use template engine 'post_office' when rendering images using templatetag 'inline_image'."
     if isinstance(file, ImageFile):
         fileobj = file
     elif os.path.isabs(file) and os.path.exists(file):
@@ -23,7 +24,7 @@ def inline_image(context, file):
         try:
             absfilename = finders.find(file)
             if absfilename is None:
-                raise FileNotFoundError("No such file: {}".format(file))
+                raise FileNotFoundError(f'No such file: {file}')
         except Exception:
             if settings.DEBUG:
                 raise
@@ -33,6 +34,6 @@ def inline_image(context, file):
     image = MIMEImage(raw_data)
     md5sum = hashlib.md5(raw_data).hexdigest()
     image.add_header('Content-Disposition', 'inline', filename=md5sum)
-    image.add_header('Content-ID', '<{}>'.format(md5sum))
+    image.add_header('Content-ID', f'<{md5sum}>')
     context.template._attached_images.append(image)
-    return 'cid:{}'.format(md5sum)
+    return f'cid:{md5sum}'

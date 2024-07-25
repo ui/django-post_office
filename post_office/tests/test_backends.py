@@ -1,5 +1,7 @@
 import os
 from email.mime.image import MIMEImage
+from unittest import mock
+
 from django.conf import settings
 from django.core.files.images import File
 from django.core.mail import EmailMultiAlternatives, send_mail, EmailMessage
@@ -22,7 +24,6 @@ class ErrorRaisingBackend(BaseEmailBackend):
 
 
 class BackendTest(TestCase):
-
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_email_backend(self):
         """
@@ -35,9 +36,7 @@ class BackendTest(TestCase):
         self.assertEqual(email.priority, PRIORITY.medium)
 
     def test_email_backend_setting(self):
-        """
-
-        """
+        """ """
         old_email_backend = getattr(settings, 'EMAIL_BACKEND', None)
         old_post_office_backend = getattr(settings, 'POST_OFFICE_BACKEND', None)
         if hasattr(settings, 'EMAIL_BACKEND'):
@@ -70,9 +69,8 @@ class BackendTest(TestCase):
         """
         "text/html" attachments to Email should be persisted into the database
         """
-        message = EmailMultiAlternatives('subject', 'body', 'from@example.com',
-                                         ['recipient@example.com'])
-        message.attach_alternative('html', "text/html")
+        message = EmailMultiAlternatives('subject', 'body', 'from@example.com', ['recipient@example.com'])
+        message.attach_alternative('html', 'text/html')
         message.send()
         email = Email.objects.latest('id')
         self.assertEqual(email.html_message, 'html')
@@ -82,9 +80,9 @@ class BackendTest(TestCase):
         """
         Test that headers are correctly set on the outgoing emails.
         """
-        message = EmailMessage('subject', 'body', 'from@example.com',
-                               ['recipient@example.com'],
-                               headers={'Reply-To': 'reply@example.com'})
+        message = EmailMessage(
+            'subject', 'body', 'from@example.com', ['recipient@example.com'], headers={'Reply-To': 'reply@example.com'}
+        )
         message.send()
         email = Email.objects.latest('id')
         self.assertEqual(email.headers, {'Reply-To': 'reply@example.com'})
@@ -95,9 +93,15 @@ class BackendTest(TestCase):
         Test that 'Reply-To' headers are correctly set on the outgoing emails,
         when EmailMessage property reply_to is set.
         """
-        message = EmailMessage('subject', 'body', 'from@example.com',
-                               ['recipient@example.com'],
-                               reply_to=['replyto@example.com', ],)
+        message = EmailMessage(
+            'subject',
+            'body',
+            'from@example.com',
+            ['recipient@example.com'],
+            reply_to=[
+                'replyto@example.com',
+            ],
+        )
         message.send()
         email = Email.objects.latest('id')
         self.assertEqual(email.headers, {'Reply-To': 'replyto@example.com'})
@@ -110,18 +114,21 @@ class BackendTest(TestCase):
         Then the explicit header value is favored over the message property reply_to,
         adopting the behaviour of message() in django.core.mail.message.EmailMessage.
         """
-        message = EmailMessage('subject', 'body', 'from@example.com',
-                               ['recipient@example.com'],
-                               reply_to=['replyto-from-property@example.com'],
-                               headers={'Reply-To': 'replyto-from-header@example.com'})
+        message = EmailMessage(
+            'subject',
+            'body',
+            'from@example.com',
+            ['recipient@example.com'],
+            reply_to=['replyto-from-property@example.com'],
+            headers={'Reply-To': 'replyto-from-header@example.com'},
+        )
         message.send()
         email = Email.objects.latest('id')
         self.assertEqual(email.headers, {'Reply-To': 'replyto-from-header@example.com'})
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_backend_attachments(self):
-        message = EmailMessage('subject', 'body', 'from@example.com',
-                               ['recipient@example.com'])
+        message = EmailMessage('subject', 'body', 'from@example.com', ['recipient@example.com'])
 
         message.attach('attachment.txt', b'attachment content')
         message.send()
@@ -133,8 +140,7 @@ class BackendTest(TestCase):
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_backend_image_attachments(self):
-        message = EmailMessage('subject', 'body', 'from@example.com',
-                               ['recipient@example.com'])
+        message = EmailMessage('subject', 'body', 'from@example.com', ['recipient@example.com'])
 
         filename = os.path.join(os.path.dirname(__file__), 'static/dummy.png')
         fileobj = File(open(filename, 'rb'), name='dummy.png')
@@ -155,8 +161,8 @@ class BackendTest(TestCase):
         EMAIL_BACKEND='post_office.EmailBackend',
         POST_OFFICE={
             'DEFAULT_PRIORITY': 'now',
-            'BACKENDS': {'default': 'django.core.mail.backends.dummy.EmailBackend'}
-        }
+            'BACKENDS': {'default': 'django.core.mail.backends.dummy.EmailBackend'},
+        },
     )
     def test_default_priority_now(self):
         # If DEFAULT_PRIORITY is "now", mails should be sent right away
@@ -164,3 +170,18 @@ class BackendTest(TestCase):
         email = Email.objects.latest('id')
         self.assertEqual(email.status, STATUS.sent)
         self.assertEqual(num_sent, 1)
+
+    @override_settings(
+        EMAIL_BACKEND='post_office.EmailBackend',
+        POST_OFFICE={
+            'DEFAULT_PRIORITY': 'medium',
+            'BACKENDS': {'default': 'django.core.mail.backends.dummy.EmailBackend'},
+        },
+    )
+    @mock.patch('post_office.signals.email_queued.send')
+    def test_email_queued_signal(self, mock):
+        # If DEFAULT_PRIORITY is not "now", the email_queued signal should be sent
+        send_mail('Test', 'Message', 'from1@example.com', ['to@example.com'])
+        email = Email.objects.latest('id')
+        self.assertEqual(email.status, STATUS.queued)
+        self.assertEqual(mock.call_count, 1)

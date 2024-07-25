@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('post_office', '0010_message_id'),
     ]
@@ -18,11 +17,19 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='email',
             name='expires_at',
-            field=models.DateTimeField(blank=True, help_text="Email won't be sent after this timestamp", null=True, verbose_name='Expires'),
+            field=models.DateTimeField(
+                blank=True, help_text="Email won't be sent after this timestamp", null=True, verbose_name='Expires'
+            ),
         ),
         migrations.AlterField(
             model_name='email',
             name='scheduled_time',
-            field=models.DateTimeField(blank=True, db_index=True, help_text='The scheduled sending time', null=True, verbose_name='Scheduled Time'),
+            field=models.DateTimeField(
+                blank=True,
+                db_index=True,
+                help_text='The scheduled sending time',
+                null=True,
+                verbose_name='Scheduled Time',
+            ),
         ),
     ]

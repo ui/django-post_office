@@ -6,16 +6,27 @@ try:
 except ImportError:
     # if bleach is not installed, render HTML as escaped text to prevent XSS attacks
     heading = gettext_lazy("Install 'bleach' to render HTML properly.")
-    clean_html = lambda body: format_html('<p><em>{heading}</em></p>\n<div>{body}</div>',
-                                          heading=heading, body=body)
+    clean_html = lambda body: format_html('<p><em>{heading}</em></p>\n<div>{body}</div>', heading=heading, body=body)
 else:
     styles = [
-        'border', 'border-top', 'border-right', 'border-bottom', 'border-left',
+        'border',
+        'border-top',
+        'border-right',
+        'border-bottom',
+        'border-left',
         'border-radius',
         'box-shadow',
         'height',
-        'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
-        'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+        'margin',
+        'margin-top',
+        'margin-right',
+        'margin-bottom',
+        'margin-left',
+        'padding',
+        'padding-top',
+        'padding-right',
+        'padding-bottom',
+        'padding-left',
         'width',
         'max-width',
         'min-width',
@@ -67,7 +78,7 @@ else:
         'list-style-position',
         'list-style-tyle',
     ]
-    tags=[
+    tags = [
         'a',
         'abbr',
         'acronym',
@@ -80,7 +91,12 @@ else:
         'em',
         'div',
         'font',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
         'head',
         'hr',
         'i',
@@ -92,11 +108,17 @@ else:
         'pre',
         'span',
         'strong',
-        'table', 'tbody', 'tfoot', 'td', 'th', 'thead', 'tr',
+        'table',
+        'tbody',
+        'tfoot',
+        'td',
+        'th',
+        'thead',
+        'tr',
         'u',
         'ul',
     ]
-    attributes={
+    attributes = {
         'a': ['class', 'href', 'id', 'style', 'target'],
         'abbr': ['class', 'id', 'style'],
         'acronym': ['class', 'id', 'style'],
@@ -126,11 +148,56 @@ else:
         'pre': ['class', 'id', 'style'],
         'span': ['class', 'id', 'style'],
         'strong': ['class', 'id', 'style'],
-        'table': ['class', 'id', 'style', 'align', 'bgcolor', 'border', 'cellpadding', 'cellspacing', 'dir', 'frame', 'rules', 'width'],
+        'table': [
+            'class',
+            'id',
+            'style',
+            'align',
+            'bgcolor',
+            'border',
+            'cellpadding',
+            'cellspacing',
+            'dir',
+            'frame',
+            'rules',
+            'width',
+        ],
         'tbody': ['class', 'id', 'style'],
         'tfoot': ['class', 'id', 'style'],
-        'td': ['class', 'id', 'style', 'abbr', 'align', 'bgcolor', 'colspan', 'dir', 'height', 'lang', 'rowspan', 'scope', 'style', 'valign', 'width'],
-        'th': ['class', 'id', 'style', 'abbr', 'align', 'background', 'bgcolor', 'colspan', 'dir', 'height', 'lang', 'scope', 'style', 'valign', 'width'],
+        'td': [
+            'class',
+            'id',
+            'style',
+            'abbr',
+            'align',
+            'bgcolor',
+            'colspan',
+            'dir',
+            'height',
+            'lang',
+            'rowspan',
+            'scope',
+            'style',
+            'valign',
+            'width',
+        ],
+        'th': [
+            'class',
+            'id',
+            'style',
+            'abbr',
+            'align',
+            'background',
+            'bgcolor',
+            'colspan',
+            'dir',
+            'height',
+            'lang',
+            'scope',
+            'style',
+            'valign',
+            'width',
+        ],
         'thead': ['class', 'id', 'style'],
         'tr': ['class', 'id', 'style', 'align', 'bgcolor', 'dir', 'style', 'valign'],
         'u': ['class', 'id', 'style'],
@@ -138,24 +205,29 @@ else:
     }
     try:
         from bleach.css_sanitizer import CSSSanitizer
+
         css_sanitizer = CSSSanitizer(
-                allowed_css_properties=styles,
+            allowed_css_properties=styles,
         )
-        clean_html = lambda body: mark_safe(bleach.clean(
-            body,
-            tags=tags,
-            attributes=attributes,
-            strip=True,
-            strip_comments=True,
-            css_sanitizer=css_sanitizer,
-        ))
+        clean_html = lambda body: mark_safe(
+            bleach.clean(
+                body,
+                tags=tags,
+                attributes=attributes,
+                strip=True,
+                strip_comments=True,
+                css_sanitizer=css_sanitizer,
+            )
+        )
     except ModuleNotFoundError:
         # if bleach version is prior to 5.0.0
-        clean_html = lambda body: mark_safe(bleach.clean(
-            body,
-            tags=tags,
-            attributes=attributes,
-            strip=True,
-            strip_comments=True,
-            styles=styles,
-        ))
+        clean_html = lambda body: mark_safe(
+            bleach.clean(
+                body,
+                tags=tags,
+                attributes=attributes,
+                strip=True,
+                strip_comments=True,
+                styles=styles,
+            )
+        )

@@ -1,10 +1,11 @@
 import os
 import platform
 
-if platform.system() in ["Darwin"]:
+if platform.system() in ['Darwin']:
     from multiprocessing import set_start_method
+
     # required since Python-3.8. See #319
-    set_start_method("fork")
+    set_start_method('fork')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -33,7 +34,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'TIMEOUT': 36000,
         'KEY_PREFIX': 'post-office',
-    }
+    },
 }
 
 POST_OFFICE = {
@@ -43,10 +44,12 @@ POST_OFFICE = {
         'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
         'smtp': 'django.core.mail.backends.smtp.EmailBackend',
         'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
+        'slow_backend': 'post_office.tests.test_mail.SlowTestBackend',
     },
     'CELERY_ENABLED': False,
     'MAX_RETRIES': 2,
     'MESSAGE_ID_ENABLED': True,
+    'BATCH_DELIVERY_TIMEOUT': 2,
     'MESSAGE_ID_FQDN': 'example.com',
 }
 
@@ -89,7 +92,8 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
         },
-    }, {
+    },
+    {
         'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
         'APP_DIRS': True,
         'DIRS': [os.path.join(BASE_DIR, 'tests/templates')],
@@ -103,11 +107,10 @@ TEMPLATES = [
                 'django.template.context_processors.tz',
                 'django.template.context_processors.request',
             ]
-        }
-    }
+        },
+    },
 ]
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'tests/static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-

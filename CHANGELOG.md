@@ -1,6 +1,31 @@
 Changelog
 =========
 
+Version 3.9.0 (2024-06-19)
+--------------------------
+* Added a new `LOCK_FILE_NAME` which lets you change post office's lock file name. Thanks @mogost!
+* Fixes a bug where `email_queued` signal is not sent in certain cases. Thanks @diesieben07!
+* Fixes an issue where attachment admin page would not render with large number of emails. Thanks @petrprikryl!
+* Fixes a crash when email instances are made with context, but without a template. Thanks @pacahon!
+* Other miscellaneous fixes and house keeping tasks by @mogost!
+
+Version 3.8.0 (2023-10-22)
+--------------------------
+* Added `BATCH_DELIVERY_TIMEOUT` that specifies the maximum time allowed for each batch to be delivered. Defaults to 180 seconds. Thanks @selwin!
+
+Version 3.7.1 (2023-08-08)
+--------------------------
+* Optimized a queryset in `get_queued()` that doesn't use indexes in Postgres. Thanks @marsha97!
+* Removed `date_hierarchy` option which causes admin to load slowly on DBs with a large number of emails. Thanks @selwin!
+* Optimized `cleanup_expired_mails()` so that deletes emails in smaller batches. Thanks @marsha97!
+
+Version 3.7.0 (2023-05-30)
+--------------------------
+* Changed JSON columns to use Django's `JSONField` and drop `jsonfield` dependency. Thanks @jrief!
+* Fixed saving HTML emails that have `quoted_printable`. Thanks @gabn88!
+* Fixes an issue where emails are rendered without context in Django's admin interface. Thanks @zagl!
+* This version no longer supports Django 3.1.
+
 Version 3.6.3 (2022-10-27)
 --------------------------
 * Fixed an issue where emails may not be rendered with context. Thanks @zagl!

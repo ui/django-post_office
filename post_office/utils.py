@@ -6,11 +6,20 @@ from django.utils.encoding import force_str
 from post_office import cache
 from .models import Email, PRIORITY, STATUS, EmailTemplate, Attachment
 from .settings import get_default_priority
+from .signals import email_queued
 from .validators import validate_email_with_name
 
 
-def send_mail(subject, message, from_email, recipient_list, html_message='',
-              scheduled_time=None, headers=None, priority=PRIORITY.medium):
+def send_mail(
+    subject,
+    message,
+    from_email,
+    recipient_list,
+    html_message='',
+    scheduled_time=None,
+    headers=None,
+    priority=PRIORITY.medium,
+):
     """
     Add a new message to the mail queue. This is a replacement for Django's
     ``send_mail`` core email method.
@@ -20,14 +29,23 @@ def send_mail(subject, message, from_email, recipient_list, html_message='',
     status = None if priority == PRIORITY.now else STATUS.queued
     emails = [
         Email.objects.create(
-            from_email=from_email, to=address, subject=subject,
-            message=message, html_message=html_message, status=status,
-            headers=headers, priority=priority, scheduled_time=scheduled_time
-        ) for address in recipient_list
+            from_email=from_email,
+            to=address,
+            subject=subject,
+            message=message,
+            html_message=html_message,
+            status=status,
+            headers=headers,
+            priority=priority,
+            scheduled_time=scheduled_time,
+        )
+        for address in recipient_list
     ]
     if priority == PRIORITY.now:
         for email in emails:
             email.dispatch()
+    else:
+        email_queued.send(sender=Email, emails=emails)
     return emails
 
 
@@ -73,7 +91,6 @@ def create_attachments(attachment_files):
     """
     attachments = []
     for filename, filedata in attachment_files.items():
-
         if isinstance(filedata, dict):
             content = filedata.get('file', None)
             mimetype = filedata.get('mimetype', None)
@@ -113,8 +130,7 @@ def parse_priority(priority):
         priority = getattr(PRIORITY, priority, None)
 
         if priority is None:
-            raise ValueError('Invalid priority, must be one of: %s' %
-                             ', '.join(PRIORITY._fields))
+            raise ValueError('Invalid priority, must be one of: %s' % ', '.join(PRIORITY._fields))
     return priority
 
 
@@ -146,23 +162,29 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
     Optionally also delete pending attachments.
     Return the number of deleted emails and attachments.
     """
-    expired_emails_ids = Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)
-    email_id_batches = split_emails(expired_emails_ids, batch_size)
     total_deleted_emails = 0
-    
-    for email_ids in email_id_batches:
-        # Delete email and incr total_deleted_emails counter
+
+    while True:
+        email_ids = Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)[:batch_size]
+        if not email_ids:
+            break
+
         _, deleted_data = Email.objects.filter(id__in=email_ids).delete()
         if deleted_data:
             total_deleted_emails += deleted_data['post_office.Email']
 
+    attachments_count = 0
     if delete_attachments:
-        attachments = Attachment.objects.filter(emails=None)
-        for attachment in attachments:
-            # Delete the actual file
-            attachment.file.delete()
-        attachments_count, _ = attachments.delete()
-    else:
-        attachments_count = 0
+        while True:
+            attachments = Attachment.objects.filter(emails=None)[:batch_size]
+            if not attachments:
+                break
+            attachment_ids = set()
+            for attachment in attachments:
+                # Delete the actual file
+                attachment.file.delete()
+                attachment_ids.add(attachment.id)
+            deleted_count, _ = Attachment.objects.filter(id__in=attachment_ids).delete()
+            attachments_count += deleted_count
 
     return total_deleted_emails, attachments_count
