@@ -237,6 +237,8 @@ def send_many(kwargs_list):
         Email.objects.bulk_create(emails)
         email_queued.send(sender=Email, emails=emails)
 
+    return emails
+
 
 def get_queued():
     """
