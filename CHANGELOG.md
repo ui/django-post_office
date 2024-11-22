@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 3.9.1 (2024-11-22)
+--------------------------
+* `send_many` now returns a list of created `Email` instances. Thanks @chromium7!
+
 Version 3.9.0 (2024-06-19)
 --------------------------
 * Added a new `LOCK_FILE_NAME` which lets you change post office's lock file name. Thanks @mogost!
@@ -81,7 +85,7 @@ Version 3.4.1 (2020-05-16)
 --------------------------
 * Allow `tasks.py` to be imported when Celery is not installed. This allows
   auto-discovery by other task systems such as Huey to succeed.
-* Fix duplicate key problem in template editor in Django admin. 
+* Fix duplicate key problem in template editor in Django admin.
 
 Version 3.4.0 (2020-04-13)
 --------------------------
