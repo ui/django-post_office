@@ -106,7 +106,7 @@ msgstr "ahora"
 
 #: post_office/models.py:42 post_office/models.py:243
 msgid "sent"
-msgstr "enviar"
+msgstr "enviado"
 
 #: post_office/models.py:43 post_office/models.py:243
 msgid "failed"
