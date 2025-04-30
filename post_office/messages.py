@@ -1,6 +1,9 @@
+from typing import TYPE_CHECKING
+
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 
-from .models import Email
+if TYPE_CHECKING:
+    from .models import Email
 
 
 class PostOfficeEmailMessage(EmailMessage):
