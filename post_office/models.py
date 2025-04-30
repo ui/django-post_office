@@ -131,6 +131,7 @@ class Email(models.Model):
         if html_message:
             if plaintext_message:
                 msg = PostOfficeEmailMultiAlternatives(
+                    email=self,
                     subject=subject,
                     body=plaintext_message,
                     from_email=self.from_email,
@@ -139,11 +140,11 @@ class Email(models.Model):
                     cc=self.cc,
                     headers=headers,
                     connection=connection,
-                    email=self,
                 )
                 msg.attach_alternative(html_message, 'text/html')
             else:
                 msg = PostOfficeEmailMultiAlternatives(
+                    email=self,
                     subject=subject,
                     body=html_message,
                     from_email=self.from_email,
@@ -152,7 +153,6 @@ class Email(models.Model):
                     cc=self.cc,
                     headers=headers,
                     connection=connection,
-                    email=self,
                 )
                 msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
