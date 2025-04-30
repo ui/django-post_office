@@ -5,7 +5,6 @@ from uuid import uuid4
 from email.mime.nonmultipart import MIMENonMultipart
 
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
 from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
@@ -16,6 +15,7 @@ from post_office.fields import CommaSeparatedEmailField
 
 from .connections import connections
 from .logutils import setup_loghandlers
+from .messages import PostOfficeEmailMessage, PostOfficeEmailMultiAlternatives
 from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
 
@@ -90,7 +90,7 @@ class Email(models.Model):
 
     def email_message(self):
         """
-        Returns Django EmailMessage object for sending.
+        Returns PostOfficeEmailMessage object for sending.
         """
         if self._cached_email_message:
             return self._cached_email_message
@@ -99,7 +99,7 @@ class Email(models.Model):
 
     def prepare_email_message(self):
         """
-        Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object,
+        Returns ``PostOfficeEmailMessage`` or ``PostOfficeEmailMultiAlternatives`` object,
         depending on whether html_message is empty.
         """
         if get_override_recipients():
@@ -130,7 +130,7 @@ class Email(models.Model):
 
         if html_message:
             if plaintext_message:
-                msg = EmailMultiAlternatives(
+                msg = PostOfficeEmailMultiAlternatives(
                     subject=subject,
                     body=plaintext_message,
                     from_email=self.from_email,
@@ -139,10 +139,11 @@ class Email(models.Model):
                     cc=self.cc,
                     headers=headers,
                     connection=connection,
+                    email=self,
                 )
                 msg.attach_alternative(html_message, 'text/html')
             else:
-                msg = EmailMultiAlternatives(
+                msg = PostOfficeEmailMultiAlternatives(
                     subject=subject,
                     body=html_message,
                     from_email=self.from_email,
@@ -151,13 +152,14 @@ class Email(models.Model):
                     cc=self.cc,
                     headers=headers,
                     connection=connection,
+                    email=self,
                 )
                 msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
                 multipart_template.attach_related(msg)
 
         else:
-            msg = EmailMessage(
+            msg = PostOfficeEmailMessage(
                 subject=subject,
                 body=plaintext_message,
                 from_email=self.from_email,
