@@ -160,6 +160,7 @@ class Email(models.Model):
 
         else:
             msg = PostOfficeEmailMessage(
+                email=self,
                 subject=subject,
                 body=plaintext_message,
                 from_email=self.from_email,
