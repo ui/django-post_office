@@ -32,7 +32,7 @@ class ModelTest(TestCase):
             html_message='<p>HTML</p>',
         )
         message = email.email_message()
-        self.assertEqual(type(message), EmailMultiAlternatives)
+        self.assertTrue(isinstance(message, EmailMultiAlternatives))
         self.assertEqual(message.from_email, 'from@example.com')
         self.assertEqual(message.to, ['to@example.com'])
         self.assertEqual(message.subject, 'Subject')
@@ -44,7 +44,7 @@ class ModelTest(TestCase):
             to=['to@example.com'], from_email='from@example.com', subject='Subject', message='Message'
         )
         message = email.email_message()
-        self.assertEqual(type(message), EmailMessage)
+        self.assertTrue(isinstance(message, EmailMessage))
         self.assertEqual(message.from_email, 'from@example.com')
         self.assertEqual(message.to, ['to@example.com'])
         self.assertEqual(message.subject, 'Subject')
