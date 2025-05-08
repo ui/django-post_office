@@ -352,6 +352,10 @@ class ModelTest(TestCase):
         self.assertEqual(repr(EmailTemplate(name='test', language='en')), '<EmailTemplate: test en>')
         self.assertEqual(repr(Email(to=['test@example.com'])), "<Email: ['test@example.com']>")
 
+    def test_models_str(self):
+        self.assertEqual(str(Email(to=['test@example.com'])), "test@example.com")
+        self.assertEqual(str(Email(to=['test@example.com', 'test2@example.com'])), "test@example.com, test2@example.com")
+
     def test_natural_key(self):
         template = EmailTemplate.objects.create(name='name')
         self.assertEqual(template, EmailTemplate.objects.get_by_natural_key(*template.natural_key()))
