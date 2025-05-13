@@ -48,6 +48,9 @@ prevent-xss = [
 testing = [
 	"tox >= 2.3",
 ]
+sendgrid = [
+	"django-sendgrid-v5",
+]
 
 [tool.setuptools]
 packages = ["post_office"]
