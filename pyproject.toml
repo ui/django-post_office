@@ -49,7 +49,7 @@ testing = [
 	"tox >= 2.3",
 ]
 sendgrid = [
-	"django-sendgrid-v5",
+	"django-sendgrid-v5 >= v1.3.0",
 ]
 
 [tool.setuptools]
