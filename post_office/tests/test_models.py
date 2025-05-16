@@ -295,7 +295,8 @@ class ModelTest(TestCase):
         self.assertEqual(email.priority, PRIORITY.medium)
 
     def test_string_priority_exception(self):
-        invalid_priority_send = lambda: send(['to1@example.com'], 'from@a.com', priority='hgh')
+        def invalid_priority_send():
+            send(['to1@example.com'], 'from@a.com', priority='hgh')
 
         with self.assertRaises(ValueError) as context:
             invalid_priority_send()
@@ -351,6 +352,12 @@ class ModelTest(TestCase):
     def test_models_repr(self):
         self.assertEqual(repr(EmailTemplate(name='test', language='en')), '<EmailTemplate: test en>')
         self.assertEqual(repr(Email(to=['test@example.com'])), "<Email: ['test@example.com']>")
+
+    def test_models_str(self):
+        self.assertEqual(str(Email(to=['test@example.com'])), 'test@example.com')
+        self.assertEqual(
+            str(Email(to=['test@example.com', 'test2@example.com'])), 'test@example.com, test2@example.com'
+        )
 
     def test_natural_key(self):
         template = EmailTemplate.objects.create(name='name')
