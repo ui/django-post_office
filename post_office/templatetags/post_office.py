@@ -13,9 +13,9 @@ register = template.Library()
 
 @register.simple_tag(takes_context=True)
 def inline_image(context, file):
-    assert hasattr(
-        context.template, '_attached_images'
-    ), "You must use template engine 'post_office' when rendering images using templatetag 'inline_image'."
+    assert hasattr(context.template, '_attached_images'), (
+        "You must use template engine 'post_office' when rendering images using templatetag 'inline_image'."
+    )
     if isinstance(file, ImageFile):
         fileobj = file
     elif os.path.isabs(file) and os.path.exists(file):
