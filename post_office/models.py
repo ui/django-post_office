@@ -89,7 +89,7 @@ class Email(models.Model):
         return '<%s: %s>' % (self.__class__.__name__, self.to)
 
     def __str__(self):
-        return f"{', '.join(self.to)}"
+        return f'{", ".join(self.to)}'
 
     def email_message(self):
         """
