@@ -1,3 +1,62 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-post_office"
+requires-python = ">=3.9"
+authors = [{name = "Selwin Ong", email = "selwin.ong@gmail.com"}]
+description = "A Django app to monitor and send mail asynchronously, complete with template support."
+urls = {Homepage = "https://github.com/ui/django-post_office"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Email",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "bleach[css]",
+    "django>=4.2",
+]
+dynamic = ["version"]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.optional-dependencies]
+test = [
+    "tox >= 2.3",
+]
+prevent-xss = [
+    "bleach",
+]
+testing = [
+    "tox >= 2.3",
+]
+
+[tool.setuptools]
+packages = ["post_office"]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "post_office.version.VERSION"}
+
 [tool.ruff]
 line-length = 120
 indent-width = 4
