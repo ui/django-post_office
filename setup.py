@@ -27,8 +27,9 @@ class Tox(TestCommand):
         sys.exit(errno)
 
 
-with open(join(dirname(__file__), 'post_office/version.txt')) as fh:
-    VERSION = '.'.join(map(str, literal_eval(fh.read())))
+with open(join(dirname(__file__), 'post_office/version.py')) as fh:
+    version_content = fh.read()
+    VERSION = version_content.split("'")[1]
 
 TESTS_REQUIRE = ['tox >= 2.3']
 
@@ -58,6 +59,8 @@ setup(
         'Framework :: Django',
         'Framework :: Django :: 4.2',
         'Framework :: Django :: 5.0',
+        'Framework :: Django :: 5.1',
+        'Framework :: Django :: 5.2',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
@@ -68,6 +71,7 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Topic :: Communications :: Email',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules',
