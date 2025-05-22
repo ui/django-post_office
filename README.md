@@ -17,7 +17,7 @@ Django. Some awesome features are:
 
 ## Dependencies
 
--   [django \>= 2.2](https://djangoproject.com/)
+-   [django \>= 4.2](https://djangoproject.com/)
 -   [jsonfield](https://github.com/rpkilby/jsonfield)
 -   [bleach](https://bleach.readthedocs.io/)
 
