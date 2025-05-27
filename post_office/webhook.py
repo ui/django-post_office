@@ -1,6 +1,7 @@
 """
 A collection of utilities to help process webhook events from email services
 """
+
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 
@@ -12,25 +13,24 @@ from .models import Email
 
 class Event(Enum):
     # Deliverability
-    ACCEPTED       = "accepted"
-    DELIVERED      = "delivered"
-    DEFERRED       = "deferred"
-    HARD_BOUNCE    = "hard_bounce"
-    SOFT_BOUNCE    = "soft_bounced"
-    REJECTED       = "rejected"
+    ACCEPTED = 'accepted'
+    DELIVERED = 'delivered'
+    DEFERRED = 'deferred'
+    HARD_BOUNCE = 'hard_bounce'
+    SOFT_BOUNCE = 'soft_bounced'
+    REJECTED = 'rejected'
 
     # Engagement
-    OPEN           = "opened"
-    CLICK          = "clicked"
+    OPEN = 'opened'
+    CLICK = 'clicked'
 
     # Complaints & unsubscribes
-    SPAM_COMPLAINT = "spam_complaint"
-    UNSUBSCRIBED   = "unsubscribed"
-    RESUBSCRIBED   = "resubscribed"
+    SPAM_COMPLAINT = 'spam_complaint'
+    UNSUBSCRIBED = 'unsubscribed'
+    RESUBSCRIBED = 'resubscribed'
 
     # Account
-    SUSPENDED      = "account_suspended"
-
+    SUSPENDED = 'account_suspended'
 
 
 class BaseWebhookHandler(View):

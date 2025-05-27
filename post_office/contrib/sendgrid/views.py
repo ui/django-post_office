@@ -20,42 +20,40 @@ logger = logging.getLogger(__name__)
 
 
 class DeliverabilityEvent(Enum):
-    PROCESSED = "processed"
-    DROPPED   = "dropped"
-    DELIVERED = "delivered"
-    DEFERRED  = "deferred"
-    BOUNCE    = "bounce"
-    BLOCKED   = "blocked"
+    PROCESSED = 'processed'
+    DROPPED = 'dropped'
+    DELIVERED = 'delivered'
+    DEFERRED = 'deferred'
+    BOUNCE = 'bounce'
+    BLOCKED = 'blocked'
 
 
 class EngagementEvent(Enum):
-    OPEN               = "open"
-    CLICK              = "click"
-    SPAMREPORT         = "spamreport"
-    UNSUBSCRIBE        = "unsubscribe"
-    GROUP_UNSUBSCRIBE  = "group_unsubscribe"
-    GROUP_RESUBSCRIBE  = "group_resubscribe"
+    OPEN = 'open'
+    CLICK = 'click'
+    SPAMREPORT = 'spamreport'
+    UNSUBSCRIBE = 'unsubscribe'
+    GROUP_UNSUBSCRIBE = 'group_unsubscribe'
+    GROUP_RESUBSCRIBE = 'group_resubscribe'
 
 
 class AccountEvent(Enum):
-    COMPLIANCE_SUSPENDED = "compliance_suspend"
+    COMPLIANCE_SUSPENDED = 'compliance_suspend'
 
 
 SENDGRID_STATUS_TO_EVENT = {
     DeliverabilityEvent.PROCESSED.value: Event.ACCEPTED,
     DeliverabilityEvent.DELIVERED.value: Event.DELIVERED,
-    DeliverabilityEvent.DEFERRED.value:  Event.DEFERRED,
-    DeliverabilityEvent.BOUNCE.value:    Event.HARD_BOUNCE,
-    DeliverabilityEvent.BLOCKED.value:   Event.SOFT_BOUNCE,
-    DeliverabilityEvent.DROPPED.value:   Event.REJECTED,
-
-    EngagementEvent.OPEN.value:        Event.OPEN,
-    EngagementEvent.CLICK.value:       Event.CLICK,
-    EngagementEvent.SPAMREPORT.value:  Event.SPAM_COMPLAINT,
+    DeliverabilityEvent.DEFERRED.value: Event.DEFERRED,
+    DeliverabilityEvent.BOUNCE.value: Event.HARD_BOUNCE,
+    DeliverabilityEvent.BLOCKED.value: Event.SOFT_BOUNCE,
+    DeliverabilityEvent.DROPPED.value: Event.REJECTED,
+    EngagementEvent.OPEN.value: Event.OPEN,
+    EngagementEvent.CLICK.value: Event.CLICK,
+    EngagementEvent.SPAMREPORT.value: Event.SPAM_COMPLAINT,
     EngagementEvent.UNSUBSCRIBE.value: Event.UNSUBSCRIBED,
     EngagementEvent.GROUP_UNSUBSCRIBE: Event.UNSUBSCRIBED,
     EngagementEvent.GROUP_RESUBSCRIBE: Event.RESUBSCRIBED,
-
     AccountEvent.COMPLIANCE_SUSPENDED: Event.SUSPENDED,
 }
 
@@ -159,7 +157,9 @@ class SendgridWebhookHandler(BaseWebhookHandler):
     def rejected(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
         self.log_event(request, *args, event=Event.REJECTED, email=email, **kwargs)
 
-    def log_event(self, request: HttpRequest, *args, event: Event, email: Email, data: dict[str, Any], **kwargs) -> None:
+    def log_event(
+        self, request: HttpRequest, *args, event: Event, email: Email, data: dict[str, Any], **kwargs
+    ) -> None:
         email_status = EVENT_TO_EMAIL_STATUS[event.value]
         email_log_status = EVENT_TO_EMAIL_LOG_STATUS[event.value]
 
