@@ -52,13 +52,14 @@ class EmailAdminTest(TestCase):
         attachment_3.file.save('test_attachment_3.txt', content=ContentFile('test file content 3'), save=True)
         email.attachments.add(attachment_3)
 
-        message = email.email_message()
+        email.email_message()
 
         attachment_inline = AttachmentInline(Email, self.site)
         attachment_inline.parent_obj = email
 
         qs_result = attachment_inline.get_queryset(self.request)
-        non_inline_attachments = [a_through.attachment for a_through in qs_result]
+        with self.assertNumQueries(1):
+            non_inline_attachments = [a_through.attachment for a_through in qs_result]
 
         self.assertIn(attachment_1, non_inline_attachments)
         self.assertIn(attachment_2, non_inline_attachments)
