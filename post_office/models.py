@@ -85,8 +85,11 @@ class Email(models.Model):
         super().__init__(*args, **kwargs)
         self._cached_email_message = None
 
+    def __repr__(self):
+        return '<%s: %s>' % (self.__class__.__name__, self.to)
+
     def __str__(self):
-        return '%s' % self.to
+        return f'{", ".join(self.to)}'
 
     def email_message(self):
         """

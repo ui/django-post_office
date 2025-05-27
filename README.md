@@ -95,7 +95,9 @@ too much. To actually send them out, run
 `python manage.py send_queued_mail`. You can schedule this management
 command to run regularly via cron:
 
-    * * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
+```cron
+* * * * * (/usr/bin/python manage.py send_queued_mail >> send_mail.log 2>&1)
+```
 
 ## Usage
 
@@ -290,7 +292,7 @@ POST_OFFICE = {
 
 In templates used to render HTML for emails add
 
-```
+```html+django
 {% load post_office %}
 
 <p>... somewhere in the body ...</p>
@@ -400,8 +402,10 @@ mail.send(
 
 You may want to set these up via cron to run regularly:
 
-    * * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
-    0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 --delete-attachments >> $PROJECT/cron_mail_cleanup.log 2>&1)
+```cron
+* * * * * (cd $PROJECT; python manage.py send_queued_mail --processes=1 >> $PROJECT/cron_mail.log 2>&1)
+0 1 * * * (cd $PROJECT; python manage.py cleanup_mail --days=30 --delete-attachments >> $PROJECT/cron_mail_cleanup.log 2>&1)
+```
 
 
 ## Settings
@@ -692,19 +696,19 @@ Attachments are not supported with `mail.send_many()`.
 
 To run the test suite:
 
-```python
+```sh
 `which django-admin` test post_office --settings=post_office.test_settings --pythonpath=.
 ```
 
 You can run the full test suite for all supported versions of Django and Python with:
 
-```python
+```sh
 tox
 ```
 
 or:
 
-```python
+```sh
 python setup.py test
 ```
 
