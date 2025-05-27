@@ -48,7 +48,7 @@ class AttachmentInline(admin.StackedInline):
         inlined_attachments = [
             a.id
             # From https://stackoverflow.com/a/67266338
-            for a in queryset.filter(**{'attachment__headers__Content-Disposition__startswith': 'inline'})
+            for a in queryset.filter(**{'attachment__headers__Content-Disposition__startswith': 'inline'}).only('id')
         ]
         return queryset.exclude(id__in=inlined_attachments)
 
