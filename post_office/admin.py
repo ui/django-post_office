@@ -49,7 +49,7 @@ class AttachmentInline(admin.StackedInline):
         inline_attachments = queryset.filter(**{'attachment__headers__Content-Disposition__startswith': 'inline'}).only(
             'id'
         )
-        return queryset.exclude(id__in=models.Subquery(inline_attachments.values('id')))
+        return queryset.exclude(id__in=models.Subquery(inline_attachments.values('id'))).select_related('attachment')
 
 
 class LogInline(admin.TabularInline):
