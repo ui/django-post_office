@@ -296,6 +296,7 @@ class EmailTemplate(models.Model):
         verbose_name=_('Default template'),
         on_delete=models.CASCADE,
     )
+    example_context = context_field_class(_('Example Context'), blank=True, null=True, default=dict)
 
     objects = EmailTemplateManager()
 
