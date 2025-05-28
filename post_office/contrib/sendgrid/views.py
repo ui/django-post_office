@@ -38,7 +38,7 @@ class EngagementEvent(Enum):
 
 
 class AccountEvent(Enum):
-    COMPLIANCE_SUSPENDED = 'compliance_suspend'
+    COMPLIANCE_SUSPENDED = 'account_status_change'
 
 
 SENDGRID_STATUS_TO_EVENT = {
@@ -52,9 +52,9 @@ SENDGRID_STATUS_TO_EVENT = {
     EngagementEvent.CLICK.value: Event.CLICK,
     EngagementEvent.SPAMREPORT.value: Event.SPAM_COMPLAINT,
     EngagementEvent.UNSUBSCRIBE.value: Event.UNSUBSCRIBED,
-    EngagementEvent.GROUP_UNSUBSCRIBE: Event.UNSUBSCRIBED,
-    EngagementEvent.GROUP_RESUBSCRIBE: Event.RESUBSCRIBED,
-    AccountEvent.COMPLIANCE_SUSPENDED: Event.SUSPENDED,
+    EngagementEvent.GROUP_UNSUBSCRIBE.value: Event.UNSUBSCRIBED,
+    EngagementEvent.GROUP_RESUBSCRIBE.value: Event.RESUBSCRIBED,
+    AccountEvent.COMPLIANCE_SUSPENDED.value: Event.ACCOUNT_SUSPENDED,
 }
 
 
@@ -78,7 +78,7 @@ EVENT_TO_EMAIL_STATUS = {
     Event.SPAM_COMPLAINT.value: None,
     Event.UNSUBSCRIBED.value: None,
     Event.RESUBSCRIBED.value: None,
-    Event.COMPLIANCE_SUSPENDED: None,
+    AccountEvent.COMPLIANCE_SUSPENDED: None,
 }
 
 
@@ -102,7 +102,7 @@ EVENT_TO_EMAIL_LOG_STATUS = {
     Event.SPAM_COMPLAINT.value: None,
     Event.UNSUBSCRIBED.value: None,
     Event.RESUBSCRIBED.value: None,
-    Event.COMPLIANCE_SUSPENDED: None,
+    Event.ACCOUNT_SUSPENDED.value: None,
 }
 
 
@@ -122,7 +122,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
                 # If we can't pick out the exact email, don't try to do anything
                 # This can happen if we use django-post_office and generate Emails and Logs
                 # before we configure and use this webhook handler
-                email = Email.objects.filter(Q(message_id=msg_dict.get('smtp-id', None))).first()
+                email = Email.objects.filter(message_id=msg_dict.get('smtp-id', None)).first()
                 event = SENDGRID_STATUS_TO_EVENT.get(msg_dict['event'], None)
 
                 if event is not None:
@@ -140,53 +140,117 @@ class SendgridWebhookHandler(BaseWebhookHandler):
         return HttpResponse('ok')
 
     def accepted(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        self.log_event(request, *args, event=Event.ACCEPTED, email=email, **kwargs)
+        self.log_deliverability_event(request, *args, event=Event.ACCEPTED, email=email, **kwargs)
 
     def delivered(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        self.log_event(request, *args, event=Event.DELIVERED, email=email, **kwargs)
+        self.log_deliverability_event(request, *args, event=Event.DELIVERED, email=email, **kwargs)
 
     def deferred(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        self.log_event(request, *args, event=Event.DEFERRED, email=email, **kwargs)
+        self.log_deliverability_event(request, *args, event=Event.DEFERRED, email=email, **kwargs)
 
     def hard_bounce(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        self.log_event(request, *args, event=Event.HARD_BOUNCE, email=email, **kwargs)
+        self.log_deliverability_event(request, *args, event=Event.HARD_BOUNCE, email=email, **kwargs)
 
     def soft_bounce(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        self.log_event(request, *args, event=Event.SOFT_BOUNCE, email=email, **kwargs)
+        self.log_deliverability_event(request, *args, event=Event.SOFT_BOUNCE, email=email, **kwargs)
 
     def rejected(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        self.log_event(request, *args, event=Event.REJECTED, email=email, **kwargs)
+        self.log_deliverability_event(request, *args, event=Event.REJECTED, email=email, **kwargs)
 
-    def log_event(
+    def log_deliverability_event(
         self, request: HttpRequest, *args, event: Event, email: Email, data: dict[str, Any], **kwargs
     ) -> None:
         email_status = EVENT_TO_EMAIL_STATUS[event.value]
         email_log_status = EVENT_TO_EMAIL_LOG_STATUS[event.value]
 
-        # Save both the email status and the corresponding log object, or neither
-        log_datetime = datetime.fromtimestamp(data['timestamp'], tz=utc)
-        with transaction.atomic():
-            logger.debug(f'{email.last_updated} < {log_datetime} -> {email.last_updated < log_datetime}')
-            if email.last_updated < log_datetime:
-                # The UNIX timestamps from Sendgrid only have a time resolution of 1 second.
-                # Sendgrid is sometimes so fast that the time between being processed and delivered is less than 1 second.
-                # Additionally, the events in the webhook are not sorted by time (or they might be sorted by reverse time?)
-                # so on top of relying on timestamp ordering, we also rely on status to avoid overwriting sent status with
-                # queued (from Sendgrid's "processed") status
-                logger.debug(
-                    f'not (email.status ({Email.STATUS_CHOICES[email_status][1]}) == STATUS.sent ({Email.STATUS_CHOICES[STATUS.sent][1]}) and '
-                    f"data['event'] ({data['event']}) == 'processed') -> "
-                    f'{not (email.status == STATUS.sent and data["event"] == "processed")}'
-                )
-                if not (email.status == STATUS.sent and data['event'] == 'processed'):
-                    logger.debug(f'Updating email status to: {email_status[1]}')
-                    # Avoid calling .save() because that triggers auto_now, which sets last_update to now()
-                    Email.objects.filter(pk=email.pk).update(last_updated=log_datetime, status=email_status)
+        if email:
+            # Save both the email status and the corresponding log object, or neither
+            log_datetime = datetime.fromtimestamp(data['timestamp'], tz=utc)
+            with transaction.atomic():
+                logger.debug(f'{email.last_updated} < {log_datetime} -> {email.last_updated < log_datetime}')
 
-            EmailLog.objects.create(
-                email=email,
-                date=log_datetime,
-                status=email_log_status,
-                message=json.dumps(data),
+                if email.last_updated < log_datetime:
+                    # The UNIX timestamps from Sendgrid only have a time resolution of 1 second.
+                    # Sendgrid is sometimes so fast that the time between being processed and delivered is less than 1 second.
+                    # Additionally, the events in the webhook are not sorted by time (or they might be sorted by reverse time?)
+                    # so on top of relying on timestamp ordering, we also rely on status to avoid overwriting sent status with
+                    # queued (from Sendgrid's "processed") status
+                    logger.debug(
+                        f'not (email.status ({Email.STATUS_CHOICES[email_status][1]}) == STATUS.sent ({Email.STATUS_CHOICES[STATUS.sent][1]}) and '
+                        f"data['event'] ({data['event']}) == 'processed') -> "
+                        f'{not (email.status == STATUS.sent and data["event"] == "processed")}'
+                    )
+                    if not (email.status == STATUS.sent and data['event'] == 'processed'):
+                        logger.debug(f'Updating email status to: {Email.STATUS_CHOICES[email_status][1]}')
+                        # Avoid calling .save() because that triggers auto_now, which sets last_update to now()
+                        Email.objects.filter(pk=email.pk).update(last_updated=log_datetime, status=email_status)
+
+                EmailLog.objects.create(
+                    email=email,
+                    date=log_datetime,
+                    status=email_log_status,
+                    message=json.dumps(data, indent='  '),
+                )
+                logger.debug('Done saving webhook email logs')
+        else:
+            logger.info("Received webhook without a valid reference to an email:\n" f"{json.dumps(data, indent='  ')}")
+
+    def opened(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
+        self.log_engagement_event(request, *args, event=Event.OPEN, email=email, **kwargs)
+
+    def clicked(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
+        self.log_engagement_event(request, *args, event=Event.CLICK, email=email, **kwargs)
+
+    def spam_complaint(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
+        self.log_engagement_event(request, *args, event=Event.SPAM_COMPLAINT, email=email, **kwargs)
+
+    def unsubscribed(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
+        self.log_engagement_event(request, *args, event=Event.UNSUBSCRIBED, email=email, **kwargs)
+
+    def resubscribed(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
+        self.log_engagement_event(request, *args, event=Event.RESUBSCRIBED, email=email, **kwargs)
+
+    def log_engagement_event(
+        self, request: HttpRequest, *args, event: Event, email: Email, data: dict[str, Any], **kwargs
+    ) -> None:
+        email_log = (
+            EmailLog.objects.filter(
+                Q(message__contains=f'"sg_message_id": "{data["sg_message_id"]}"')
+                | Q(message__contains=data['sg_message_id'])
             )
-            logger.debug('Done saving webhook email logs')
+            .select_related('email')
+            .first()
+        )
+
+        if email_log:
+            email = email_log.email
+
+            # Save both the email status and the corresponding log object, or neither
+            log_datetime = datetime.fromtimestamp(data['timestamp'], tz=utc)
+            with transaction.atomic():
+                logger.debug(
+                    f'email.status ({email.status} != STATUS.sent ({STATUS.sent})' f' -> {email.status != STATUS.sent}'
+                )
+                if email.status != STATUS.sent:
+                    logger.debug(f'Updating email status to: {STATUS.sent}')
+                    # Avoid calling .save() because that triggers auto_now, which sets last_update to now()
+                    Email.objects.filter(pk=email.pk).update(last_updated=log_datetime, status=STATUS.sent)
+
+                EmailLog.objects.create(
+                    email=email,
+                    date=log_datetime,
+                    status=STATUS.sent,
+                    message=json.dumps(data, indent='  '),
+                )
+                logger.debug('Done saving webhook email logs')
+        else:
+            logger.info(
+                "Received webhook without a valid reference to an email log:\n" f"{json.dumps(data, indent='  ')}"
+            )
+
+    def account_suspended(
+        self, request: HttpRequest, *args, email: Email | None = None, data: dict[str, Any], **kwargs
+    ) -> None:
+        # This is a bigger deal than a reference to an email that doesn't exist,
+        # so we intentionally raise an exception with all given information
+        raise Exception("Received webhook regarding account suspension:\n" f"{json.dumps(data, indent='  ')}")

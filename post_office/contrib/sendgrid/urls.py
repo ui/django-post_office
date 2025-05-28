@@ -1,8 +1,8 @@
 from django.urls import path
 
-from .views import sendgrid_deliverability_webhook_handler
+from .views import SendgridWebhookHandler
 
 
 urlpatterns = [
-    path('deliverability', sendgrid_deliverability_webhook_handler, 'sendgrid_deliverability_webhook_handler'),
+    path('', SendgridWebhookHandler.as_view(), name='sendgrid_webhook_handler'),
 ]
