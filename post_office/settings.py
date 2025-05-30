@@ -3,8 +3,10 @@ import warnings
 from django.conf import settings
 from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
+from django.core.files.storage import default_storage, storages
 from django.core.mail.utils import DNS_NAME
 from django.template import engines as template_engines
+from django.utils.functional import LazyObject
 
 from django.utils.module_loading import import_string
 
@@ -128,6 +130,12 @@ def get_message_id_fqdn():
 # BATCH_DELIVERY_TIMEOUT defaults to 180 seconds (3 minutes)
 def get_batch_delivery_timeout():
     return get_config().get('BATCH_DELIVERY_TIMEOUT', 180)
+
+
+def get_file_storage():
+    if storage_name := get_config().get('FILE_STORAGE', None):
+        return storages[storage_name]
+    return default_storage
 
 
 CONTEXT_FIELD_CLASS = get_config().get('CONTEXT_FIELD_CLASS', 'django.db.models.JSONField')
