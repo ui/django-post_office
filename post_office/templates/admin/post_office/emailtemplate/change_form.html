@@ -29,8 +29,9 @@
         CodeMirror.fromTextArea($('#id_subject')[0], options);
         CodeMirror.fromTextArea($('#id_content')[0], options);
         CodeMirror.fromTextArea($('#id_html_content')[0], options);
+        CodeMirror.fromTextArea($('#id_example_context')[0], {...options, ...{mode: "json"}});
 
-        $('.CodeMirror').css('height', 'auto');
+        $('.CodeMirror').css('height', 'auto').css('width', '100%');
       })(django.jQuery);
     </script>
 {% endblock %}
