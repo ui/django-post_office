@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-post_office"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{name = "Selwin Ong", email = "selwin.ong@gmail.com"}]
 description = "A Django app to monitor and send mail asynchronously, complete with template support."
 urls = {Homepage = "https://github.com/ui/django-post_office"}
@@ -20,7 +20,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -63,7 +62,7 @@ version = {attr = "post_office.version.VERSION"}
 [tool.ruff]
 line-length = 120
 indent-width = 4
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.format]
 quote-style = "single"

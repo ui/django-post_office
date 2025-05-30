@@ -2,7 +2,6 @@
 A collection of utilities to help process webhook events from email services
 """
 
-import json
 import logging
 from abc import ABCMeta, abstractmethod
 from enum import Enum
@@ -12,7 +11,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Email
+from .models import STATUS
 
 
 logger = logging.getLogger(__name__)
@@ -24,27 +23,59 @@ class Event(Enum):
     DELIVERED = 'delivered'
     DEFERRED = 'deferred'
     HARD_BOUNCE = 'hard_bounce'
-    SOFT_BOUNCE = 'soft_bounced'
+    SOFT_BOUNCE = 'soft_bounce'
     REJECTED = 'rejected'
 
     # Engagement
-    OPEN = 'opened'
-    CLICK = 'clicked'
+    OPEN = 'open'
+    CLICK = 'click'
 
     # Complaints & unsubscribes
     SPAM_COMPLAINT = 'spam_complaint'
-    UNSUBSCRIBED = 'unsubscribed'
-    RESUBSCRIBED = 'resubscribed'
+    UNSUBSCRIBE = 'unsubscribe'
+    RESUBSCRIBE = 'resubscribe'
 
     # Account
     ACCOUNT_SUSPENDED = 'account_suspended'
+
+
+EVENT_TO_EMAIL_STATUS = {
+    Event.ACCEPTED: STATUS.queued,
+    Event.DELIVERED: STATUS.sent,
+    Event.DEFERRED: STATUS.requeued,
+    Event.HARD_BOUNCE: STATUS.failed,
+    Event.SOFT_BOUNCE: STATUS.failed,
+    Event.REJECTED: STATUS.failed,
+    Event.OPEN: None,
+    Event.CLICK: None,
+    Event.SPAM_COMPLAINT: None,
+    Event.UNSUBSCRIBE: None,
+    Event.RESUBSCRIBE: None,
+    Event.ACCOUNT_SUSPENDED: None,
+}
+
+
+EVENT_TO_EMAIL_LOG_STATUS = {
+    Event.ACCEPTED: STATUS.sent,
+    Event.DELIVERED: STATUS.sent,
+    Event.DEFERRED: STATUS.sent,
+    Event.HARD_BOUNCE: STATUS.failed,
+    Event.SOFT_BOUNCE: STATUS.failed,
+    Event.REJECTED: STATUS.failed,
+    Event.OPEN: None,
+    Event.CLICK: None,
+    Event.SPAM_COMPLAINT: None,
+    Event.UNSUBSCRIBE: None,
+    Event.RESUBSCRIBE: None,
+    Event.ACCOUNT_SUSPENDED: None,
+}
 
 
 class BaseWebhookHandler(View):
     __metaclass__ = ABCMeta
 
     @csrf_exempt
-    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         # The same method as View.dispatch, but we verify the webhook once
         # we verify the HTTP method
         if request.method.lower() in self.http_method_names:
@@ -63,55 +94,6 @@ class BaseWebhookHandler(View):
     def verify_webhook(self, request: HttpRequest, *args, **kwargs) -> bool:
         pass
 
-    def process_event(self, request: HttpRequest, event: Event, email: Email | None = None, *args, **kwargs) -> None:
-        handler = getattr(self, event.value, None)
-        if handler:
-            return handler(request, *args, email=email, **kwargs)
-        return HttpResponseNotFound()
-
-    def unrecognized_event(
-        self,
-        request: HttpRequest,
-        event: str,
-        *args,
-        email: Email | None = None,
-        data: dict[str, Any] | None = None,
-        **kwargs,
-    ) -> None:
-        logger.warning(f"Received unrecognized webhook event:\n{json.dumps(data, indent='  ')}")
-
-    def accepted(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def delivered(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def deferred(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def hard_bounce(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def soft_bounce(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def rejected(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def opened(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def clicked(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def spam_complaint(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def unsubscribed(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def resubscribed(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
-        pass
-
-    def account_suspended(self, request: HttpRequest, *args, email: Email | None = None, **kwargs) -> None:
+    @abstractmethod
+    def handle_event(self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, **kwargs) -> None:
         pass
