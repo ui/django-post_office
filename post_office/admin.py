@@ -45,13 +45,13 @@ class AttachmentInline(admin.StackedInline):
         if self.parent_obj:
             queryset = queryset.filter(email=self.parent_obj)
 
-        inlined_attachments = [
-            a.id
-            for a in queryset
-            if isinstance(a.attachment.headers, dict)
-            and a.attachment.headers.get('Content-Disposition', '').startswith('inline')
-        ]
-        return queryset.exclude(id__in=inlined_attachments)
+        # From https://stackoverflow.com/a/67266338
+        return queryset.exclude(
+            **{
+                'attachment__headers__Content-Disposition__isnull': False,
+                'attachment__headers__Content-Disposition__startswith': 'inline',
+            }
+        ).select_related('attachment')
 
 
 class LogInline(admin.TabularInline):
