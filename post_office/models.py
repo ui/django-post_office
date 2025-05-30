@@ -7,6 +7,7 @@ from email.mime.nonmultipart import MIMENonMultipart
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import models
+from django.db.models.indexes import Index
 from django.utils.encoding import smart_str
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
@@ -302,6 +303,10 @@ class EmailTemplate(models.Model):
     class Meta:
         app_label = 'post_office'
         unique_together = ('name', 'language', 'default_template')
+        indexes = [
+            Index(fields=['name', 'language']),
+            Index(fields=['name', 'language', 'default_template']),
+        ]
         verbose_name = _('Email Template')
         verbose_name_plural = _('Email Templates')
         ordering = ['name']
