@@ -695,5 +695,5 @@ class SendgridWebhookAccountEventsTestCase(BaseWebhookTestCase):
 
         self.assertEqual(
             str(exc_cm.exception),
-            ('Error when processing Sendgrid Events webhook. ' 'The Sendgrid Events Webhook API may have changed.'),
+            ('Error when processing Sendgrid Events webhook. The Sendgrid Events Webhook API may have changed.'),
         )

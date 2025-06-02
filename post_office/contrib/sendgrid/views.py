@@ -255,7 +255,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             log_datetime = datetime.fromtimestamp(payload['timestamp'], tz=UTC)
             with transaction.atomic():
                 logger.debug(
-                    f'email.status ({email.status} != STATUS.sent ({STATUS.sent})' f' -> {email.status != STATUS.sent}'
+                    f'email.status ({email.status} != STATUS.sent ({STATUS.sent}) -> {email.status != STATUS.sent}'
                 )
                 if email.status != STATUS.sent:
                     logger.debug(f'Updating email status to: {STATUS.sent}')
