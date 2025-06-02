@@ -4,12 +4,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pytz import utc
-
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
-from django.views.decorators.csrf import csrf_exempt
 from post_office.models import Email, Log as EmailLog, STATUS
 from post_office.webhook import (
     EVENT_TO_EMAIL_STATUS,
@@ -17,7 +15,7 @@ from post_office.webhook import (
     Event,
     BaseWebhookHandler,
 )
-
+from pytz import utc
 from sendgrid_backend.decorators import check_sendgrid_signature
 
 
@@ -71,9 +69,28 @@ SENDGRID_STATUS_TO_EVENT = {
 }
 
 
+def serialize_email(email):
+    return (
+        None
+        if email is None
+        else {
+            'message_id': email.message_id,
+            'to': email.to,
+            'sent': email.created,
+            'subject': email.subject,
+        }
+    )
+
+
 class SendgridWebhookHandler(BaseWebhookHandler):
     def verify_webhook(self, request: HttpRequest, *args, **kwargs) -> bool:
-        return check_sendgrid_signature(request)
+        verified = False
+        try:
+            verified = check_sendgrid_signature(request)
+        except Exception:
+            verified = False
+        finally:
+            return verified
 
     def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         try:
@@ -87,12 +104,9 @@ class SendgridWebhookHandler(BaseWebhookHandler):
                 # This can happen if we use django-post_office and generate Emails and Logs
                 # before we configure and use this webhook handler
                 email = Email.objects.filter(message_id=payload.get('smtp-id', None)).first()
-                event = SENDGRID_STATUS_TO_EVENT.get(payload['event'], None)
+                event = SENDGRID_STATUS_TO_EVENT.get(payload['event'], payload['event'])
 
-                if event is not None:
-                    self.handle_event(request, event, payload, *args, email=email, **kwargs)
-                else:
-                    self.unrecognized_event(request, event, payload, *args, email=email, **kwargs)
+                self.handle_event(request, event, payload, *args, email=email, **kwargs)
 
         except Exception as e:
             logger.error(e)
@@ -100,7 +114,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             # that something is wrong
             raise Exception(
                 'Error when processing Sendgrid Events webhook. The Sendgrid Events Webhook API may have changed.'
-            ) from e
+            )
         return HttpResponse('ok')
 
     def handle_event(
@@ -136,14 +150,22 @@ class SendgridWebhookHandler(BaseWebhookHandler):
         email: Email | None = None,
         **kwargs,
     ) -> None:
-        info_dict = {
-            'request': request,
-            'event': event,
-            'payload': payload,
-            'args': args,
-            'email': email,
-        } | kwargs
-        logger.warning(f"Received unrecognized webhook event:\n{json.dumps(info_dict, indent='  ')}")
+        info_dict = json.dumps(
+            {
+                'request.method': request.method,
+                'request.headers': dict(request.headers),
+                'request.path': request.path,
+                'request.body': json.loads(request.body.decode('utf-8')),
+                'event': event,
+                'payload': payload,
+                'args': args,
+                'email': serialize_email(email),
+            }
+            | kwargs,
+            indent='  ',
+            cls=DjangoJSONEncoder,
+        )
+        logger.warning(f'Received unrecognized webhook event:\n{info_dict}')
         return HttpResponseNotFound()
 
     def log_deliverability_event(
@@ -153,12 +175,14 @@ class SendgridWebhookHandler(BaseWebhookHandler):
         email_log_status = EVENT_TO_EMAIL_LOG_STATUS[event]
 
         if email:
+            email_last_updated = round(email.last_updated.timestamp())
             # Save both the email status and the corresponding log object, or neither
-            log_datetime = datetime.fromtimestamp(payload['timestamp'], tz=utc)
             with transaction.atomic():
-                logger.debug(f'{email.last_updated} < {log_datetime} -> {email.last_updated < log_datetime}')
-
-                if email.last_updated < log_datetime:
+                logger.debug(
+                    f'[{event.value}] {email_last_updated} < {payload["timestamp"]} -> {email_last_updated < payload["timestamp"]}'
+                )
+                log_datetime = datetime.fromtimestamp(payload['timestamp'], tz=utc)
+                if email_last_updated <= payload['timestamp']:
                     # The UNIX timestamps from Sendgrid only have a time resolution of 1 second.
                     # Sendgrid is sometimes so fast that the time between being processed and delivered is less than 1 second.
                     # Additionally, the events in the webhook are not sorted by time (or they might be sorted by reverse time?)
@@ -182,16 +206,22 @@ class SendgridWebhookHandler(BaseWebhookHandler):
                 )
                 logger.debug('Done saving webhook email logs')
         else:
-            info_dict = {
-                'request': request,
-                'event': event,
-                'payload': payload,
-                'args': args,
-                'email': email,
-            } | kwargs
-            logger.info(
-                "Received webhook without a valid reference to an email:\n" f"{json.dumps(info_dict, indent='  ')}"
+            info_dict = json.dumps(
+                {
+                    'request.method': request.method,
+                    'request.headers': dict(request.headers),
+                    'request.path': request.path,
+                    'request.body': json.loads(request.body.decode('utf-8')),
+                    'event': event.value,
+                    'payload': payload,
+                    'args': args,
+                    'email': serialize_email(email),
+                }
+                | kwargs,
+                indent='  ',
+                cls=DjangoJSONEncoder,
             )
+            logger.info(f'Received webhook without a valid reference to an email:\n{info_dict}')
 
     def log_engagement_event(
         self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, **kwargs
@@ -235,15 +265,21 @@ class SendgridWebhookHandler(BaseWebhookHandler):
                 )
                 logger.debug('Done saving webhook email logs')
         else:
-            info_dict = {
-                'request': request,
-                'event': event,
-                'payload': payload,
-                'args': args,
-            } | kwargs
-            logger.info(
-                "Received webhook without a valid reference to an email log:\n" f"{json.dumps(info_dict, indent='  ')}"
+            info_dict = json.dumps(
+                {
+                    'request.method': request.method,
+                    'request.headers': dict(request.headers),
+                    'request.path': request.path,
+                    'request.body': json.loads(request.body.decode('utf-8')),
+                    'event': event.value,
+                    'payload': payload,
+                    'args': args,
+                }
+                | {k: serialize_email(v) if isinstance(v, Email) else v for k, v in kwargs.items()},
+                indent='  ',
+                cls=DjangoJSONEncoder,
             )
+            logger.info(f'Received webhook without a valid reference to an email log:\n{info_dict}')
 
     def account_suspended(
         self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, email: Email | None = None, **kwargs
