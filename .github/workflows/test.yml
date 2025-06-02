@@ -48,4 +48,4 @@ jobs:
 
       - name: Run Test
         run: |
-          `which django-admin` test post_office --settings=post_office.test_settings --pythonpath=.
+          `which django-admin` test post_office post_office.contrib.sendgrid.tests --settings=post_office.test_settings --pythonpath=.
