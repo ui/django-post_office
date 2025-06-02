@@ -1,6 +1,12 @@
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+
+    UTC = timezone.utc
+from datetime import datetime
 import json
 import logging
-from datetime import datetime
 from enum import Enum
 from typing import Any
 
@@ -15,7 +21,6 @@ from post_office.webhook import (
     Event,
     BaseWebhookHandler,
 )
-from pytz import utc
 from sendgrid_backend.decorators import check_sendgrid_signature
 
 
@@ -181,7 +186,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
                 logger.debug(
                     f'[{event.value}] {email_last_updated} < {payload["timestamp"]} -> {email_last_updated < payload["timestamp"]}'
                 )
-                log_datetime = datetime.fromtimestamp(payload['timestamp'], tz=utc)
+                log_datetime = datetime.fromtimestamp(payload['timestamp'], tz=UTC)
                 if email_last_updated <= payload['timestamp']:
                     # The UNIX timestamps from Sendgrid only have a time resolution of 1 second.
                     # Sendgrid is sometimes so fast that the time between being processed and delivered is less than 1 second.
@@ -247,7 +252,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             email = email_log.email
 
             # Save both the email status and the corresponding log object, or neither
-            log_datetime = datetime.fromtimestamp(payload['timestamp'], tz=utc)
+            log_datetime = datetime.fromtimestamp(payload['timestamp'], tz=UTC)
             with transaction.atomic():
                 logger.debug(
                     f'email.status ({email.status} != STATUS.sent ({STATUS.sent})' f' -> {email.status != STATUS.sent}'

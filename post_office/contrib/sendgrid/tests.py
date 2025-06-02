@@ -1,5 +1,12 @@
 import json
 import logging
+
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+
+    UTC = timezone.utc
 from datetime import datetime
 from time import time
 from typing import Any
@@ -9,9 +16,8 @@ from sendgrid.helpers.eventwebhook import EventWebhook
 from sendgrid.helpers.eventwebhook.eventwebhook_header import EventWebhookHeader
 from post_office.models import STATUS, Email
 from post_office.contrib.sendgrid.views import SendgridWebhookHandler
-from pytz import utc
 
-from django.test import RequestFactory, TestCase  # noqa: F401
+from django.test import RequestFactory, TestCase, override_settings  # noqa: F401
 
 
 try:
@@ -327,12 +333,14 @@ UNRECOGNIZED_EVENTS = list(
 )
 
 
+@override_settings(USE_TZ=True)
 class BaseWebhookTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.event_webhook = EventWebhook()
 
 
+@override_settings(USE_TZ=True)
 class SendgridWebhookVerificationTestCase(BaseWebhookTestCase):
     def test_signed_data_verifies(self):
         data = {'a': 'A', 'b': 'B', 'c': 'C'}
@@ -366,6 +374,7 @@ class SendgridWebhookVerificationTestCase(BaseWebhookTestCase):
         self.assertEqual(email.logs.all().count(), 0)
 
 
+@override_settings(USE_TZ=True)
 class SendgridWebhookPostTestCase(BaseWebhookTestCase):
     @classmethod
     def setUpTestData(cls):
@@ -395,12 +404,13 @@ class SendgridWebhookPostTestCase(BaseWebhookTestCase):
             self.assertTrue(cm.output[0].startswith(f'WARNING:{logger}:Received unrecognized webhook event:'))
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.queued)
 
 
+@override_settings(USE_TZ=True)
 class SendgridWebhookDeliverabilityEventsTestCase(BaseWebhookTestCase):
     def test_real_quick_processed_and_delivered_events(self):
         view = SendgridWebhookHandler.as_view()
@@ -416,16 +426,16 @@ class SendgridWebhookDeliverabilityEventsTestCase(BaseWebhookTestCase):
         )
         # Set created and last_updated to 100 seconds before the first event (events are in reverse order)
         Email.objects.filter(id=email.id).update(
-            created=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
-            last_updated=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+            created=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
+            last_updated=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
         )
         email.refresh_from_db()
         self.assertEqual(
-            email.created, datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc)
+            email.created, datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC)
         )
         self.assertEqual(
             email.last_updated,
-            datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+            datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
         )
 
         request, verify_key = signed_request_and_verify_key([PROCESSED_AND_DELIVERED_EVENTS[-1]])
@@ -434,7 +444,7 @@ class SendgridWebhookDeliverabilityEventsTestCase(BaseWebhookTestCase):
             response = view(request)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.queued)
@@ -448,7 +458,7 @@ class SendgridWebhookDeliverabilityEventsTestCase(BaseWebhookTestCase):
             response = view(request)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.sent)
@@ -475,7 +485,7 @@ class SendgridWebhookDeliverabilityEventsTestCase(BaseWebhookTestCase):
             response = view(request)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
     def test_all_deliverability_events_with_unknown_email(self):
         view = SendgridWebhookHandler.as_view()
@@ -504,12 +514,13 @@ class SendgridWebhookDeliverabilityEventsTestCase(BaseWebhookTestCase):
                 )
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.queued)
 
 
+@override_settings(USE_TZ=True)
 class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
     def test_all_engagement_events(self):
         view = SendgridWebhookHandler.as_view()
@@ -525,16 +536,16 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
         )
         # Set created and last_updated to 100 seconds before the first event (events are in reverse order)
         Email.objects.filter(id=email.id).update(
-            created=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
-            last_updated=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+            created=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
+            last_updated=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
         )
         email.refresh_from_db()
         self.assertEqual(
-            email.created, datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc)
+            email.created, datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC)
         )
         self.assertEqual(
             email.last_updated,
-            datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+            datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
         )
 
         request, verify_key = signed_request_and_verify_key(PROCESSED_AND_DELIVERED_EVENTS)
@@ -543,7 +554,7 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
             response = view(request)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.sent)
@@ -555,7 +566,7 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
             response = view(request)
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.sent)
@@ -575,16 +586,16 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
         )
         # Set created and last_updated to 100 seconds before the first event (events are in reverse order)
         Email.objects.filter(id=email.id).update(
-            created=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
-            last_updated=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+            created=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
+            last_updated=datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
         )
         email.refresh_from_db()
         self.assertEqual(
-            email.created, datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc)
+            email.created, datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC)
         )
         self.assertEqual(
             email.last_updated,
-            datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+            datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
         )
 
         # POST a deliverability event so we have a proper EmailLog to query against
@@ -593,7 +604,7 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
         with self.settings(SENDGRID_WEBHOOK_VERIFICATION_KEY=convert_verify_key_to_base64(verify_key)):
             response = view(request)
 
-            self.assertEqual(response.text, 'ok')
+            self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.queued)
@@ -607,7 +618,7 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
             response = view(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.text, 'ok')
+        self.assertEqual(response.content.decode('utf-8'), 'ok')
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.sent)
@@ -630,20 +641,20 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
                 # Set created and last_updated to 100 seconds before the first event (events are in reverse order)
                 Email.objects.filter(id=email.id).update(
                     created=datetime.fromtimestamp(
-                        float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc
+                        float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC
                     ),
                     last_updated=datetime.fromtimestamp(
-                        float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc
+                        float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC
                     ),
                 )
                 email.refresh_from_db()
                 self.assertEqual(
                     email.created,
-                    datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+                    datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
                 )
                 self.assertEqual(
                     email.last_updated,
-                    datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=utc),
+                    datetime.fromtimestamp(float(PROCESSED_AND_DELIVERED_EVENTS[-1]['timestamp'] - 100), tz=UTC),
                 )
 
                 # Now POST an engagement event
@@ -655,7 +666,7 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
                         response = view(request)
 
                 self.assertEqual(response.status_code, 200)
-                self.assertEqual(response.text, 'ok')
+                self.assertEqual(response.content.decode('utf-8'), 'ok')
 
                 self.assertTrue(len(cm.output), 1)
                 for infologline in cm.output:
@@ -666,6 +677,7 @@ class SendgridWebhookEngagementEventsTestCase(BaseWebhookTestCase):
                     )
 
 
+@override_settings(USE_TZ=True)
 class SendgridWebhookAccountEventsTestCase(BaseWebhookTestCase):
     def test_all_account_events(self):
         view = SendgridWebhookHandler.as_view()
