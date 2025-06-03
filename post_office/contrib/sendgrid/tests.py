@@ -32,7 +32,7 @@ try:
     # We can control what our test code imports, but not what sendgrid imports,
     # and they are not compatible with each other, so we both check for imports
     # and also check the version string
-    if sendgrid_version > (6, 12, 0):
+    if tuple([int(v) for v in sendgrid_version.split('.')]) > (6, 12, 0):
         raise AssertionError()
 except (ImportError, AssertionError):
     import base64
