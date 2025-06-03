@@ -713,6 +713,89 @@ python setup.py test
 ```
 
 
+## Webhook Integration
+
+Some email providers offer configurable webhooks to notify users of email events, like when emails
+are queued for sending, when they are deferred, delivered, bounce (soft bounce and hard bounce).
+Some even offer engagement events like when emails are opened or links are clicked.
+
+This project supports webhook integration you can use in your site.
+
+### Custom Webhook Handler
+
+To easily define your own custom webhook handler, you can subclass `post_office.webhook.BaseWebhookHandler`, and
+override the `verify_webhook` and `handle_event` instance methods (see below).
+
+The `BaseWebhookHandler` is itself a subclass of Django's `View` CBV. You will also need to override one or more
+instance methods corresponding to the HTTP method(s) your email provider's webhook will use.
+
+For example, the Sendgrid webhook only reports events with the HTTP POST method, so the `View.post` method should be
+specified in your custom webhook handler:
+
+```python
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        ...
+```
+
+Since a single webhook can contain many events, your method should split them up and call `self.handle_event()` with
+the appropriate arguments (see below).
+
+Next, add your custom webhook handler to your project URLConf.
+
+Once done, you will need to configure your email provider to send email events to your webhook at the configured path.
+
+#### Override instance method `verify_webhook`
+
+```python
+class MyWebhookHandler(BaseWebhookHandler):
+    def verify_webhook(self, request: HttpRequest, *args, **kwargs) -> bool:
+        ...
+```
+
+The `verify_webhook` method should check that the webhook was sent by the expected provider. Since webhook endpoints
+are publicly accessible, anybody on the internet can send an HTTP request to your webhook handler. To prevent this,
+some email providers offer to sign their webhooks using public key cryptography and give you a public key to verify it.
+You can use the `verify_webhook` method to verify the signature for a webhook HTTP request.
+
+
+#### Override instance method `handle_event`
+
+```python
+class MyWebhookHandler(BaseWebhookHandler):
+    def handle_event(
+        self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, email: Email | None = None, **kwargs
+    ) -> None:
+        ...
+```
+
+The `handle_event` method receives an event enum (specified in `post_office.webhook.Event`), and a `payload`. The
+payload should be a `dict` object defining the data for a single event, and the `email` should be a corresponding
+`post_office.models.Email` object, if one can be correlated from the payload data.
+
+Once you've defined those three methods, connected your webhook handler in your project URLConf, and configured your
+email provider to send webhooks, you should be ready to receive email events!
+
+### Example: Sendgrid Webhook Handler
+
+For a working example, you can check out the Sendgrid webhook handler that ships as part of the `sendgrid` contrib app
+for this project, defined in `post_office/contrib/sendgrid/views.py`.
+
+If you wish to use the Sendgrid example webhook handler directly, you will need to add `post_office.contrib.sendgrid`
+to `INSTALLED_APPS` in your project `settings.py` module, and include that URLConf in your project's root URLConf:
+
+```python
+from django.urls import path, include
+
+urlpatterns = [
+    ...
+    path('hooks/mail/', include('post_office.contrib.sendgrid.urls')),
+]
+```
+
+If you are using Sendgrid as your email provider but wish to customize some of the behavior, you can subclass the
+`SendgridWebhookHandler` and add your customized handler to a project URLConf.
+
+
 ## Integration with Celery
 
 If your Django project runs in a Celery enabled configuration, you can use its worker to send out
