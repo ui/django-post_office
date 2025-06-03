@@ -5,4 +5,5 @@ from .test_mail import MailTest
 from .test_models import ModelTest
 from .test_utils import UtilsTest
 from .test_cache import CacheTest
+from .test_webhook import WebhookTest
 from .test_views import AdminViewTest
