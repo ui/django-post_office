@@ -16,7 +16,7 @@ from post_office.fields import CommaSeparatedEmailField
 
 from .connections import connections
 from .logutils import setup_loghandlers
-from .settings import context_field_class, get_log_level, get_template_engine, get_override_recipients
+from .settings import context_field_class, get_file_storage, get_log_level, get_template_engine, get_override_recipients
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -337,7 +337,7 @@ class Attachment(models.Model):
     A model describing an email attachment.
     """
 
-    file = models.FileField(_('File'), upload_to=get_upload_path)
+    file = models.FileField(_('File'), storage=get_file_storage, upload_to=get_upload_path)
     name = models.CharField(_('Name'), max_length=255, help_text=_('The original filename'))
     emails = models.ManyToManyField(Email, related_name='attachments', verbose_name=_('Emails'))
     mimetype = models.CharField(max_length=255, default='', blank=True)
