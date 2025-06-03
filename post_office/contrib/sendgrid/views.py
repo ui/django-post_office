@@ -105,13 +105,8 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             for payload in reversed(json.loads(request.body)):
                 logger.debug(payload)
 
-                # If we can't pick out the exact email, don't try to do anything
-                # This can happen if we use django-post_office and generate Emails and Logs
-                # before we configure and use this webhook handler
-                email = Email.objects.filter(message_id=payload.get('smtp-id', None)).first()
                 event = SENDGRID_STATUS_TO_EVENT.get(payload['event'], payload['event'])
-
-                self.handle_event(request, event, payload, *args, email=email, **kwargs)
+                self.handle_event(request, event, payload, *args, **kwargs)
 
         except Exception as e:
             logger.error(e)
@@ -122,9 +117,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             )
         return HttpResponse('ok')
 
-    def handle_event(
-        self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, email: Email | None = None, **kwargs
-    ) -> None:
+    def handle_event(self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, **kwargs) -> None:
         if event in [
             Event.ACCEPTED,
             Event.DELIVERED,
@@ -133,7 +126,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             Event.SOFT_BOUNCE,
             Event.REJECTED,
         ]:
-            return self.log_deliverability_event(request, event, payload, *args, email=email, **kwargs)
+            return self.log_deliverability_event(request, event, payload, *args, **kwargs)
         elif event in [
             Event.OPEN,
             Event.CLICK,
@@ -141,10 +134,10 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             Event.UNSUBSCRIBE,
             Event.RESUBSCRIBE,
         ]:
-            return self.log_engagement_event(request, event, payload, *args, email=email, **kwargs)
+            return self.log_engagement_event(request, event, payload, *args, **kwargs)
         elif event == Event.ACCOUNT_SUSPENDED:
-            return self.account_suspended(request, event, payload, *args, email=email, **kwargs)
-        return self.unrecognized_event(request, event, payload, *args, email=email, **kwargs)
+            return self.account_suspended(request, event, payload, *args, **kwargs)
+        return self.unrecognized_event(request, event, payload, *args, **kwargs)
 
     def unrecognized_event(
         self,
@@ -152,7 +145,6 @@ class SendgridWebhookHandler(BaseWebhookHandler):
         event: str,
         payload: dict[str, Any] | None = None,
         *args,
-        email: Email | None = None,
         **kwargs,
     ) -> None:
         info_dict = json.dumps(
@@ -164,7 +156,6 @@ class SendgridWebhookHandler(BaseWebhookHandler):
                 'event': event,
                 'payload': payload,
                 'args': args,
-                'email': serialize_email(email),
             }
             | kwargs,
             indent='  ',
@@ -174,12 +165,15 @@ class SendgridWebhookHandler(BaseWebhookHandler):
         return HttpResponseNotFound()
 
     def log_deliverability_event(
-        self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, email: Email | None = None, **kwargs
+        self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, **kwargs
     ) -> None:
         email_status = EVENT_TO_EMAIL_STATUS[event]
         email_log_status = EVENT_TO_EMAIL_LOG_STATUS[event]
 
-        if email:
+        # If we can't pick out the exact email, don't try to do anything
+        # This can happen if we use django-post_office and generate Emails and Logs
+        # before we configure and use this webhook handler
+        if email := Email.objects.filter(message_id=payload.get('smtp-id', None)).first():
             email_last_updated = round(email.last_updated.timestamp())
             # Save both the email status and the corresponding log object, or neither
             with transaction.atomic():
@@ -286,9 +280,7 @@ class SendgridWebhookHandler(BaseWebhookHandler):
             )
             logger.info(f'Received webhook without a valid reference to an email log:\n{info_dict}')
 
-    def account_suspended(
-        self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, email: Email | None = None, **kwargs
-    ) -> None:
+    def account_suspended(self, request: HttpRequest, event: Event, payload: dict[str, Any], *args, **kwargs) -> None:
         # This is a bigger deal than a reference to an email that doesn't exist,
         # so we intentionally raise an exception with all given information
         # In production, this will trigger an email with the exception
