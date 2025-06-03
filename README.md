@@ -17,7 +17,7 @@ Django. Some awesome features are:
 
 ## Dependencies
 
--   [django \>= 2.2](https://djangoproject.com/)
+-   [django \>= 4.2](https://djangoproject.com/)
 -   [jsonfield](https://github.com/rpkilby/jsonfield)
 -   [bleach](https://bleach.readthedocs.io/)
 
@@ -412,6 +412,32 @@ You may want to set these up via cron to run regularly:
 
 This section outlines all the settings and configurations that you can
 put in Django's `settings.py` to fine tune `post-office`'s behavior.
+
+
+### File Storage
+
+If you want Post Office to use a specific file storage for attachments, make sure to configure a
+storage in the `STORAGES` setting in your project `settings.py`, then specify the storage name in
+the `FILE_STORAGE` key. Post Office will use the `default` storage if this is not specified.
+
+```python
+STORAGES = {
+    "default": {
+        "BACKEND": 'django.core.files.storage.FileSystemStorage',
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+    "post_office": {
+        "BACKEND": 'storages.backends.s3boto3.S3Boto3Storage',
+    },
+}
+
+POST_OFFICE = {
+    ...
+    'FILE_STORAGE': 'post_office',
+}
+```
 
 
 ### Batch Size

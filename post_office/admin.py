@@ -10,6 +10,7 @@ from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
 from django.http.response import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.template import Context, Template
+from django.urls import path
 from django.urls import re_path, reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
@@ -21,11 +22,9 @@ from .sanitizer import clean_html
 from .settings import get_template_engine
 
 
+@admin.display(description='Message')
 def get_message_preview(instance):
     return f'{instance.message[:25]}...' if len(instance.message) > 25 else instance.message
-
-
-get_message_preview.short_description = 'Message'
 
 
 class AttachmentInline(admin.StackedInline):
@@ -46,13 +45,13 @@ class AttachmentInline(admin.StackedInline):
         if self.parent_obj:
             queryset = queryset.filter(email=self.parent_obj)
 
-        inlined_attachments = [
-            a.id
-            for a in queryset
-            if isinstance(a.attachment.headers, dict)
-            and a.attachment.headers.get('Content-Disposition', '').startswith('inline')
-        ]
-        return queryset.exclude(id__in=inlined_attachments)
+        # From https://stackoverflow.com/a/67266338
+        return queryset.exclude(
+            **{
+                'attachment__headers__Content-Disposition__isnull': False,
+                'attachment__headers__Content-Disposition__startswith': 'inline',
+            }
+        ).select_related('attachment')
 
 
 class LogInline(admin.TabularInline):
@@ -81,14 +80,13 @@ class CommaSeparatedEmailWidget(TextInput):
         return ','.join([item for item in value])
 
 
+@admin.action(description='Requeue selected emails')
 def requeue(modeladmin, request, queryset):
     """An admin action to requeue emails."""
     queryset.update(status=STATUS.queued)
 
 
-requeue.short_description = 'Requeue selected emails'
-
-
+@admin.register(Email)
 class EmailAdmin(admin.ModelAdmin):
     list_display = [
         'truncated_message_id',
@@ -113,7 +111,7 @@ class EmailAdmin(admin.ModelAdmin):
                 self.fetch_email_image,
                 name='post_office_email_image',
             ),
-            re_path(r'^(?P<pk>\d+)/resend/$', self.resend, name='resend'),
+            path('<int:pk>/resend/', self.resend, name='resend'),
         ]
         urls.extend(super().get_urls())
         return urls
@@ -121,21 +119,26 @@ class EmailAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('template')
 
+    @admin.display(
+        description=_('To'),
+        ordering='to',
+    )
     def to_display(self, instance):
         return ', '.join(instance.to)
 
+    @admin.display(description='Message-ID')
     def truncated_message_id(self, instance):
         if instance.message_id:
             return Truncator(instance.message_id[1:-1]).chars(10)
         return str(instance.id)
 
-    to_display.short_description = _('To')
-    to_display.admin_order_field = 'to'
-    truncated_message_id.short_description = 'Message-ID'
-
     def has_add_permission(self, request):
         return False
 
+    @admin.display(
+        description=_('Subject'),
+        ordering='subject',
+    )
     def shortened_subject(self, instance):
         if instance.context:
             template_cache_key = '_subject_template_' + str(instance.template_id)
@@ -149,14 +152,12 @@ class EmailAdmin(admin.ModelAdmin):
             subject = instance.subject
         return Truncator(subject).chars(100)
 
-    shortened_subject.short_description = _('Subject')
-    shortened_subject.admin_order_field = 'subject'
-
+    @admin.display(
+        description=_('Use Template'),
+        boolean=True,
+    )
     def use_template(self, instance):
         return bool(instance.template_id)
-
-    use_template.short_description = _('Use Template')
-    use_template.boolean = True
 
     def get_fieldsets(self, request, obj=None):
         fields = ['from_email', 'to', 'cc', 'bcc', 'priority', ('status', 'scheduled_time')]
@@ -182,19 +183,18 @@ class EmailAdmin(admin.ModelAdmin):
 
         return fieldsets
 
+    @admin.display(description=_('Subject'))
     def render_subject(self, instance):
         message = instance.email_message()
         return message.subject
 
-    render_subject.short_description = _('Subject')
-
+    @admin.display(description=_('Mail Body'))
     def render_plaintext_body(self, instance):
         for message in instance.email_message().message().walk():
             if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/plain':
                 return format_html('<pre>{}</pre>', message.get_payload())
 
-    render_plaintext_body.short_description = _('Mail Body')
-
+    @admin.display(description=_('HTML Body'))
     def render_html_body(self, instance):
         pattern = re.compile('cid:([0-9a-f]{32})')
         url = reverse('admin:post_office_email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
@@ -203,8 +203,6 @@ class EmailAdmin(admin.ModelAdmin):
             if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/html':
                 payload = message.get_payload(decode=True).decode('utf-8')
                 return clean_html(pattern.sub(url, payload))
-
-    render_html_body.short_description = _('HTML Body')
 
     def fetch_email_image(self, request, pk, content_id):
         instance = self.get_object(request, pk)
@@ -220,6 +218,7 @@ class EmailAdmin(admin.ModelAdmin):
         return HttpResponseRedirect(reverse('admin:post_office_email_change', args=[instance.pk]))
 
 
+@admin.register(Log)
 class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
 
@@ -303,6 +302,7 @@ def _create_iframe(src, height, width):
 
 
 class ContentPreviewMixin:
+    @admin.display(description=_('Content Preview'))
     def content_preview(self, instance: EmailTemplate) -> str:
         if instance.content:
             src = f'?preview=text&language={instance.language}'
@@ -315,16 +315,13 @@ class ContentPreviewMixin:
         else:
             return ''
 
-    content_preview.short_description = _('Content Preview')
-
+    @admin.display(description=_('HTML Preview'))
     def html_preview(self, instance: EmailTemplate) -> str:
         if instance.html_content:
             src = f'?preview=html&language={instance.language}'
             return _create_iframe(src, 30, 40)
         else:
             return ''
-
-    html_preview.short_description = _('HTML Preview')
 
     def get_readonly_fields(self, request, obj=None):
         ro_fields = super().get_readonly_fields(request, obj=obj)
@@ -346,6 +343,7 @@ class EmailTemplateInline(ContentPreviewMixin, admin.StackedInline):
         return len(settings.LANGUAGES)
 
 
+@admin.register(EmailTemplate)
 class EmailTemplateAdmin(ContentPreviewMixin, admin.ModelAdmin):
     form = EmailTemplateAdminForm
     list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
@@ -398,17 +396,17 @@ class EmailTemplateAdmin(ContentPreviewMixin, admin.ModelAdmin):
 
         return super().change_view(request, object_id, form_url, extra_context)
 
+    @admin.display(
+        description=_('Description'),
+        ordering='description',
+    )
     def description_shortened(self, instance):
         return Truncator(instance.description.split('\n')[0]).chars(200)
 
-    description_shortened.short_description = _('Description')
-    description_shortened.admin_order_field = 'description'
-
+    @admin.display(description=_('Languages'))
     def languages_compact(self, instance):
         languages = [instance.language] + [tt.language for tt in instance.translated_templates.order_by('language')]
         return ', '.join(languages)
-
-    languages_compact.short_description = _('Languages')
 
     def save_model(self, request, obj, form, change):
         # If no language is specified, default to the user's current language
@@ -422,14 +420,9 @@ class EmailTemplateAdmin(ContentPreviewMixin, admin.ModelAdmin):
             obj.translated_templates.update(name=obj.name)
 
 
+@admin.register(Attachment)
 class AttachmentAdmin(admin.ModelAdmin):
     list_display = ['name', 'file']
     filter_horizontal = ['emails']
     search_fields = ['name']
     autocomplete_fields = ['emails']
-
-
-admin.site.register(Email, EmailAdmin)
-admin.site.register(Log, LogAdmin)
-admin.site.register(EmailTemplate, EmailTemplateAdmin)
-admin.site.register(Attachment, AttachmentAdmin)
