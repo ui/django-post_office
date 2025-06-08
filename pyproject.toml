@@ -48,9 +48,6 @@ test = [
 prevent-xss = [
     "bleach",
 ]
-testing = [
-    "tox >= 2.3",
-]
 
 [tool.setuptools]
 zip-safe = false
