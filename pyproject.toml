@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-post_office"
+license = "MIT"
 requires-python = ">=3.9"
 authors = [{name = "Selwin Ong", email = "selwin.ong@gmail.com"}]
 description = "A Django app to monitor and send mail asynchronously, complete with template support."
@@ -17,7 +18,6 @@ classifiers = [
     "Framework :: Django :: 5.1",
     "Framework :: Django :: 5.2",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -48,14 +48,9 @@ test = [
 prevent-xss = [
     "bleach",
 ]
-testing = [
-    "tox >= 2.3",
-]
 
 [tool.setuptools]
-packages = ["post_office"]
 zip-safe = false
-include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {attr = "post_office.version.VERSION"}
