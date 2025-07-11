@@ -27,6 +27,23 @@ PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued requeued')._make(range(4))
 
 
+class RecipientDeliveryStatus(models.IntegerChoices):
+    ACCEPTED = 10, _('Accepted')
+    DELIVERED = 20, _('Delivered')
+    DEFERRED = 30, _('Deferred')
+    SOFT_BOUNCE = 40, _('Soft Bounce')
+    HARD_BOUNCE = 50, _('Hard Bounce')
+    REJECTED = 60, _('Rejected')
+
+    # Engagement
+    OPEN = 70, _('Open')
+    CLICK = 80, _('Click')
+
+    # Complaints & unsubscribes
+    SPAM_COMPLAINT = 90, _('Spam Complaint')
+    UNSUBSCRIBED = 100, _('Unsubscribed')
+
+
 class Email(models.Model):
     """
     A model to hold email information.
@@ -58,6 +75,9 @@ class Email(models.Model):
     whether it's successfully delivered.
     """
     status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES, db_index=True, blank=True, null=True)
+    recipient_delivery_status = models.PositiveSmallIntegerField(
+        _('Recipient Delivery Status'), choices=RecipientDeliveryStatus.choices, blank=True, null=True
+    )
     priority = models.PositiveSmallIntegerField(_('Priority'), choices=PRIORITY_CHOICES, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
@@ -250,6 +270,9 @@ class Log(models.Model):
     )
     date = models.DateTimeField(auto_now_add=True)
     status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES)
+    recipient_delivery_status = models.PositiveSmallIntegerField(
+        _('Recipient Delivery Status'), choices=RecipientDeliveryStatus.choices, blank=True, null=True
+    )
     exception_type = models.CharField(_('Exception type'), max_length=255, blank=True)
     message = models.TextField(_('Message'))
 
