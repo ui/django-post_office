@@ -30,18 +30,15 @@ STATUS = namedtuple('STATUS', 'sent failed queued requeued')._make(range(4))
 class RecipientDeliveryStatus(models.IntegerChoices):
     ACCEPTED = 10, _('Accepted')
     DELIVERED = 20, _('Delivered')
-    DEFERRED = 30, _('Deferred')
-    SOFT_BOUNCE = 40, _('Soft Bounce')
-    HARD_BOUNCE = 50, _('Hard Bounce')
-    REJECTED = 60, _('Rejected')
+    OPENED = 30, _('Opened')
+    CLICKED = 40, _('Clicked')
 
-    # Engagement
-    OPEN = 70, _('Open')
-    CLICK = 80, _('Click')
+    DEFERRED = 50, _('Deferred')
+    SOFT_BOUNCED = 60, _('Soft Bounced')
+    HARD_BOUNCED = 70, _('Hard Bounced')
 
-    # Complaints & unsubscribes
-    SPAM_COMPLAINT = 90, _('Spam Complaint')
-    UNSUBSCRIBED = 100, _('Unsubscribed')
+    SPAM_COMPLAINT = 80, _('Spam Complaint')
+    UNSUBSCRIBED = 90, _('Unsubscribed')
 
 
 class Email(models.Model):
