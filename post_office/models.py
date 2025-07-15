@@ -260,16 +260,13 @@ class Log(models.Model):
     A model to record sending email sending activities.
     """
 
-    STATUS_CHOICES = [(STATUS.sent, _('sent')), (STATUS.failed, _('failed'))]
+    STATUS_CHOICES = [(STATUS.sent, _('sent')), (STATUS.failed, _('failed'))] + RecipientDeliveryStatus.choices
 
     email = models.ForeignKey(
         Email, editable=False, related_name='logs', verbose_name=_('Email address'), on_delete=models.CASCADE
     )
     date = models.DateTimeField(auto_now_add=True)
     status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES)
-    recipient_delivery_status = models.PositiveSmallIntegerField(
-        _('Recipient Delivery Status'), choices=RecipientDeliveryStatus.choices, blank=True, null=True
-    )
     exception_type = models.CharField(_('Exception type'), max_length=255, blank=True)
     message = models.TextField(_('Message'))
 
