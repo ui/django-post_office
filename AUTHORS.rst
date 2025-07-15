@@ -14,3 +14,4 @@ Contributors:
 * Jacob Rief (@jacobrief)
 * Alexandr Artemyev (@mogost)
 * Antonio Hinojo (@ahmontero)
+* Filip Dobrovolny (@fdobrovolny)
