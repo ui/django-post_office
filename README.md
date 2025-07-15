@@ -848,8 +848,7 @@ containers, where you don't have a running cron-daemon.
 ## Signals
 
 Each time an email is added to the mail queue, Post Office emits a
-special [Django
-signal](https://docs.djangoproject.com/en/stable/topics/signals/).
+special [Django signal](https://docs.djangoproject.com/en/stable/topics/signals/).
 Whenever a third party application wants to be informed about this
 event, it shall connect a callback function to the Post Office's signal
 handler `email_queued`, for instance:
@@ -871,5 +870,4 @@ handler.
 
 Full changelog can be found [here](https://github.com/ui/django-post_office/blob/master/CHANGELOG.md).
 
-Created and maintained by the cool guys at [Stamps](https://stamps.co.id), Indonesia's most elegant
-CRM/loyalty platform.
+Created and maintained by [Stamps](https://stamps.id), Indonesia's most elegant CRM/loyalty platform.
