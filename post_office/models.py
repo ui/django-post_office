@@ -27,6 +27,20 @@ PRIORITY = namedtuple('PRIORITY', 'low medium high now')._make(range(4))
 STATUS = namedtuple('STATUS', 'sent failed queued requeued')._make(range(4))
 
 
+class RecipientDeliveryStatus(models.IntegerChoices):
+    ACCEPTED = 10, _('Accepted')
+    DELIVERED = 20, _('Delivered')
+    OPENED = 30, _('Opened')
+    CLICKED = 40, _('Clicked')
+
+    DEFERRED = 50, _('Deferred')
+    SOFT_BOUNCED = 60, _('Soft Bounced')
+    HARD_BOUNCED = 70, _('Hard Bounced')
+
+    SPAM_COMPLAINT = 80, _('Spam Complaint')
+    UNSUBSCRIBED = 90, _('Unsubscribed')
+
+
 class Email(models.Model):
     """
     A model to hold email information.
@@ -58,6 +72,9 @@ class Email(models.Model):
     whether it's successfully delivered.
     """
     status = models.PositiveSmallIntegerField(_('Status'), choices=STATUS_CHOICES, db_index=True, blank=True, null=True)
+    recipient_delivery_status = models.PositiveSmallIntegerField(
+        _('Recipient Delivery Status'), choices=RecipientDeliveryStatus.choices, blank=True, null=True
+    )
     priority = models.PositiveSmallIntegerField(_('Priority'), choices=PRIORITY_CHOICES, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     last_updated = models.DateTimeField(db_index=True, auto_now=True)
@@ -243,7 +260,7 @@ class Log(models.Model):
     A model to record sending email sending activities.
     """
 
-    STATUS_CHOICES = [(STATUS.sent, _('sent')), (STATUS.failed, _('failed'))]
+    STATUS_CHOICES = [(STATUS.sent, _('sent')), (STATUS.failed, _('failed'))] + RecipientDeliveryStatus.choices
 
     email = models.ForeignKey(
         Email, editable=False, related_name='logs', verbose_name=_('Email address'), on_delete=models.CASCADE

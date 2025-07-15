@@ -59,6 +59,9 @@ version = {attr = "post_office.version.VERSION"}
 line-length = 120
 indent-width = 4
 target-version = "py39"
+exclude = [
+    "migrations",
+]
 
 [tool.ruff.format]
 quote-style = "single"
