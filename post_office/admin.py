@@ -3,7 +3,7 @@ import re
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.mail.message import SafeMIMEText
 from django.db import models
 from django.forms import BaseInlineFormSet
@@ -14,11 +14,12 @@ from django.urls import path
 from django.urls import re_path, reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language, gettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
 from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
+from .settings import get_template_engine
 
 
 @admin.display(description='Message')
@@ -248,6 +249,7 @@ class EmailTemplateAdminFormSet(BaseInlineFormSet):
 class EmailTemplateAdminForm(forms.ModelForm):
     language = forms.ChoiceField(
         choices=settings.LANGUAGES,
+        initial=get_language,
         required=False,
         label=_('Language'),
         help_text=_('Render template in alternative language'),
@@ -255,21 +257,86 @@ class EmailTemplateAdminForm(forms.ModelForm):
 
     class Meta:
         model = EmailTemplate
-        fields = ['name', 'description', 'subject', 'content', 'html_content', 'language', 'default_template']
+        fields = [
+            'name',
+            'description',
+            'subject',
+            'content',
+            'html_content',
+            'language',
+            'default_template',
+            'example_context',
+        ]
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         super().__init__(*args, **kwargs)
-        if instance and instance.language:
-            self.fields['language'].disabled = True
+        # Hint that this is supposed to be a dictionary
+        self.fields['example_context'].initial = {}
+
+        if not instance or instance.language is None:
+            # New form - set the initial selected language to the user's current language
+            current_language = get_language()
+            # current_language might be en-us, which might be in language choices
+            if current_language in [lt[0] for lt in self.fields['language'].choices]:
+                self.fields['language'].initial = current_language
+            # current_language might be "en-us", but choices might only contain
+            # "en" so we shorten current_language and try again
+            elif current_language.split('-')[0] in [lt[0] for lt in self.fields['language'].choices]:
+                self.fields['language'].initial = current_language.split('-')[0]
 
 
-class EmailTemplateInline(admin.StackedInline):
+def _create_iframe(src, height, width):
+    return format_html(
+        """
+        <iframe
+            style="width: {width}em; height: {height}em; resize: both;"
+            src="{src}">'
+            sandbox
+        </iframe>
+        """,
+        height=height,
+        width=width,
+        src=src,
+    )
+
+
+class ContentPreviewMixin:
+    @admin.display(description=_('Content Preview'))
+    def content_preview(self, instance: EmailTemplate) -> str:
+        if instance.content:
+            src = f'?preview=text&language={instance.language}'
+            # Use max() to ensure the height and width are never 0
+            # The *2+1 equation was derived empirically and should not be held
+            # in high regard
+            height = max(instance.content.count('\n'), 1) * 2 + 1
+            width = max([len(line) for line in instance.content.split('\n')]) * 2
+            return _create_iframe(src, height, width)
+        else:
+            return ''
+
+    @admin.display(description=_('HTML Preview'))
+    def html_preview(self, instance: EmailTemplate) -> str:
+        if instance.html_content:
+            src = f'?preview=html&language={instance.language}'
+            return _create_iframe(src, 30, 40)
+        else:
+            return ''
+
+    def get_readonly_fields(self, request, obj=None):
+        ro_fields = super().get_readonly_fields(request, obj=obj)
+        if obj and obj.language is not None:
+            ro_fields += ('language',)
+        return ro_fields
+
+
+class EmailTemplateInline(ContentPreviewMixin, admin.StackedInline):
     form = EmailTemplateAdminForm
     formset = EmailTemplateAdminFormSet
     model = EmailTemplate
     extra = 0
-    fields = ('language', 'subject', 'content', 'html_content')
+    fields = ('language', 'subject', 'content', 'html_content', 'example_context', 'content_preview', 'html_preview')
+    readonly_fields = ('content_preview', 'html_preview')
     formfield_overrides = {models.CharField: {'widget': SubjectField}}
 
     def get_max_num(self, request, obj=None, **kwargs):
@@ -277,19 +344,57 @@ class EmailTemplateInline(admin.StackedInline):
 
 
 @admin.register(EmailTemplate)
-class EmailTemplateAdmin(admin.ModelAdmin):
+class EmailTemplateAdmin(ContentPreviewMixin, admin.ModelAdmin):
     form = EmailTemplateAdminForm
     list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
     search_fields = ('name', 'description', 'subject')
     fieldsets = [
         (None, {'fields': ('name', 'description')}),
-        (_('Default Content'), {'fields': ('subject', 'content', 'html_content')}),
+        (_('Default Content'), {'fields': ('subject', 'content', 'html_content', 'language')}),
+        (_('Content Preview'), {'fields': ('example_context', 'content_preview', 'html_preview')}),
     ]
+    readonly_fields = ('content_preview', 'html_preview')
     inlines = (EmailTemplateInline,) if settings.USE_I18N else ()
     formfield_overrides = {models.CharField: {'widget': SubjectField}}
 
     def get_queryset(self, request):
         return self.model.objects.filter(default_template__isnull=True)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        if not self.has_view_permission(request, obj=None):
+            raise PermissionDenied
+
+        if request.GET.get('preview'):
+            instance = self.get_object(request, object_id)
+            engine = get_template_engine()
+
+            if request.GET.get('language') == instance.language:
+                template_instance = instance
+            elif language := request.GET.get('language'):
+                template_instance = instance.translated_templates.filter(language=language).first()
+            else:
+                template_instance = instance
+
+            if request.GET.get('preview') == 'html':
+                template = engine.from_string(
+                    template_instance.html_content.replace('inline_image', 'static').replace(
+                        ' post_office ', ' static '
+                    )
+                )
+            else:
+                template = engine.from_string(f'<pre>{template_instance.content}</pre>')
+
+            response = HttpResponse(
+                clean_html(template.render(instance.example_context)),
+                # We need to expicitly set these, because most people are
+                # probably running middleware to prevent clickjacking (and
+                # Django generates a skeleton project with that activated by
+                # default)
+                headers={'X-Frame-Options': 'SAMEORIGIN'},
+            )
+            return response
+
+        return super().change_view(request, object_id, form_url, extra_context)
 
     @admin.display(
         description=_('Description'),
@@ -300,10 +405,14 @@ class EmailTemplateAdmin(admin.ModelAdmin):
 
     @admin.display(description=_('Languages'))
     def languages_compact(self, instance):
-        languages = [tt.language for tt in instance.translated_templates.order_by('language')]
+        languages = [instance.language] + [tt.language for tt in instance.translated_templates.order_by('language')]
         return ', '.join(languages)
 
     def save_model(self, request, obj, form, change):
+        # If no language is specified, default to the user's current language
+        if obj.language is None:
+            obj.language = get_language()
+
         obj.save()
 
         # if the name got changed, also change the translated templates to match again
