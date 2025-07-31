@@ -388,7 +388,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     # Update statuses of sent emails
     email_ids = [email.id for email in sent_emails]
-    Email.objects.filter(id__in=email_ids).update(status=STATUS.sent)
+    Email.objects.filter(id__in=email_ids).update(status=STATUS.sent, last_updated=timezone.now())
 
     # Update statuses and conditionally requeue failed emails
     num_failed, num_requeued = 0, 0
@@ -407,8 +407,9 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
         else:
             email.status = STATUS.failed
             num_failed += 1
+        email.last_updated = timezone.now()
 
-    Email.objects.bulk_update(emails_failed, ['status', 'scheduled_time', 'number_of_retries'])
+    Email.objects.bulk_update(emails_failed, ['status', 'scheduled_time', 'number_of_retries', 'last_updated'])
 
     # If log level is 0, log nothing, 1 logs only sending failures
     # and 2 means log both successes and failures
