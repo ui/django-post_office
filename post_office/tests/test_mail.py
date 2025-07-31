@@ -96,8 +96,32 @@ class MailTest(TestCase):
             status=STATUS.queued,
             backend_alias='locmem',
         )
+        original_last_updated = email.last_updated
+
         _send_bulk([email], uses_multiprocessing=False)
-        self.assertEqual(Email.objects.get(id=email.id).status, STATUS.sent)
+        email.refresh_from_db()
+        self.assertEqual(email.status, STATUS.sent)
+        self.assertGreater(email.last_updated, original_last_updated)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'send bulk')
+
+        # test fail
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='bob@example.com',
+            subject='send bulk',
+            message='Message',
+            status=STATUS.queued,
+            backend_alias='locmem',
+        )
+        original_last_updated = email.last_updated
+        with patch.object(Email, 'dispatch', side_effect=ValueError('test')):
+            _send_bulk([email], uses_multiprocessing=False)
+
+        email.refresh_from_db()
+        self.assertEqual(email.status, STATUS.requeued)
+        self.assertEqual(email.number_of_retries, 1)
+        self.assertGreater(email.last_updated, original_last_updated)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'send bulk')
 
