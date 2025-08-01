@@ -48,12 +48,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='email',
             name='context',
-            field=models.JSONField(blank=True, null=True, verbose_name='Context'),
+            field=models.TextField(blank=True, null=True, verbose_name='Context'),
         ),
         migrations.AlterField(
             model_name='email',
             name='headers',
-            field=models.JSONField(blank=True, null=True, verbose_name='Headers'),
+            field=models.TextField(blank=True, null=True, verbose_name='Headers'),
         ),
         migrations.AlterField(
             model_name='email',
