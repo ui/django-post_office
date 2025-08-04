@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Version 3.10.1 (2025-08-04)
+---------------------------
+* Fixed an issue where `email.last_updated` is not updated during email delivery. Thanks @marsha97!
+
 Version 3.10.0 (2025-07-15)
 ---------------------------
 * Added `email.recipient_delivery_status` field for tracking delivery issues. Thanks @hery733!
