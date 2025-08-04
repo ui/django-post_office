@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='email',
             name='context',
-            field=models.TextField(blank=True, null=True, verbose_name='Context'),
+            field=models.JSONField(blank=True, null=True, verbose_name='Context'),
         ),
         migrations.AlterField(
             model_name='email',
