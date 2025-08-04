@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='email',
             name='headers',
-            field=models.TextField(blank=True, null=True, verbose_name='Headers'),
+            field=models.JSONField(blank=True, null=True, verbose_name='Headers'),
         ),
         migrations.AlterField(
             model_name='email',
