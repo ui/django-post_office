@@ -250,6 +250,36 @@ mail.send(
 )
 ```
 
+### Shiping templates with applications
+
+You can also pack the templates with your applications, so that they are automatically created.
+
+```
+from django.apps import AppConfig
+from post_office.apps import PostOfficeConfig
+from django.db.models.signals import post_migrate
+
+
+def create_emails(sender=None, **kwargs):
+    from post_office.models import EmailTemplate
+    EmailTemplate.objects.update_or_create(
+        name='generic',
+        defaults={
+        'subject'      :  'New message',
+        'description'  :  'Generic template',
+        'html_content' :  "content html",
+        'content'      :  "content"}
+        )
+    pass
+
+
+class PostOfficeBase(PostOfficeConfig):
+
+    def ready(self):
+        super().ready()
+        post_migrate.connect(create_emails, sender=self)
+```
+
 ### Inlined Images
 
 Often one wants to render images inside a template, which are attached
