@@ -227,6 +227,9 @@ class LogAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 class SubjectField(TextInput):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
