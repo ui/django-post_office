@@ -220,7 +220,12 @@ class EmailAdmin(admin.ModelAdmin):
 @admin.register(Log)
 class LogAdmin(admin.ModelAdmin):
     list_display = ('date', 'email', 'status', get_message_preview)
+    
+    def has_add_permission(self, request, obj=None):
+        return False
 
+    def has_change_permission(self, request, obj=None):
+        return False
 
 class SubjectField(TextInput):
     def __init__(self, *args, **kwargs):
