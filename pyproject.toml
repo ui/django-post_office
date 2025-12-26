@@ -43,11 +43,21 @@ content-type = "text/markdown"
 
 [project.optional-dependencies]
 test = [
+    "pytest",
+    "pytest-django",
     "tox >= 2.3",
 ]
 
 [tool.setuptools]
 zip-safe = false
+
+[tool.setuptools.packages.find]
+include = [
+    "post_office",
+    "post_office.*",
+    "post_office_attachments",
+    "post_office_attachments.*",
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "post_office.version.VERSION"}
@@ -59,6 +69,9 @@ target-version = "py39"
 exclude = [
     "migrations",
 ]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "post_office.test_settings"
 
 [tool.ruff.format]
 quote-style = "single"

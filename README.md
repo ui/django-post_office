@@ -718,7 +718,8 @@ Attachments are not supported with `mail.send_many()`.
 To run the test suite:
 
 ```sh
-`which django-admin` test post_office --settings=post_office.test_settings --pythonpath=.
+pip install -e ".[test]"
+pytest
 ```
 
 You can run the full test suite for all supported versions of Django and Python with:
@@ -730,7 +731,7 @@ tox
 or:
 
 ```sh
-python setup.py test
+pytest
 ```
 
 
