@@ -18,12 +18,7 @@ Django. Some awesome features are:
 ## Dependencies
 
 -   [django \>= 4.2](https://djangoproject.com/)
--   [jsonfield](https://github.com/rpkilby/jsonfield)
--   [bleach](https://bleach.readthedocs.io/)
-
-With this optional dependency, HTML emails are nicely rendered
-inside the Django admin backend. Without this library, all HTML tags
-will otherwise be stripped for security reasons.
+-   [nh3](https://nh3.readthedocs.io/) - HTML sanitization library for rendering HTML emails safely in Django admin
 
 ## Installation
 

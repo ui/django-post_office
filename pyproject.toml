@@ -32,7 +32,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "bleach[css]",
+    "nh3",
     "django>=4.2",
 ]
 dynamic = ["version"]
@@ -44,9 +44,6 @@ content-type = "text/markdown"
 [project.optional-dependencies]
 test = [
     "tox >= 2.3",
-]
-prevent-xss = [
-    "bleach",
 ]
 
 [tool.setuptools]

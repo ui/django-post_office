@@ -1,6 +1,9 @@
 Changelog
 =========
 
+## Unreleased
+* Replaced `bleach` with `nh3` for HTML sanitization. `bleach` has been deprecated since 2023. Thanks @selwin!
+
 Version 3.10.1 (2025-08-04)
 ---------------------------
 * Fixed an issue where `email.last_updated` is not updated during email delivery. Thanks @marsha97!
