@@ -545,7 +545,7 @@ class MailTest(TestCase):
         """
         Ensure that batch delivery timeout is respected.
         """
-        email = Email.objects.create(
+        _email = Email.objects.create(
             to=['to@example.com'],
             from_email='bob@example.com',
             subject='',

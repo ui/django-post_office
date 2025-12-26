@@ -1,21 +1,11 @@
-import json
-import os
 
-from datetime import datetime, timedelta
 
-from django.conf import settings as django_settings, settings
 from django.contrib.admin.sites import AdminSite
-from django.core import mail
-from django.core import serializers
 from django.core.files.base import ContentFile
-from django.core.mail import EmailMessage, EmailMultiAlternatives
-from django.forms.models import modelform_factory
 from django.test import TestCase
-from django.utils import timezone
 
 from ..admin import AttachmentInline
-from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
-from ..mail import send
+from ..models import Email, Attachment
 
 
 class MockRequest:

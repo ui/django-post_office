@@ -4,12 +4,12 @@ from unittest import mock
 
 from django.conf import settings
 from django.core.files.images import File
-from django.core.mail import EmailMultiAlternatives, send_mail, EmailMessage
+from django.core.mail import EmailMessage, EmailMultiAlternatives, send_mail
 from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, STATUS, PRIORITY
+from ..models import PRIORITY, STATUS, Email
 from ..settings import get_backend
 
 
@@ -62,6 +62,8 @@ class BackendTest(TestCase):
             setattr(settings, 'EMAIL_BACKEND', old_email_backend)
         else:
             delattr(settings, 'EMAIL_BACKEND')
+        if old_post_office_backend:
+            setattr(settings, 'POST_OFFICE_BACKEND', old_post_office_backend)
         setattr(settings, 'POST_OFFICE', previous_settings)
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')

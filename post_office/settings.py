@@ -6,7 +6,6 @@ from django.core.cache.backends.base import InvalidCacheBackendError
 from django.core.files.storage import default_storage, storages
 from django.core.mail.utils import DNS_NAME
 from django.template import engines as template_engines
-from django.utils.functional import LazyObject
 
 from django.utils.module_loading import import_string
 
