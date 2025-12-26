@@ -62,8 +62,6 @@ class BackendTest(TestCase):
             setattr(settings, 'EMAIL_BACKEND', old_email_backend)
         else:
             delattr(settings, 'EMAIL_BACKEND')
-        if old_post_office_backend:
-            setattr(settings, 'POST_OFFICE_BACKEND', old_post_office_backend)
         setattr(settings, 'POST_OFFICE', previous_settings)
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
