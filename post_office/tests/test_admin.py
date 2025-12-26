@@ -1,5 +1,3 @@
-
-
 from django.contrib.admin.sites import AdminSite
 from django.core.files.base import ContentFile
 from django.test import TestCase
