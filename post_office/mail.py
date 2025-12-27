@@ -264,7 +264,7 @@ def send_queued(processes: int = 1, log_level: int | None = None) -> tuple[int, 
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
-    queued_emails = get_queued()
+    queued_emails = list(get_queued())
     total_sent, total_failed, total_requeued = 0, 0, 0
     total_email = len(queued_emails)
 
@@ -328,7 +328,7 @@ def send_queued(processes: int = 1, log_level: int | None = None) -> tuple[int, 
 
 
 def _send_bulk(
-    emails: Sequence[Email] | QuerySet[Email], uses_multiprocessing: bool = True, log_level: int | None = None
+    emails: Sequence[Email], uses_multiprocessing: bool = True, log_level: int | None = None
 ) -> tuple[int, int, int]:
     # Multiprocessing does not play well with database connection
     # Fix: Close connections on forking process
