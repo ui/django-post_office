@@ -254,10 +254,27 @@ def get_queued() -> QuerySet[Email]:
     query = (Q(scheduled_time__lte=now) | Q(scheduled_time=None)) & (Q(expires_at__gt=now) | Q(expires_at=None))
     return (
         Email.objects.filter(query, status__in=[STATUS.queued, STATUS.requeued])
-        .select_related('template')
         .order_by(*get_sending_order())
         .prefetch_related('attachments')[: get_batch_size()]
     )
+
+
+def attach_templates(emails: list[Email]) -> None:
+    """
+    Efficiently attach template objects to emails using a single query
+    for all unique templates instead of loading duplicates.
+    """
+    template_ids = {email.template_id for email in emails if email.template_id is not None}
+
+    if not template_ids:
+        return
+
+    templates = EmailTemplate.objects.filter(id__in=template_ids)
+    template_map = {template.id: template for template in templates}
+
+    for email in emails:
+        if email.template_id is not None:
+            email.template = template_map.get(email.template_id)
 
 
 def send_queued(processes: int = 1, log_level: int | None = None) -> tuple[int, int, int]:
@@ -265,6 +282,7 @@ def send_queued(processes: int = 1, log_level: int | None = None) -> tuple[int, 
     Sends out all queued mails that has scheduled_time less than now or None
     """
     queued_emails = list(get_queued())
+    attach_templates(queued_emails)
     total_sent, total_failed, total_requeued = 0, 0, 0
     total_email = len(queued_emails)
 

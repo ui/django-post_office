@@ -13,7 +13,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from ..mail import _send_bulk, create, get_queued, send, send_many, send_queued
+from ..mail import _send_bulk, attach_templates, create, get_queued, send, send_many, send_queued
 from ..models import PRIORITY, STATUS, Attachment, Email, EmailTemplate
 from ..settings import get_batch_size, get_log_level, get_max_retries, get_retry_timedelta, get_threads_per_process
 
@@ -183,6 +183,27 @@ class MailTest(TestCase):
             status=STATUS.queued, scheduled_time=timezone.datetime(2010, 12, 13), **kwargs
         )
         self.assertEqual(list(get_queued()), [queued_email, past_email])
+
+    def test_attach_templates(self):
+        """
+        Ensure templates are loaded efficiently when multiple emails share the same template.
+        """
+        template = EmailTemplate.objects.create(name='test', subject='Test', content='Test content')
+        # Create multiple emails with the same template
+        for _ in range(5):
+            template.email_set.create(
+                from_email='from@example.com',
+                to=['to@example.com'],
+                context={'name': 'Test'},
+                status=STATUS.queued,
+            )
+
+        emails = list(get_queued())
+        attach_templates(emails)
+
+        # All emails should reference the same template object instance
+        template_instances = [id(email.template) for email in emails]
+        self.assertEqual(len(set(template_instances)), 1)
 
     def test_get_batch_size(self):
         """
