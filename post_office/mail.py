@@ -1,7 +1,10 @@
+from collections.abc import Sequence
+from typing import Any
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.template import Context, Template
 from django.utils import timezone
 from email.utils import make_msgid
@@ -226,7 +229,7 @@ def send(
     return email
 
 
-def send_many(kwargs_list):
+def send_many(kwargs_list: list[dict[str, Any]]) -> list[Email]:
     """
     Similar to mail.send(), but this function accepts a list of kwargs.
     Internally, it uses Django's bulk_create command for efficiency reasons.
@@ -240,7 +243,7 @@ def send_many(kwargs_list):
     return emails
 
 
-def get_queued():
+def get_queued() -> QuerySet[Email]:
     """
     Returns the queryset of emails eligible for sending – fulfilling these conditions:
      - Status is queued or requeued
@@ -257,7 +260,7 @@ def get_queued():
     )
 
 
-def send_queued(processes=1, log_level=None):
+def send_queued(processes: int = 1, log_level: int | None = None) -> tuple[int, int, int]:
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
@@ -311,7 +314,7 @@ def send_queued(processes=1, log_level=None):
 
             total_sent = sum(result[0] for result in results)
             total_failed = sum(result[1] for result in results)
-            total_requeued = [result[2] for result in results]
+            total_requeued = sum(result[2] for result in results)
 
     logger.info(
         '%s emails attempted, %s sent, %s failed, %s requeued',
@@ -324,7 +327,9 @@ def send_queued(processes=1, log_level=None):
     return total_sent, total_failed, total_requeued
 
 
-def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
+def _send_bulk(
+    emails: Sequence[Email] | QuerySet[Email], uses_multiprocessing: bool = True, log_level: int | None = None
+) -> tuple[int, int, int]:
     # Multiprocessing does not play well with database connection
     # Fix: Close connections on forking process
     # https://groups.google.com/forum/#!topic/django-users/eCAIY9DAfG0
@@ -333,6 +338,7 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
 
     if log_level is None:
         log_level = get_log_level()
+    assert log_level is not None
 
     sent_emails = []
     failed_emails = []  # This is a list of two tuples (email, exception)
@@ -447,7 +453,9 @@ def _send_bulk(emails, uses_multiprocessing=True, log_level=None):
     return len(sent_emails), num_failed, num_requeued
 
 
-def send_queued_mail_until_done(lockfile=default_lockfile, processes=1, log_level=None):
+def send_queued_mail_until_done(
+    lockfile: str = default_lockfile, processes: int = 1, log_level: int | None = None
+) -> None:
     """
     Send mail in queue batch by batch, until all emails have been processed.
     """
