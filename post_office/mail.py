@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -37,6 +37,16 @@ from .utils import (
 )
 
 logger = setup_loghandlers('INFO')
+
+
+def _send_email(email: Email, log_level: int) -> tuple[bool, Optional[Exception]]:
+    try:
+        email.dispatch(log_level=log_level, commit=False, disconnect_after_delivery=False)
+        logger.debug('Successfully sent email #%d' % email.id)
+        return True, None
+    except Exception as e:
+        logger.exception('Failed to send email #%d' % email.id)
+        return False, e
 
 
 def create(
@@ -277,7 +287,7 @@ def attach_templates(emails: list[Email]) -> None:
             email.template = template_map.get(email.template_id)
 
 
-def send_queued(processes: int = 1, log_level: Optional[int] = None) -> Tuple[int, int, int]:
+def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[int, int, int]:
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
@@ -364,14 +374,7 @@ def _send_bulk(
 
     logger.info('Process started, sending %s emails' % email_count)
 
-    def send(email):
-        try:
-            email.dispatch(log_level=log_level, commit=False, disconnect_after_delivery=False)
-            sent_emails.append(email)
-            logger.debug('Successfully sent email #%d' % email.id)
-        except Exception as e:
-            logger.exception('Failed to send email #%d' % email.id)
-            failed_emails.append((email, e))
+    emails_to_send = []
 
     # Prepare emails before we send these to threads for sending
     # So we don't need to access the DB from within threads
@@ -380,6 +383,7 @@ def _send_bulk(
         # email from a faulty Django template
         try:
             email.prepare_email_message()
+            emails_to_send.append(email)
         except Exception as e:
             logger.exception('Failed to prepare email #%d' % email.id)
             failed_emails.append((email, e))
@@ -388,15 +392,19 @@ def _send_bulk(
     pool = ThreadPool(number_of_threads)
 
     results = []
-    for email in emails:
-        results.append(pool.apply_async(send, args=(email,)))
+    for email in emails_to_send:
+        results.append((email, pool.apply_async(_send_email, args=(email, log_level))))
 
     timeout = get_batch_delivery_timeout()
 
     # Wait for all tasks to complete with a timeout
     # The get method is used with a timeout to wait for each result
-    for result in results:
-        result.get(timeout=timeout)
+    for email, result in results:
+        success, exception = result.get(timeout=timeout)
+        if success:
+            sent_emails.append(email)
+        else:
+            failed_emails.append((email, exception))
     # for result in results:
     #     try:
     #         # Wait for all tasks to complete with a timeout
