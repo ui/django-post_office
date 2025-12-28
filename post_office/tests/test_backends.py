@@ -38,7 +38,7 @@ class BackendTest(TestCase):
     def test_email_backend_setting(self):
         """ """
         old_email_backend = getattr(settings, 'EMAIL_BACKEND', None)
-        old_post_office_backend = getattr(settings, 'POST_OFFICE_BACKEND', None)
+        getattr(settings, 'POST_OFFICE_BACKEND', None)
         if hasattr(settings, 'EMAIL_BACKEND'):
             delattr(settings, 'EMAIL_BACKEND')
         if hasattr(settings, 'POST_OFFICE_BACKEND'):

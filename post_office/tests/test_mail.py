@@ -583,6 +583,37 @@ class MailTest(TestCase):
         # Assert that running time is less than 3 seconds (2 seconds timeout + 1 second buffer)
         self.assertTrue(end_time - start_time < timezone.timedelta(seconds=3))
 
+    @override_settings(POST_OFFICE={'BATCH_DELIVERY_TIMEOUT': 2, 'USE_MODERN_SENDER': True, 'MAX_RETRIES': 1, 'BACKENDS': {'slow_backend': 'post_office.tests.test_mail.SlowTestBackend'}})
+    def test_modern_sender_timeout(self):
+        """
+        Ensure that _send_many() handles timeout gracefully without raising an exception.
+        Timed-out emails should be marked as requeued/failed.
+        """
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='bob@example.com',
+            subject='Test',
+            message='Test message',
+            status=STATUS.queued,
+            backend_alias='slow_backend',
+        )
+        start_time = timezone.now()
+        # With USE_MODERN_SENDER=True, timeout should be handled gracefully
+        sent, failed, requeued = send_queued()
+        end_time = timezone.now()
+
+        # Should complete within timeout + buffer (not hang for 5s)
+        self.assertTrue(end_time - start_time < timezone.timedelta(seconds=3))
+
+        # No emails sent (timed out), 1 requeued
+        self.assertEqual(sent, 0)
+        self.assertEqual(requeued, 1)
+
+        # Email should be marked as requeued (first failure)
+        email.refresh_from_db()
+        self.assertEqual(email.status, STATUS.requeued)
+        self.assertEqual(email.number_of_retries, 1)
+
     @patch('post_office.signals.email_queued.send')
     def test_backend_signal(self, mock):
         """

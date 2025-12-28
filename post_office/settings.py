@@ -131,6 +131,15 @@ def get_batch_delivery_timeout():
     return get_config().get('BATCH_DELIVERY_TIMEOUT', 180)
 
 
+def get_use_modern_sender():
+    """
+    When True, uses ThreadPoolExecutor with non-blocking shutdown for sending emails.
+    When False, uses the legacy multiprocessing.dummy.Pool implementation.
+    Default is False for backward compatibility.
+    """
+    return get_config().get('USE_MODERN_SENDER', False)
+
+
 def get_file_storage():
     if storage_name := get_config().get('FILE_STORAGE', None):
         return storages[storage_name]

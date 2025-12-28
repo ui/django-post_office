@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Any, Optional
 
 from django.conf import settings
@@ -26,6 +27,7 @@ from .settings import (
     get_retry_timedelta,
     get_sending_order,
     get_threads_per_process,
+    get_use_modern_sender,
 )
 from .signals import email_queued
 from .utils import (
@@ -301,13 +303,16 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
     if log_level is None:
         log_level = get_log_level()
 
+    # Choose sender function based on setting
+    send_func = _send_many if get_use_modern_sender() else _send_bulk
+
     if queued_emails:
         # Don't use more processes than number of emails
         if total_email < processes:
             processes = total_email
 
         if processes == 1:
-            total_sent, total_failed, total_requeued = _send_bulk(
+            total_sent, total_failed, total_requeued = send_func(
                 emails=queued_emails,
                 uses_multiprocessing=False,
                 log_level=log_level,
@@ -319,7 +324,7 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
 
             tasks = []
             for email_list in email_lists:
-                tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
+                tasks.append(pool.apply_async(send_func, args=(email_list,)))
 
             timeout = get_batch_delivery_timeout()
             results = []
@@ -327,14 +332,13 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
             # Wait for all tasks to complete with a timeout
             # The get method is used with a timeout to wait for each result
             for task in tasks:
-                results.append(task.get(timeout=timeout))
-            # for task in tasks:
-            #     try:
-            #         # Wait for all tasks to complete with a timeout
-            #         # The get method is used with a timeout to wait for each result
-            #         results.append(task.get(timeout=timeout))
-            #     except (TimeoutError, ContextTimeoutError):
-            #         logger.exception("Process timed out after %d seconds" % timeout)
+                try:
+                    results.append(task.get(timeout=timeout))
+                except TimeoutError:
+                    # Log warning and continue - the process may still complete in background
+                    # and update the DB. Emails will be picked up in next send_queued() run.
+                    logger.warning('Process timed out after %d seconds', timeout)
+                    results.append((0, 0, 0))
 
             # results = pool.map(_send_bulk, email_lists)
             pool.terminate()
@@ -416,6 +420,19 @@ def _send_bulk(
     pool.close()
     pool.join()
 
+    return _finalize_send(sent_emails, failed_emails, email_count, log_level)
+
+
+def _finalize_send(
+    sent_emails: list[Email],
+    failed_emails: list[tuple[Email, Exception]],
+    email_count: int,
+    log_level: int,
+) -> tuple[int, int, int]:
+    """
+    Common finalization logic for updating email statuses and creating logs.
+    Used by both _send_bulk and _send_many.
+    """
     connections.close()
 
     # Update statuses of sent emails
@@ -477,6 +494,81 @@ def _send_bulk(
     )
 
     return len(sent_emails), num_failed, num_requeued
+
+
+def _send_many(
+    emails: Sequence[Email], uses_multiprocessing: bool = True, log_level: Optional[int] = None
+) -> tuple[int, int, int]:
+    """
+    Modern implementation using ThreadPoolExecutor with non-blocking shutdown.
+    At-least-once delivery semantics: timed-out emails may be duplicated on retry.
+    """
+    if uses_multiprocessing:
+        db_connection.close()
+
+    if log_level is None:
+        log_level = get_log_level()
+    assert log_level is not None
+
+    sent_emails = []
+    failed_emails = []  # List of (email, exception) tuples
+    emails_to_send = []
+    email_count = len(emails)
+
+    logger.info('Process started, sending %s emails' % email_count)
+
+    # Prepare emails before we send these to threads for sending
+    # So we don't need to access the DB from within threads
+    for email in emails:
+        try:
+            email.prepare_email_message()
+            emails_to_send.append(email)
+        except Exception as e:
+            logger.exception('Failed to prepare email #%d' % email.id)
+            failed_emails.append((email, e))
+
+    # Early return if no emails to send (avoids ThreadPoolExecutor(max_workers=0) ValueError)
+    if not emails_to_send:
+        return _finalize_send(sent_emails, failed_emails, email_count, log_level)
+
+    number_of_threads = min(get_threads_per_process(), len(emails_to_send))
+    timeout = get_batch_delivery_timeout()
+
+    # Ensure at least 1 thread (handles THREADS_PER_PROCESS=0 misconfiguration)
+    number_of_threads = max(1, number_of_threads)
+
+    executor = ThreadPoolExecutor(max_workers=number_of_threads)
+    try:
+        future_to_email = {
+            executor.submit(_send_email, email, log_level): email
+            for email in emails_to_send
+        }
+
+        done, not_done = wait(future_to_email.keys(), timeout=timeout)
+
+        # Collect results from completed futures
+        for future in done:
+            email = future_to_email[future]
+            try:
+                success, exception = future.result()
+                if success:
+                    sent_emails.append(email)
+                else:
+                    failed_emails.append((email, exception))
+            except Exception as e:
+                # Unexpected error (shouldn't happen, but be safe)
+                failed_emails.append((email, e))
+
+        # Handle timed-out futures
+        for future in not_done:
+            email = future_to_email[future]
+            future.cancel()
+            logger.warning('Email #%d timed out after %d seconds', email.id, timeout)
+            failed_emails.append((email, TimeoutError(f'Delivery timed out after {timeout}s')))
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+
+    return _finalize_send(sent_emails, failed_emails, email_count, log_level)
 
 
 def send_queued_mail_until_done(
