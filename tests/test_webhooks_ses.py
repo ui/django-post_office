@@ -162,6 +162,20 @@ class SESWebhookHandlerTest(TestCase):
         events = self.handler.parse_events(request)
         self.assertEqual(len(events), 0)
 
+    def test_parse_unknown_notification_type(self):
+        """Test that unknown notification types are ignored."""
+        message = {
+            'notificationType': 'UnknownType',
+            'mail': {
+                'messageId': 'abc123',
+                'destination': ['user@example.com'],
+            },
+        }
+        payload = self._make_sns_payload(message)
+        request = self._make_request(payload)
+        events = self.handler.parse_events(request)
+        self.assertEqual(len(events), 0)
+
 
 @mock.patch('post_office.webhooks.ses._get_aws_certificate')
 class SESSignatureVerificationTest(TestCase):
@@ -258,17 +272,3 @@ class SESSignatureVerificationTest(TestCase):
         for url in invalid_urls:
             with self.subTest(url=url):
                 self.assertFalse(_is_valid_cert_url(url), f'Expected invalid: {url}')
-
-    def test_parse_unknown_notification_type(self):
-        """Test that unknown notification types are ignored."""
-        message = {
-            'notificationType': 'UnknownType',
-            'mail': {
-                'messageId': 'abc123',
-                'destination': ['user@example.com'],
-            },
-        }
-        payload = self._make_sns_payload(message)
-        request = self._make_request(payload)
-        events = self.handler.parse_events(request)
-        self.assertEqual(len(events), 0)
