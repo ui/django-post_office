@@ -118,6 +118,7 @@ def verify_ses_signature(payload: dict) -> bool:
         logger.warning('SES Signature Verification Failed: %s', exc)
         return False
 
+
 class SESWebhookHandler(BaseWebhookHandler):
     """
     Webhook handler for AWS SES via SNS.
@@ -226,7 +227,6 @@ class SESWebhookHandler(BaseWebhookHandler):
                 'subscribe_url': subscribe_url,
             }
         )
-
 
     def _handle_notification(self, payload: dict) -> HttpResponse:
         """Handle SNS notification containing SES event."""

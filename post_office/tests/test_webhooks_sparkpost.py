@@ -88,11 +88,14 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_injection_event(self):
         """Test parsing injection event."""
-        payload = self._wrap_event('injection', {
-            'rcpt_to': 'test@example.com',
-            'message_id': 'msg-123',
-            'timestamp': '1703683200',
-        })
+        payload = self._wrap_event(
+            'injection',
+            {
+                'rcpt_to': 'test@example.com',
+                'message_id': 'msg-123',
+                'timestamp': '1703683200',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -104,10 +107,13 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_delivery_event(self):
         """Test parsing delivery event."""
-        payload = self._wrap_event('delivery', {
-            'rcpt_to': 'test@example.com',
-            'message_id': 'msg-123',
-        })
+        payload = self._wrap_event(
+            'delivery',
+            {
+                'rcpt_to': 'test@example.com',
+                'message_id': 'msg-123',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -116,9 +122,12 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_open_event(self):
         """Test parsing open event."""
-        payload = self._wrap_event('open', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'open',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -127,9 +136,12 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_initial_open_event(self):
         """Test parsing initial_open event."""
-        payload = self._wrap_event('initial_open', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'initial_open',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -138,9 +150,12 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_click_event(self):
         """Test parsing click event."""
-        payload = self._wrap_event('click', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'click',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -149,9 +164,12 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_delay_event(self):
         """Test parsing delay event."""
-        payload = self._wrap_event('delay', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'delay',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -160,9 +178,12 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_spam_complaint_event(self):
         """Test parsing spam_complaint event."""
-        payload = self._wrap_event('spam_complaint', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'spam_complaint',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -171,9 +192,12 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_list_unsubscribe_event(self):
         """Test parsing list_unsubscribe event."""
-        payload = self._wrap_event('list_unsubscribe', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'list_unsubscribe',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -182,9 +206,12 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_link_unsubscribe_event(self):
         """Test parsing link_unsubscribe event."""
-        payload = self._wrap_event('link_unsubscribe', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'link_unsubscribe',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -193,10 +220,13 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_out_of_band_event(self):
         """Test parsing out_of_band bounce event."""
-        payload = self._wrap_event('out_of_band', {
-            'rcpt_to': 'test@example.com',
-            'bounce_class': '10',  # Hard bounce
-        })
+        payload = self._wrap_event(
+            'out_of_band',
+            {
+                'rcpt_to': 'test@example.com',
+                'bounce_class': '10',  # Hard bounce
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -205,10 +235,13 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_policy_rejection_event(self):
         """Test parsing policy_rejection event."""
-        payload = self._wrap_event('policy_rejection', {
-            'rcpt_to': 'test@example.com',
-            'bounce_class': '25',  # Admin bounce
-        })
+        payload = self._wrap_event(
+            'policy_rejection',
+            {
+                'rcpt_to': 'test@example.com',
+                'bounce_class': '25',  # Admin bounce
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -230,10 +263,13 @@ class SparkPostWebhookHandlerTest(TestCase):
 
         for bounce_class, expected_status, description in test_cases:
             with self.subTest(description=description, bounce_class=bounce_class):
-                payload = self._wrap_event('bounce', {
-                    'rcpt_to': 'test@example.com',
-                    'bounce_class': bounce_class,
-                })
+                payload = self._wrap_event(
+                    'bounce',
+                    {
+                        'rcpt_to': 'test@example.com',
+                        'bounce_class': bounce_class,
+                    },
+                )
                 request = self._make_request(payload)
                 events = self.handler.parse_events(request)
 
@@ -280,19 +316,25 @@ class SparkPostWebhookHandlerTest(TestCase):
 
     def test_parse_event_without_recipient(self):
         """Test that events without recipient are skipped."""
-        payload = self._wrap_event('delivery', {
-            'message_id': 'msg-123',
-            # No rcpt_to
-        })
+        payload = self._wrap_event(
+            'delivery',
+            {
+                'message_id': 'msg-123',
+                # No rcpt_to
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
         self.assertEqual(len(events), 0)
 
     def test_parse_unknown_event_type(self):
         """Test that unknown event types are skipped."""
-        payload = self._wrap_event('unknown_event', {
-            'rcpt_to': 'test@example.com',
-        })
+        payload = self._wrap_event(
+            'unknown_event',
+            {
+                'rcpt_to': 'test@example.com',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
         self.assertEqual(len(events), 0)
@@ -300,10 +342,13 @@ class SparkPostWebhookHandlerTest(TestCase):
     def test_parse_timestamp(self):
         """Test that Unix timestamps are correctly parsed."""
         # Integer timestamp
-        payload = self._wrap_event('delivery', {
-            'rcpt_to': 'test@example.com',
-            'timestamp': '1703683200',  # 2023-12-27 12:00:00 UTC
-        })
+        payload = self._wrap_event(
+            'delivery',
+            {
+                'rcpt_to': 'test@example.com',
+                'timestamp': '1703683200',  # 2023-12-27 12:00:00 UTC
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
@@ -314,10 +359,13 @@ class SparkPostWebhookHandlerTest(TestCase):
         self.assertEqual(events[0].timestamp.day, 27)
 
         # Fractional timestamp
-        payload = self._wrap_event('delivery', {
-            'rcpt_to': 'test@example.com',
-            'timestamp': '1703683200.123456',
-        })
+        payload = self._wrap_event(
+            'delivery',
+            {
+                'rcpt_to': 'test@example.com',
+                'timestamp': '1703683200.123456',
+            },
+        )
         request = self._make_request(payload)
         events = self.handler.parse_events(request)
 
