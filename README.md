@@ -408,13 +408,19 @@ You may want to set these up via cron to run regularly:
 This section outlines all the settings and configurations that you can
 put in Django's `settings.py` to fine tune `post-office`'s behavior.
 
-### Webhook Handlers
+### Webhook Handlers (Not Yet Released)
 
-`post_office` ships with base webhook handlers you can subclass to handle ESP callbacks.
-Each handler parses provider payloads into a list of `ESPEvent` objects and then calls
-`handle_events()` so you can implement your own persistence logic.
+`post_office` ships with webhook handlers for AWS SES and SparkPost. These handlers
+parse ESP (Email Service Provider) webhook payloads into normalized `ESPEvent` objects
+and call `handle_events()` so you can implement your own persistence logic.
 
-`ESPEvent` fields:
+```python
+from post_office.webhooks import SESWebhookHandler, SparkPostWebhookHandler, ESPEvent
+```
+
+#### ESPEvent
+
+Each webhook event is normalized into an `ESPEvent` object:
 
 ```python
 ESPEvent(
@@ -428,12 +434,27 @@ ESPEvent(
 )
 ```
 
-To implement your own handler, subclass the provider handler and override `handle_events()`.
+The `delivery_status` field uses `RecipientDeliveryStatus` with the following values:
+
+- `ACCEPTED`
+- `DELIVERED`
+- `OPENED`
+- `CLICKED`
+- `DEFERRED`
+- `SOFT_BOUNCED`
+- `UNDETERMINED_BOUNCED`
+- `HARD_BOUNCED`
+- `SPAM_COMPLAINT`
+- `UNSUBSCRIBED`
+
+#### SESWebhookHandler
+
+Handles AWS SES notifications via SNS. Supports delivery, bounce (soft/hard/undetermined),
+and complaint events.
 
 ```python
 from django.urls import path
-from post_office.webhooks.base import ESPEvent
-from post_office.webhooks.ses import SESWebhookHandler
+from post_office.webhooks import SESWebhookHandler, ESPEvent
 
 
 class MySESWebhookHandler(SESWebhookHandler):
@@ -449,24 +470,62 @@ urlpatterns = [
 ]
 ```
 
-Configure webhook settings in `POST_OFFICE`:
+Configure in `POST_OFFICE`:
 
 ```python
 POST_OFFICE = {
     'WEBHOOKS': {
         'SES': {
-            'VERIFY_SIGNATURE': True,  # default, requires cryptography
+            'VERIFY_SIGNATURE': True,  # default, requires cryptography package
         },
     },
 }
 ```
 
 Signature verification uses the SNS `SigningCertURL` and requires the `cryptography`
-package. If you want to skip signature verification (for local development only),
-set `VERIFY_SIGNATURE` to `False`.
+package. Set `VERIFY_SIGNATURE` to `False` for local development only.
 
-The handler also recognizes SNS subscription confirmations; you should visit the
-`SubscribeURL` from AWS to complete the subscription.
+The handler also recognizes SNS subscription confirmations; visit the `SubscribeURL`
+from AWS to complete the subscription.
+
+#### SparkPostWebhookHandler
+
+Handles SparkPost webhook events including delivery, bounce, open, click, spam complaint,
+and unsubscribe events.
+
+```python
+from django.urls import path
+from post_office.webhooks import SparkPostWebhookHandler, ESPEvent
+
+
+class MySparkPostWebhookHandler(SparkPostWebhookHandler):
+    def handle_events(self, events: list[ESPEvent], payload):
+        for event in events:
+            # Add your own persistence logic here.
+            pass
+
+
+urlpatterns = [
+    path('webhooks/sparkpost/', MySparkPostWebhookHandler.as_view(), name='sparkpost-webhook'),
+]
+```
+
+Configure in `POST_OFFICE`:
+
+```python
+POST_OFFICE = {
+    'WEBHOOKS': {
+        'SPARKPOST': {
+            'USERNAME': 'your-webhook-username',
+            'PASSWORD': 'your-webhook-password',
+            'VERIFY_SIGNATURE': True,  # default
+        },
+    },
+}
+```
+
+SparkPost uses HTTP Basic Authentication. Configure `USERNAME` and `PASSWORD` to match
+your SparkPost webhook settings.
 
 
 ### File Storage
