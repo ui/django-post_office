@@ -568,10 +568,12 @@ class MailTest(TestCase):
                 expires_at=timezone.datetime(2020, 5, 18, 9, 0, 0),
             )
 
-    @override_settings(POST_OFFICE={
-        'BACKENDS': {'slow_backend': 'tests.test_mail.SlowTestBackend'},
-        'BATCH_DELIVERY_TIMEOUT': 2,
-    })
+    @override_settings(
+        POST_OFFICE={
+            'BACKENDS': {'slow_backend': 'tests.test_mail.SlowTestBackend'},
+            'BATCH_DELIVERY_TIMEOUT': 2,
+        }
+    )
     def test_batch_delivery_timeout(self):
         """
         Ensure that batch delivery timeout is respected.
