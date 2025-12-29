@@ -10,6 +10,7 @@ from django.template import engines as template_engines
 from django.utils.module_loading import import_string
 
 import datetime
+import django
 
 
 def get_backend(alias='default'):
