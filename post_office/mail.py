@@ -1,4 +1,7 @@
 from collections.abc import Sequence
+from email.utils import make_msgid
+from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 from typing import Any, Optional
 
 from django.conf import settings
@@ -7,14 +10,11 @@ from django.db import connection as db_connection
 from django.db.models import Q, QuerySet
 from django.template import Context, Template
 from django.utils import timezone
-from email.utils import make_msgid
-from multiprocessing import Pool
-from multiprocessing.dummy import Pool as ThreadPool
 
 from .connections import connections
-from .lockfile import default_lockfile, FileLock, FileLocked
+from .lockfile import FileLock, FileLocked, default_lockfile
 from .logutils import setup_loghandlers
-from .models import Email, EmailTemplate, Log, PRIORITY, STATUS
+from .models import PRIORITY, STATUS, Email, EmailTemplate, Log
 from .settings import (
     get_available_backends,
     get_batch_delivery_timeout,
@@ -315,30 +315,18 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
         else:
             email_lists = split_emails(queued_emails, processes)
 
-            pool = Pool(processes)
+            with Pool(processes) as pool:
+                tasks = []
+                for email_list in email_lists:
+                    tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
 
-            tasks = []
-            for email_list in email_lists:
-                tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
+                timeout = get_batch_delivery_timeout()
+                results = []
 
-            timeout = get_batch_delivery_timeout()
-            results = []
-
-            # Wait for all tasks to complete with a timeout
-            # The get method is used with a timeout to wait for each result
-            for task in tasks:
-                results.append(task.get(timeout=timeout))
-            # for task in tasks:
-            #     try:
-            #         # Wait for all tasks to complete with a timeout
-            #         # The get method is used with a timeout to wait for each result
-            #         results.append(task.get(timeout=timeout))
-            #     except (TimeoutError, ContextTimeoutError):
-            #         logger.exception("Process timed out after %d seconds" % timeout)
-
-            # results = pool.map(_send_bulk, email_lists)
-            pool.terminate()
-            pool.join()
+                # Wait for all tasks to complete with a timeout
+                # The get method is used with a timeout to wait for each result
+                for task in tasks:
+                    results.append(task.get(timeout=timeout))
 
             total_sent = sum(result[0] for result in results)
             total_failed = sum(result[1] for result in results)
@@ -389,32 +377,21 @@ def _send_bulk(
             failed_emails.append((email, e))
 
     number_of_threads = min(get_threads_per_process(), email_count)
-    pool = ThreadPool(number_of_threads)
+    with ThreadPool(number_of_threads) as pool:
+        results = []
+        for email in emails_to_send:
+            results.append((email, pool.apply_async(_send_email, args=(email, log_level))))
 
-    results = []
-    for email in emails_to_send:
-        results.append((email, pool.apply_async(_send_email, args=(email, log_level))))
+        timeout = get_batch_delivery_timeout()
 
-    timeout = get_batch_delivery_timeout()
-
-    # Wait for all tasks to complete with a timeout
-    # The get method is used with a timeout to wait for each result
-    for email, result in results:
-        success, exception = result.get(timeout=timeout)
-        if success:
-            sent_emails.append(email)
-        else:
-            failed_emails.append((email, exception))
-    # for result in results:
-    #     try:
-    #         # Wait for all tasks to complete with a timeout
-    #         # The get method is used with a timeout to wait for each result
-    #         result.get(timeout=timeout)
-    #     except TimeoutError:
-    #         logger.exception("Process timed out after %d seconds" % timeout)
-
-    pool.close()
-    pool.join()
+        # Wait for all tasks to complete with a timeout
+        # The get method is used with a timeout to wait for each result
+        for email, result in results:
+            success, exception = result.get(timeout=timeout)
+            if success:
+                sent_emails.append(email)
+            else:
+                failed_emails.append((email, exception))
 
     connections.close()
 
