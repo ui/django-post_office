@@ -1,10 +1,9 @@
+import multiprocessing
 from collections.abc import Sequence
 from email.utils import make_msgid
-from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 from typing import Any, Optional
 
-import django
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
@@ -38,14 +37,6 @@ from .utils import (
 )
 
 logger = setup_loghandlers('INFO')
-
-
-def pool_initializer():
-    """
-    Initialize the worker process for multiprocessing.
-    Required for Python 3.14+ where the default start method is 'spawn' or 'forkserver'.
-    """
-    django.setup()
 
 
 def _send_email(email: Email, log_level: int) -> tuple[bool, Optional[Exception]]:
@@ -324,8 +315,10 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
         else:
             email_lists = split_emails(queued_emails, processes)
 
-            # pool_initializer is required for Python 3.14+ where the default start method is 'spawn' or 'forkserver'
-            with Pool(processes, initializer=pool_initializer) as pool:
+            # Use 'fork' context to ensure child processes inherit Django setup.
+            # This is required for Python 3.14+ where the default start method is 'forkserver' on Linux.
+            ctx = multiprocessing.get_context('fork')
+            with ctx.Pool(processes) as pool:
                 tasks = []
                 for email_list in email_lists:
                     tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
