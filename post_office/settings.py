@@ -1,6 +1,9 @@
 import warnings
 
+import django
 from django.conf import settings
+
+PRE_DJANGO_6 = django.VERSION < (6, 0)
 from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
 from django.core.files.storage import default_storage, storages

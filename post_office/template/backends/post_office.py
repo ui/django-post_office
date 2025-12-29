@@ -5,6 +5,8 @@ from django.template.backends.base import BaseEngine
 from django.template.backends.django import Template as DjangoTemplate, reraise, get_installed_libraries
 from django.template.engine import Engine
 
+from post_office.settings import PRE_DJANGO_6
+
 
 class Template(DjangoTemplate):
     def __init__(self, template, backend):
@@ -13,7 +15,8 @@ class Template(DjangoTemplate):
 
     def attach_related(self, email_message):
         assert isinstance(email_message, EmailMultiAlternatives), 'Parameter must be of type EmailMultiAlternatives'
-        email_message.mixed_subtype = 'related'
+        if PRE_DJANGO_6:
+            email_message.mixed_subtype = 'related'
         for attachment in self.template._attached_images:
             email_message.attach(attachment)
 

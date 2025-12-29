@@ -4,7 +4,6 @@ from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
-from django.core.mail.message import SafeMIMEText
 from django.db import models
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
@@ -19,6 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from .fields import CommaSeparatedEmailField
 from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
+from .settings import PRE_DJANGO_6
 
 
 @admin.display(description='Message')
@@ -158,6 +158,19 @@ class EmailAdmin(admin.ModelAdmin):
     def use_template(self, instance):
         return bool(instance.template_id)
 
+    def _is_text_body(self, part):
+        """Check if a message part is a text body (not an attachment)."""
+        if PRE_DJANGO_6:
+            from django.core.mail.message import SafeMIMEText
+            return isinstance(part, SafeMIMEText)
+        else:
+            # Django 6+: check content type and exclude attachments
+            content_type = part.get_content_type()
+            if content_type not in ('text/plain', 'text/html'):
+                return False
+            # Exclude parts marked as attachments
+            return part.get_content_disposition() != 'attachment'
+
     def get_fieldsets(self, request, obj=None):
         fields = ['from_email', 'to', 'cc', 'bcc', 'priority', ('status', 'scheduled_time')]
         if obj.message_id:
@@ -165,7 +178,7 @@ class EmailAdmin(admin.ModelAdmin):
         fieldsets = [(None, {'fields': fields})]
         has_plaintext_content, has_html_content = False, False
         for part in obj.email_message().message().walk():
-            if not isinstance(part, SafeMIMEText):
+            if not self._is_text_body(part):
                 continue
             content_type = part.get_content_type()
             if content_type == 'text/plain':
@@ -189,18 +202,18 @@ class EmailAdmin(admin.ModelAdmin):
 
     @admin.display(description=_('Mail Body'))
     def render_plaintext_body(self, instance):
-        for message in instance.email_message().message().walk():
-            if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/plain':
-                return format_html('<pre>{}</pre>', message.get_payload())
+        for part in instance.email_message().message().walk():
+            if self._is_text_body(part) and part.get_content_type() == 'text/plain':
+                return format_html('<pre>{}</pre>', part.get_payload())
 
     @admin.display(description=_('HTML Body'))
     def render_html_body(self, instance):
         pattern = re.compile('cid:([0-9a-f]{32})')
         url = reverse('admin:post_office_email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
         url = url.replace(32 * '0', r'\1')
-        for message in instance.email_message().message().walk():
-            if isinstance(message, SafeMIMEText) and message.get_content_type() == 'text/html':
-                payload = message.get_payload(decode=True).decode('utf-8')
+        for part in instance.email_message().message().walk():
+            if self._is_text_body(part) and part.get_content_type() == 'text/html':
+                payload = part.get_payload(decode=True).decode('utf-8')
                 return clean_html(pattern.sub(url, payload))
 
     def fetch_email_image(self, request, pk, content_id):
