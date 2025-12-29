@@ -1,38 +1,112 @@
-from django.test import TestCase, override_settings
+import os
+import platform
 
-from ..settings import get_file_storage
+if platform.system() in ['Darwin']:
+    from multiprocessing import set_start_method
+
+    # required since Python-3.8. See #319
+    set_start_method('fork')
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+    },
+}
+
+# Default values: True
+# POST_OFFICE_CACHE = True
+# POST_OFFICE_TEMPLATE_CACHE = True
 
 
-class TestFileStorageSettings(TestCase):
-    @override_settings(
-        STORAGES={
-            'default': {
-                'BACKEND': 'django.core.files.storage.FileSystemStorage',
-            },
-            'staticfiles': {
-                'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
-            },
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'TIMEOUT': 36000,
+        'KEY_PREFIX': 'post-office',
+    },
+    'post_office': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'TIMEOUT': 36000,
+        'KEY_PREFIX': 'post-office',
+    },
+}
+
+POST_OFFICE = {
+    'BACKENDS': {
+        'default': 'django.core.mail.backends.dummy.EmailBackend',
+        'locmem': 'django.core.mail.backends.locmem.EmailBackend',
+        'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
+        'smtp': 'django.core.mail.backends.smtp.EmailBackend',
+        'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
+        'slow_backend': 'post_office.tests.test_mail.SlowTestBackend',
+    },
+    'CELERY_ENABLED': False,
+    'MAX_RETRIES': 2,
+    'MESSAGE_ID_ENABLED': True,
+    'BATCH_DELIVERY_TIMEOUT': 2,
+    'MESSAGE_ID_FQDN': 'example.com',
+}
+
+
+INSTALLED_APPS = (
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.sessions',
+    'post_office',
+)
+
+SECRET_KEY = 'a'
+
+ROOT_URLCONF = 'post_office.tests.test_urls'
+
+DEFAULT_FROM_EMAIL = 'webmaster@example.com'
+
+MIDDLEWARE = [
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+]
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.request',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+            ],
         },
-        POST_OFFICE={},
-    )
-    def test_default_file_storage(self):
-        self.assertEqual(get_file_storage().__class__.__name__, 'FileSystemStorage')
+    },
+    {
+        'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
+        'APP_DIRS': True,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.template.context_processors.request',
+            ]
+        },
+    },
+]
 
-    @override_settings(
-        STORAGES={
-            'default': {
-                'BACKEND': 'django.core.files.storage.FileSystemStorage',
-            },
-            'staticfiles': {
-                'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
-            },
-            'post_office': {
-                'BACKEND': 'django.core.files.storage.InMemoryStorage',
-            },
-        },
-        POST_OFFICE={
-            'FILE_STORAGE': 'post_office',
-        },
-    )
-    def test_configured_file_storage(self):
-        self.assertEqual(get_file_storage().__class__.__name__, 'InMemoryStorage')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
