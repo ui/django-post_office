@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import connection
 from django.test import TransactionTestCase
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -49,14 +50,6 @@ class SlowTestBackend(mail.backends.base.BaseEmailBackend):
 
 
 class MailTest(TransactionTestCase):
-    def setUp(self):
-        # Ensure database connection is properly established before each test
-        # This is needed because TransactionTestCase can leave the connection in a bad state
-        # when combined with bulk_create operations
-        from django.db import connection
-
-        connection.ensure_connection()
-
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_send_queued_mail(self):
         """
@@ -276,6 +269,10 @@ class MailTest(TransactionTestCase):
 
     def test_send_many(self):
         """Test send_many creates the right emails"""
+        # Ensure database connection is properly established before each test
+        # This is needed because TransactionTestCase can leave the connection in a bad state
+        # when combined with bulk_create operations
+        connection.ensure_connection()
         kwargs_list = [
             {'sender': 'from@example.com', 'recipients': ['a@example.com']},
             {'sender': 'from@example.com', 'recipients': ['b@example.com']},
