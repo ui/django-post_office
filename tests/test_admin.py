@@ -26,12 +26,12 @@ class EmailAdminTest(TestCase):
         email = Email.objects.create(to=['to@example.com'], from_email='from@example.com', subject='Subject')
 
         mt = 'text/plain'
-        attachment_1 = Attachment(mimetype=mt, headers={"Doesn't Have Content-Disposition Header": 'Nope'})
+        attachment_1 = Attachment(mimetype=mt, headers={'X-Custom-Header': 'Nope'})
         attachment_1.file.save('test_attachment_1.txt', content=ContentFile('test file content 1'), save=True)
         email.attachments.add(attachment_1)
 
         attachment_2 = Attachment(
-            mimetype=mt, headers={'Content-Disposition': "Content-Disposition header doesn't start with 'inline'"}
+            mimetype=mt, headers={'Content-Disposition': 'attachment; filename="test.txt"'}
         )
         attachment_2.file.save('test_attachment_2.txt', content=ContentFile('test file content 2'), save=True)
         email.attachments.add(attachment_2)
