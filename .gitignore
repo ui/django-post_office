@@ -39,3 +39,4 @@ ghostdriver.log
 .mypy_cache
 
 post_office_attachments
+*.sqlite3

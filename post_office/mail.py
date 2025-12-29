@@ -4,6 +4,7 @@ from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool
 from typing import Any, Optional
 
+import django
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
@@ -26,7 +27,6 @@ from .settings import (
     get_retry_timedelta,
     get_sending_order,
     get_threads_per_process,
-    pool_initializer,
 )
 from .signals import email_queued
 from .utils import (
@@ -38,6 +38,14 @@ from .utils import (
 )
 
 logger = setup_loghandlers('INFO')
+
+
+def pool_initializer():
+    """
+    Initialize the worker process for multiprocessing.
+    Required for Python 3.14+ where the default start method is 'spawn' or 'forkserver'.
+    """
+    django.setup()
 
 
 def _send_email(email: Email, log_level: int) -> tuple[bool, Optional[Exception]]:

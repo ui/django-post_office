@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
@@ -48,7 +48,7 @@ class SlowTestBackend(mail.backends.base.BaseEmailBackend):
         time.sleep(5)
 
 
-class MailTest(TestCase):
+class MailTest(TransactionTestCase):
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_send_queued_mail(self):
         """

@@ -10,7 +10,6 @@ from django.template import engines as template_engines
 from django.utils.module_loading import import_string
 
 import datetime
-import django
 
 
 def get_backend(alias='default'):
@@ -166,8 +165,3 @@ def get_webhook_config(provider: str) -> dict:
     return webhooks_config.get(provider, {})
 
 
-def pool_initializer():
-    """
-    Initialize the worker process for multiprocessing.
-    """
-    django.setup()
