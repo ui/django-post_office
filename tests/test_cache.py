@@ -2,7 +2,7 @@ from django.conf import settings
 from django.test import TestCase
 
 from post_office import cache
-from ..settings import get_cache_backend
+from post_office.settings import get_cache_backend
 
 
 class CacheTest(TestCase):
