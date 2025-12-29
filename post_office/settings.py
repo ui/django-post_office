@@ -1,18 +1,16 @@
+import datetime
 import warnings
 
 import django
 from django.conf import settings
-
-PRE_DJANGO_6 = django.VERSION < (6, 0)
 from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
 from django.core.files.storage import default_storage, storages
 from django.core.mail.utils import DNS_NAME
 from django.template import engines as template_engines
-
 from django.utils.module_loading import import_string
 
-import datetime
+PRE_DJANGO_6 = django.VERSION < (6, 0)
 
 
 def get_backend(alias='default'):

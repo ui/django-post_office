@@ -162,6 +162,7 @@ class EmailAdmin(admin.ModelAdmin):
         """Check if a message part is a text body (not an attachment)."""
         if PRE_DJANGO_6:
             from django.core.mail.message import SafeMIMEText
+
             return isinstance(part, SafeMIMEText)
         else:
             # Django 6+: check content type and exclude attachments
