@@ -163,5 +163,3 @@ def get_webhook_config(provider: str) -> dict:
     """
     webhooks_config = get_config().get('WEBHOOKS', {})
     return webhooks_config.get(provider, {})
-
-

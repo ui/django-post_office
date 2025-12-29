@@ -30,9 +30,7 @@ class EmailAdminTest(TestCase):
         attachment_1.file.save('test_attachment_1.txt', content=ContentFile('test file content 1'), save=True)
         email.attachments.add(attachment_1)
 
-        attachment_2 = Attachment(
-            mimetype=mt, headers={'Content-Disposition': 'attachment; filename="test.txt"'}
-        )
+        attachment_2 = Attachment(mimetype=mt, headers={'Content-Disposition': 'attachment; filename="test.txt"'})
         attachment_2.file.save('test_attachment_2.txt', content=ContentFile('test file content 2'), save=True)
         email.attachments.add(attachment_2)
 
