@@ -1,6 +1,6 @@
 from django.test import TestCase, override_settings
 
-from ..settings import get_file_storage
+from post_office.settings import get_file_storage
 
 
 class TestFileStorageSettings(TestCase):

@@ -12,8 +12,8 @@ from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.utils import timezone
 
-from ..models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
-from ..mail import send
+from post_office.models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
+from post_office.mail import send
 
 
 class ModelTest(TestCase):

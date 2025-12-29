@@ -2,8 +2,8 @@ from django.contrib.admin.sites import AdminSite
 from django.core.files.base import ContentFile
 from django.test import TestCase
 
-from ..admin import AttachmentInline
-from ..models import Email, Attachment
+from post_office.admin import AttachmentInline
+from post_office.models import Email, Attachment
 
 
 class MockRequest:

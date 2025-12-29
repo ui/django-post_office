@@ -4,9 +4,16 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
-from ..utils import create_attachments, get_email_template, parse_emails, parse_priority, send_mail, split_emails
-from ..validators import validate_email_with_name, validate_comma_separated_emails
+from post_office.models import Email, STATUS, PRIORITY, EmailTemplate, Attachment
+from post_office.utils import (
+    create_attachments,
+    get_email_template,
+    parse_emails,
+    parse_priority,
+    send_mail,
+    split_emails,
+)
+from post_office.validators import validate_email_with_name, validate_comma_separated_emails
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')

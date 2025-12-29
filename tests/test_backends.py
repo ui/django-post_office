@@ -9,8 +9,8 @@ from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from ..models import PRIORITY, STATUS, Email
-from ..settings import get_backend
+from post_office.models import PRIORITY, STATUS, Email
+from post_office.settings import get_backend
 
 
 class ErrorRaisingBackend(BaseEmailBackend):

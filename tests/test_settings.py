@@ -37,10 +37,10 @@ POST_OFFICE = {
     'BACKENDS': {
         'default': 'django.core.mail.backends.dummy.EmailBackend',
         'locmem': 'django.core.mail.backends.locmem.EmailBackend',
-        'error': 'post_office.tests.test_backends.ErrorRaisingBackend',
+        'error': 'tests.test_backends.ErrorRaisingBackend',
         'smtp': 'django.core.mail.backends.smtp.EmailBackend',
-        'connection_tester': 'post_office.tests.test_mail.ConnectionTestingBackend',
-        'slow_backend': 'post_office.tests.test_mail.SlowTestBackend',
+        'connection_tester': 'tests.test_mail.ConnectionTestingBackend',
+        'slow_backend': 'tests.test_mail.SlowTestBackend',
     },
     'CELERY_ENABLED': False,
     'MAX_RETRIES': 2,
@@ -71,7 +71,7 @@ INSTALLED_APPS = (
 
 SECRET_KEY = 'a'
 
-ROOT_URLCONF = 'post_office.test_urls'
+ROOT_URLCONF = 'tests.test_urls'
 
 DEFAULT_FROM_EMAIL = 'webmaster@example.com'
 
@@ -102,7 +102,7 @@ TEMPLATES = [
     {
         'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
         'APP_DIRS': True,
-        'DIRS': [os.path.join(BASE_DIR, 'tests/templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'OPTIONS': {
             'context_processors': [
                 'django.contrib.auth.context_processors.auth',
@@ -117,6 +117,6 @@ TEMPLATES = [
     },
 ]
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'tests/static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

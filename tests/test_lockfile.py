@@ -3,7 +3,7 @@ import os
 
 from django.test import TestCase
 
-from ..lockfile import FileLock, FileLocked
+from post_office.lockfile import FileLock, FileLocked
 
 
 def setup_fake_lock(lock_file_name):
