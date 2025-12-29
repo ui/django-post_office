@@ -26,6 +26,7 @@ from .settings import (
     get_retry_timedelta,
     get_sending_order,
     get_threads_per_process,
+    pool_initializer,
 )
 from .signals import email_queued
 from .utils import (
@@ -315,7 +316,8 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
         else:
             email_lists = split_emails(queued_emails, processes)
 
-            with Pool(processes) as pool:
+            # pool_initializer is required for Python 3.14+ where the default start method is 'spawn' or 'forkserver'
+            with Pool(processes, initializer=pool_initializer) as pool:
                 tasks = []
                 for email_list in email_lists:
                     tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
