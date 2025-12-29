@@ -3,6 +3,8 @@ Changelog
 
 ## Unreleased
 * Replaced `bleach` with `nh3` for HTML sanitization. `bleach` has been deprecated since 2023. Thanks @selwin!
+* Added `SESWebhookHandler` and `SparkPostWebhookHandler` for handling webhook events (beta feature). Thanks @selwin!
+* Optimized the way templates are fetched during email delivery. Thanks @selwin!
 
 Version 3.10.1 (2025-08-04)
 ---------------------------

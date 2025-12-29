@@ -410,6 +410,8 @@ put in Django's `settings.py` to fine tune `post-office`'s behavior.
 
 ### Webhook Handlers (Not Yet Released)
 
+__Webhook Handlers are still in beta, use at your own risk.__
+
 `post_office` ships with webhook handlers for AWS SES and SparkPost. These handlers
 parse ESP (Email Service Provider) webhook payloads into normalized `ESPEvent` objects
 and call `handle_events()` so you can implement your own persistence logic.
