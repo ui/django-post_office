@@ -169,5 +169,7 @@ def get_webhook_config(provider: str) -> dict:
 def pool_initializer():
     """
     Initialize the worker process for multiprocessing.
+    This is required for Python 3.14+ where the default multiprocessing start method
+    is 'forkserver' on Linux, meaning worker processes don't inherit Django's state.
     """
     django.setup()

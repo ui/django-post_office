@@ -3,11 +3,11 @@ import os
 
 from django.core.files.base import ContentFile
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from django.utils.timezone import now
 
-from post_office.models import Attachment, Email, STATUS
+from post_office.models import STATUS, Attachment, Email
 
 
 class CommandTest(TestCase):
@@ -72,6 +72,14 @@ class CommandTest(TestCase):
         email.save()
         call_command('cleanup_mail', days=30)
         self.assertEqual(Email.objects.count(), 0)
+
+
+class SendQueuedMailCommandTest(TransactionTestCase):
+    """
+    Tests for send_queued_mail command.
+    Uses TransactionTestCase because the command closes/reopens database connections,
+    which is incompatible with TestCase's transaction wrapping.
+    """
 
     TEST_SETTINGS = {
         'BACKENDS': {

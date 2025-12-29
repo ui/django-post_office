@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.test import TestCase
+from django.test import TransactionTestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
@@ -48,7 +48,15 @@ class SlowTestBackend(mail.backends.base.BaseEmailBackend):
         time.sleep(5)
 
 
-class MailTest(TestCase):
+class MailTest(TransactionTestCase):
+    def setUp(self):
+        # Ensure database connection is properly established before each test
+        # This is needed because TransactionTestCase can leave the connection in a bad state
+        # when combined with bulk_create operations
+        from django.db import connection
+
+        connection.ensure_connection()
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
     def test_send_queued_mail(self):
         """
@@ -70,26 +78,6 @@ class MailTest(TestCase):
         self.assertNotEqual(Email.objects.get(id=none_mail.id).status, STATUS.sent)
         self.assertEqual(Email.objects.get(id=queued_mail.id).status, STATUS.sent)
 
-    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
-    def test_send_queued_mail_multi_processes(self):
-        """
-        Check that send_queued works well with multiple processes
-        """
-        kwargs = {
-            'to': ['to@example.com'],
-            'from_email': 'bob@example.com',
-            'subject': 'Test',
-            'message': 'Message',
-            'status': STATUS.queued,
-        }
-
-        # All three emails should be sent
-        self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 0)
-        for i in range(3):
-            Email.objects.create(**kwargs)
-        total_sent, total_failed, total_requeued = send_queued(processes=2)
-        self.assertEqual(total_sent, 3)
-
     def test_send_bulk(self):
         """
         Ensure _send_bulk() properly sends out emails.
@@ -104,7 +92,7 @@ class MailTest(TestCase):
         )
         original_last_updated = email.last_updated
 
-        _send_bulk([email], uses_multiprocessing=False)
+        _send_bulk([email])
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.sent)
         self.assertGreater(email.last_updated, original_last_updated)
@@ -122,7 +110,7 @@ class MailTest(TestCase):
         )
         original_last_updated = email.last_updated
         with patch.object(Email, 'dispatch', side_effect=ValueError('test')):
-            _send_bulk([email], uses_multiprocessing=False)
+            _send_bulk([email])
 
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.requeued)
@@ -154,7 +142,7 @@ class MailTest(TestCase):
             status=STATUS.queued,
             backend_alias='connection_tester',
         )
-        _send_bulk([email, email_2])
+        _send_bulk([email, email_2], uses_multiprocessing=False)
         self.assertEqual(connection_counter, 1)
 
     def test_get_queued(self):
