@@ -48,7 +48,7 @@ POST_OFFICE = {
     'CELERY_ENABLED': False,
     'MAX_RETRIES': 2,
     'MESSAGE_ID_ENABLED': True,
-    'BATCH_DELIVERY_TIMEOUT': 5,
+    'BATCH_DELIVERY_TIMEOUT': 2,
     'MESSAGE_ID_FQDN': 'example.com',
     'WEBHOOKS': {
         'SES': {
