@@ -203,7 +203,7 @@ class HTMLMailTest(TestCase):
     @override_settings(
         EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
         POST_OFFICE={
-            'BACKENDS': {'locmem': 'django.core.mail.backends.locmem.EmailBackend'},
+            'BACKENDS': {'default': 'django.core.mail.backends.locmem.EmailBackend'},
             'TEMPLATE_ENGINE': 'post_office',
         },
     )
