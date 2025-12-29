@@ -15,7 +15,13 @@ from django.utils import timezone
 
 from post_office.mail import _send_bulk, attach_templates, create, get_queued, send, send_many, send_queued
 from post_office.models import PRIORITY, STATUS, Attachment, Email, EmailTemplate
-from post_office.settings import get_batch_size, get_log_level, get_max_retries, get_retry_timedelta, get_threads_per_process
+from post_office.settings import (
+    get_batch_size,
+    get_log_level,
+    get_max_retries,
+    get_retry_timedelta,
+    get_threads_per_process,
+)
 
 connection_counter = 0
 
