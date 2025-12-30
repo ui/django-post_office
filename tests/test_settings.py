@@ -7,13 +7,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'test_db.sqlite3'),
         'OPTIONS': {
-            # Increase timeout for SQLite busy lock (default is 5 seconds)
             'timeout': 30,
-        },
-        'TEST': {
-            # Force file-based database for tests (required for multiprocessing tests)
-            # In-memory databases can't be shared across processes
-            'NAME': os.path.join(BASE_DIR, 'test_db.sqlite3'),
         },
     },
 }
