@@ -73,22 +73,14 @@ class CommandTest(TestCase):
         call_command('cleanup_mail', days=30)
         self.assertEqual(Email.objects.count(), 0)
 
-
-class SendQueuedMailCommandTest(TransactionTestCase):
-    """
-    Tests for send_queued_mail command.
-    Uses TransactionTestCase because the command closes/reopens database connections,
-    which is incompatible with TestCase's transaction wrapping.
-    """
-
-    TEST_SETTINGS = {
-        'BACKENDS': {
-            'default': 'django.core.mail.backends.dummy.EmailBackend',
-        },
-        'BATCH_SIZE': 1,
-    }
-
-    @override_settings(POST_OFFICE=TEST_SETTINGS)
+    @override_settings(
+        POST_OFFICE={
+            'BACKENDS': {
+                'default': 'django.core.mail.backends.dummy.EmailBackend',
+            },
+            'BATCH_SIZE': 1,
+        }
+    )
     def test_send_queued_mail(self):
         """
         Ensure that ``send_queued_mail`` behaves properly and sends all queued
