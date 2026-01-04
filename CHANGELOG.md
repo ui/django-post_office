@@ -1,7 +1,8 @@
 Changelog
 =========
 
-## Unreleased
+## Version 3.11 (2026-01-04)
+* Added Python 3.14 and Django 6.0 compatibility. Thanks @selwin!
 * Replaced `bleach` with `nh3` for HTML sanitization. `bleach` has been deprecated since 2023. Thanks @selwin!
 * Added `SESWebhookHandler` and `SparkPostWebhookHandler` for handling webhook events (beta feature). Thanks @selwin!
 * Optimized the way templates are fetched during email delivery. Thanks @selwin!
