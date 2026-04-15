@@ -112,8 +112,14 @@ class Email(models.Model):
     def email_message(self):
         """
         Returns Django EmailMessage object for sending.
+
+        The connection is always re-fetched from the thread-local registry so
+        that worker threads each use their own backend/session rather than
+        sharing the one that was embedded when prepare_email_message() ran in
+        the main thread.
         """
         if self._cached_email_message:
+            self._cached_email_message.connection = connections[self.backend_alias or 'default']
             return self._cached_email_message
 
         return self.prepare_email_message()
