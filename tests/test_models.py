@@ -98,9 +98,7 @@ class ModelTest(TestCase):
         email.dispatch()
         self.assertEqual(mail.outbox[0].subject, 'Test dispatch')
 
-    @override_settings(
-        POST_OFFICE={**settings.POST_OFFICE, 'OVERRIDE_RECIPIENTS': ['override@gmail.com']}
-    )
+    @override_settings(POST_OFFICE={**settings.POST_OFFICE, 'OVERRIDE_RECIPIENTS': ['override@gmail.com']})
     def test_dispatch_with_override_recipients(self):
         email = Email.objects.create(
             to=['to@example.com'],
