@@ -13,7 +13,16 @@ from django.test import TransactionTestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from post_office.mail import _send_bulk, attach_templates, create, get_queued, send, send_many, send_queued
+from post_office.mail import (
+    _send_bulk,
+    attach_templates,
+    create,
+    get_queued,
+    send,
+    send_many,
+    send_queued,
+    send_queued_mail_until_done,
+)
 from post_office.models import PRIORITY, STATUS, Attachment, Email, EmailTemplate
 from post_office.settings import (
     get_batch_size,
@@ -588,6 +597,39 @@ class MailTest(TransactionTestCase):
         end_time = timezone.now()
         # Assert that running time is less than 3 seconds (2 seconds timeout + 1 second buffer)
         self.assertTrue(end_time - start_time < timezone.timedelta(seconds=3))
+
+    def test_send_bulk_closes_connections_on_exception(self):
+        """
+        Connections must be released even when _send_bulk raises (e.g. on batch
+        delivery timeout or any other pool-side failure). Otherwise the
+        backend's HTTP session leaks sockets across repeated batches and
+        eventually hits EMFILE (too many open files).
+        """
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='locmem',
+        )
+        # Simulate any exception raised from the pool block (timeout, crash, etc.)
+        with patch('post_office.mail.ThreadPool', side_effect=RuntimeError('pool broke')):
+            with patch('post_office.mail.connections.close') as mock_close:
+                with self.assertRaises(RuntimeError):
+                    _send_bulk([email], uses_multiprocessing=False)
+                mock_close.assert_called()
+
+    def test_send_queued_mail_until_done_closes_connections_on_error(self):
+        """
+        send_queued_mail_until_done must close connections before re-raising,
+        so a crashing batch doesn't leave an open backend session behind.
+        """
+        with patch('post_office.mail.send_queued', side_effect=RuntimeError('boom')):
+            with patch('post_office.mail.connections.close') as mock_close:
+                with self.assertRaises(RuntimeError):
+                    send_queued_mail_until_done(lockfile='/tmp/post_office_test_lockfile')
+                mock_close.assert_called()
 
     @patch('post_office.signals.email_queued.send')
     def test_backend_signal(self, mock):
