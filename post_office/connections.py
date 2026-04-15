@@ -40,6 +40,11 @@ class ConnectionHandler:
     def close(self):
         for connection in self.all():
             connection.close()
+        # Evict closed connections so the next __getitem__ reopens them.
+        # Keeping closed connections cached breaks backends (e.g. Amazon SES)
+        # whose close() nulls out internal clients — subsequent batches would
+        # hand workers a dead connection and race inside send_messages.
+        self._connections.connections = {}
 
 
 connections = ConnectionHandler()
