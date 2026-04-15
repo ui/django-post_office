@@ -57,8 +57,6 @@ zip-safe = false
 include = [
     "post_office",
     "post_office.*",
-    "post_office_attachments",
-    "post_office_attachments.*",
 ]
 
 [tool.setuptools.dynamic]
