@@ -380,23 +380,24 @@ def _send_bulk(
             failed_emails.append((email, e))
 
     number_of_threads = min(get_threads_per_process(), email_count)
-    with ThreadPool(number_of_threads) as pool:
-        results = []
-        for email in emails_to_send:
-            results.append((email, pool.apply_async(_send_email, args=(email, log_level))))
+    try:
+        with ThreadPool(number_of_threads) as pool:
+            results = []
+            for email in emails_to_send:
+                results.append((email, pool.apply_async(_send_email, args=(email, log_level))))
 
-        timeout = get_batch_delivery_timeout()
+            timeout = get_batch_delivery_timeout()
 
-        # Wait for all tasks to complete with a timeout
-        # The get method is used with a timeout to wait for each result
-        for email, result in results:
-            success, exception = result.get(timeout=timeout)
-            if success:
-                sent_emails.append(email)
-            else:
-                failed_emails.append((email, exception))
-
-    connections.close()
+            # Wait for all tasks to complete with a timeout
+            # The get method is used with a timeout to wait for each result
+            for email, result in results:
+                success, exception = result.get(timeout=timeout)
+                if success:
+                    sent_emails.append(email)
+                else:
+                    failed_emails.append((email, exception))
+    finally:
+        connections.close()
 
     # Update statuses of sent emails
     email_ids = [email.id for email in sent_emails]
@@ -472,6 +473,7 @@ def send_queued_mail_until_done(
                 try:
                     send_queued(processes, log_level)
                 except Exception as e:
+                    connections.close()
                     logger.exception(e, extra={'status_code': 500})
                     raise
 
