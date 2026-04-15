@@ -10,3 +10,13 @@ class ConnectionTest(TestCase):
         # Ensure ConnectionHandler returns the right connection
         self.assertTrue(isinstance(connections['error'], ErrorRaisingBackend))
         self.assertTrue(isinstance(connections['locmem'], backends.locmem.EmailBackend))
+
+    def test_close_evicts_cache(self):
+        # Ensure connections.close() clears the cache so the next __getitem__
+        # yields a freshly-opened connection. Without this, backends that null
+        # out their client on close() (e.g. Amazon SES) would hand out dead
+        # connections on subsequent batches.
+        first = connections['locmem']
+        connections.close()
+        second = connections['locmem']
+        self.assertIsNot(first, second)

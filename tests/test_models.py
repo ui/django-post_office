@@ -10,6 +10,7 @@ from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.forms.models import modelform_factory
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils import timezone
 
 from post_office.models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
@@ -97,9 +98,8 @@ class ModelTest(TestCase):
         email.dispatch()
         self.assertEqual(mail.outbox[0].subject, 'Test dispatch')
 
+    @override_settings(POST_OFFICE={**settings.POST_OFFICE, 'OVERRIDE_RECIPIENTS': ['override@gmail.com']})
     def test_dispatch_with_override_recipients(self):
-        previous_settings = settings.POST_OFFICE
-        setattr(settings, 'POST_OFFICE', {'OVERRIDE_RECIPIENTS': ['override@gmail.com']})
         email = Email.objects.create(
             to=['to@example.com'],
             from_email='from@example.com',
@@ -109,7 +109,6 @@ class ModelTest(TestCase):
         )
         email.dispatch()
         self.assertEqual(mail.outbox[0].to, ['override@gmail.com'])
-        settings.POST_OFFICE = previous_settings
 
     def test_status_and_log(self):
         """
