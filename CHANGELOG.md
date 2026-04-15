@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## Version 3.11.1 (2026-04-15)
+* Fixed a bug where `connections.close()` is not called when exceptions are raised. Thanks @selwin!
+* Fixed a bug where `connections.close()` does not clear connections cache. Thanks @selwin!
+
 ## Version 3.11 (2026-01-04)
 * Added Python 3.14 and Django 6.0 compatibility. Thanks @selwin!
 * Replaced `bleach` with `nh3` for HTML sanitization. `bleach` has been deprecated since 2023. Thanks @selwin!
