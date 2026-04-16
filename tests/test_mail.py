@@ -157,7 +157,8 @@ class MailTest(TransactionTestCase):
                     message='',
                     status=STATUS.queued,
                     backend_alias='connection_tester',
-                ) for _ in range(3)
+                )
+                for _ in range(3)
             ]
         )
         _send_bulk([email_1, email_2, email_3])

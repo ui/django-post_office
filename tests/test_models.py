@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from django.conf import settings as django_settings, settings
 from django.core import mail
@@ -133,7 +133,7 @@ class ModelTest(TestCase):
 
         email.dispatch(connection=mocked_connection)
         # message object's connection should be overridden by the provided one
-        self.assertEqual(email.email_message().connection, mocked_connection) 
+        self.assertEqual(email.email_message().connection, mocked_connection)
         mocked_connection.send_messages.assert_called_once()
 
     def test_status_and_log(self):
