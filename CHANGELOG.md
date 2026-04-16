@@ -1,6 +1,9 @@
 Changelog
 =========
 
+## Version 3.11.2 (2026-04-16)
+* `_send_email` should dispatch email using it's own connection. Thanks @ibadarrohman!
+
 ## Version 3.11.1 (2026-04-15)
 * Fixed a bug where `connections.close()` is not called when exceptions are raised. Thanks @selwin!
 * Fixed a bug where `connections.close()` does not clear connections cache. Thanks @selwin!
