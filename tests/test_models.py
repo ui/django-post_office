@@ -1,7 +1,7 @@
 import json
 import os
-
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
 from django.conf import settings as django_settings, settings
 from django.core import mail
@@ -110,6 +110,23 @@ class ModelTest(TestCase):
         email.dispatch()
         self.assertEqual(mail.outbox[0].to, ['override@gmail.com'])
         settings.POST_OFFICE = previous_settings
+
+    def test_dispatch_uses_provided_connection(self):
+        """
+        Ensure dispatch() uses the explicitly passed connection to send the
+        message instead of fetching one from the registry.
+        """
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='from@example.com',
+            subject='Test provided connection',
+            message='Message',
+            backend_alias='locmem',
+        )
+        mock_conn = MagicMock()
+        mock_conn.send_messages.return_value = 1
+        email.dispatch(connection=mock_conn, disconnect_after_delivery=False)
+        mock_conn.send_messages.assert_called_once()
 
     def test_status_and_log(self):
         """

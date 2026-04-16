@@ -104,7 +104,7 @@ class Email(models.Model):
         self._cached_email_message = None
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, self.to)
+        return f'<{self.__class__.__name__}: {self.to}>'
 
     def __str__(self):
         return f'{", ".join(self.to)}'
@@ -139,6 +139,7 @@ class Email(models.Model):
             multipart_template = None
             html_message = self.html_message
 
+        connection = connections[self.backend_alias or 'default']
         if isinstance(self.headers, dict) or self.expires_at or self.message_id:
             headers = dict(self.headers or {})
             if self.expires_at:
@@ -158,6 +159,7 @@ class Email(models.Model):
                     bcc=self.bcc,
                     cc=self.cc,
                     headers=headers,
+                    connection=connection,
                 )
                 msg.attach_alternative(html_message, 'text/html')
             else:
@@ -169,6 +171,7 @@ class Email(models.Model):
                     bcc=self.bcc,
                     cc=self.cc,
                     headers=headers,
+                    connection=connection,
                 )
                 msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
@@ -183,6 +186,7 @@ class Email(models.Model):
                 bcc=self.bcc,
                 cc=self.cc,
                 headers=headers,
+                connection=connection,
             )
 
         for attachment in self.attachments.all():
@@ -325,7 +329,7 @@ class EmailTemplate(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return '%s %s' % (self.name, self.language)
+        return f'{self.name} {self.language}'
 
     def natural_key(self):
         return (self.name, self.language, self.default_template)

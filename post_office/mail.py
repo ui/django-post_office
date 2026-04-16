@@ -41,11 +41,12 @@ logger = setup_loghandlers('INFO')
 
 def _send_email(email: Email, log_level: int) -> tuple[bool, Optional[Exception]]:
     try:
-        email.dispatch(log_level=log_level, commit=False, disconnect_after_delivery=False)
-        logger.debug('Successfully sent email #%d' % email.id)
+        connection = connections[email.backend_alias or 'default']
+        email.dispatch(log_level=log_level, commit=False, disconnect_after_delivery=False, connection=connection)
+        logger.debug(f'Successfully sent email #{email.id}')
         return True, None
     except Exception as e:
-        logger.exception('Failed to send email #%d' % email.id)
+        logger.exception(f'Failed to send email #{email.id}')
         return False, e
 
 
@@ -162,17 +163,17 @@ def send(
     try:
         recipients = parse_emails(recipients)
     except ValidationError as e:
-        raise ValidationError('recipients: %s' % e.message)
+        raise ValidationError(f'recipients: {e.message}')
 
     try:
         cc = parse_emails(cc)
     except ValidationError as e:
-        raise ValidationError('c: %s' % e.message)
+        raise ValidationError(f'c: {e.message}')
 
     try:
         bcc = parse_emails(bcc)
     except ValidationError as e:
-        raise ValidationError('bcc: %s' % e.message)
+        raise ValidationError(f'bcc: {e.message}')
 
     if sender is None:
         sender = settings.DEFAULT_FROM_EMAIL
@@ -206,7 +207,7 @@ def send(
             template = get_email_template(template, language)
 
     if backend and backend not in get_available_backends().keys():
-        raise ValueError('%s is not a valid backend alias' % backend)
+        raise ValueError(f'{backend} is not a valid backend alias')
 
     email = create(
         sender,
@@ -296,7 +297,7 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
     total_sent, total_failed, total_requeued = 0, 0, 0
     total_email = len(queued_emails)
 
-    logger.info('Started sending %s emails with %s processes.' % (total_email, processes))
+    logger.info(f'Started sending {total_email} emails with {processes} processes.')
 
     if log_level is None:
         log_level = get_log_level()
@@ -363,7 +364,7 @@ def _send_bulk(
     failed_emails = []  # This is a list of two tuples (email, exception)
     email_count = len(emails)
 
-    logger.info('Process started, sending %s emails' % email_count)
+    logger.info(f'Process started, sending {email_count} emails')
 
     emails_to_send = []
 
@@ -376,7 +377,7 @@ def _send_bulk(
             email.prepare_email_message()
             emails_to_send.append(email)
         except Exception as e:
-            logger.exception('Failed to prepare email #%d' % email.id)
+            logger.exception(f'Failed to prepare email #{email.id}')
             failed_emails.append((email, e))
 
     number_of_threads = min(get_threads_per_process(), email_count)
