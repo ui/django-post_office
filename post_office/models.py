@@ -217,7 +217,7 @@ class Email(models.Model):
         """
         try:
             msg = self.email_message()
-            if connection:
+            if connection is not None:
                 msg.connection = connection
             msg.send()
             status = STATUS.sent
