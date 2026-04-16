@@ -209,12 +209,16 @@ class Email(models.Model):
     def dispatch(self, log_level=None, disconnect_after_delivery=True, commit=True, connection=None):
         """
         Sends email and log the result.
+
+        If ``connection`` is provided, it overrides the connection embedded in
+        the email message by ``prepare_email_message()``. This allows callers
+        (e.g. worker threads) to supply a thread-local connection rather than
+        reusing one that was opened in a different thread.
         """
         try:
             msg = self.email_message()
-            if connection is None:
-                connection = connections[self.backend_alias or 'default']
-            msg.connection = connection
+            if connection:
+                msg.connection = connection
             msg.send()
             status = STATUS.sent
             message = ''

@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.conf import settings as django_settings, settings
 from django.core import mail
@@ -11,6 +11,7 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.utils import timezone
+from django.core.mail.backends.locmem import EmailBackend as LocMemEmailBackend
 
 from post_office.models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from post_office.mail import send
@@ -113,8 +114,8 @@ class ModelTest(TestCase):
 
     def test_dispatch_uses_provided_connection(self):
         """
-        Ensure dispatch() uses the explicitly passed connection to send the
-        message instead of fetching one from the registry.
+        Ensure dispatch() overrides msg.connection with the explicitly passed
+        connection, even when prepare_email_message() already embedded one.
         """
         email = Email.objects.create(
             to=['to@example.com'],
@@ -123,10 +124,17 @@ class ModelTest(TestCase):
             message='Message',
             backend_alias='locmem',
         )
-        mock_conn = MagicMock()
-        mock_conn.send_messages.return_value = 1
-        email.dispatch(connection=mock_conn, disconnect_after_delivery=False)
-        mock_conn.send_messages.assert_called_once()
+
+        mocked_connection = MagicMock()
+        mocked_connection.send_messages.return_value = 1
+
+        # sanity check, original connection embedded in email_message() should be a LocMemEmailBackend instance
+        self.assertTrue(isinstance(email.email_message().connection, LocMemEmailBackend))
+
+        email.dispatch(connection=mocked_connection)
+        # message object's connection should be overridden by the provided one
+        self.assertEqual(email.email_message().connection, mocked_connection) 
+        mocked_connection.send_messages.assert_called_once()
 
     def test_status_and_log(self):
         """
