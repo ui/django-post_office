@@ -112,14 +112,8 @@ class Email(models.Model):
     def email_message(self):
         """
         Returns Django EmailMessage object for sending.
-
-        The connection is always re-fetched from the thread-local registry so
-        that worker threads each use their own backend/session rather than
-        sharing the one that was embedded when prepare_email_message() ran in
-        the main thread.
         """
         if self._cached_email_message:
-            self._cached_email_message.connection = connections[self.backend_alias or 'default']
             return self._cached_email_message
 
         return self.prepare_email_message()
@@ -145,7 +139,6 @@ class Email(models.Model):
             multipart_template = None
             html_message = self.html_message
 
-        connection = connections[self.backend_alias or 'default']
         if isinstance(self.headers, dict) or self.expires_at or self.message_id:
             headers = dict(self.headers or {})
             if self.expires_at:
@@ -165,7 +158,6 @@ class Email(models.Model):
                     bcc=self.bcc,
                     cc=self.cc,
                     headers=headers,
-                    connection=connection,
                 )
                 msg.attach_alternative(html_message, 'text/html')
             else:
@@ -177,7 +169,6 @@ class Email(models.Model):
                     bcc=self.bcc,
                     cc=self.cc,
                     headers=headers,
-                    connection=connection,
                 )
                 msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
@@ -192,7 +183,6 @@ class Email(models.Model):
                 bcc=self.bcc,
                 cc=self.cc,
                 headers=headers,
-                connection=connection,
             )
 
         for attachment in self.attachments.all():
@@ -212,12 +202,16 @@ class Email(models.Model):
         self._cached_email_message = msg
         return msg
 
-    def dispatch(self, log_level=None, disconnect_after_delivery=True, commit=True):
+    def dispatch(self, log_level=None, disconnect_after_delivery=True, commit=True, connection=None):
         """
         Sends email and log the result.
         """
         try:
-            self.email_message().send()
+            msg = self.email_message()
+            if connection is None:
+                connection = connections[self.backend_alias or 'default']
+            msg.connection = connection
+            msg.send()
             status = STATUS.sent
             message = ''
             exception_type = ''

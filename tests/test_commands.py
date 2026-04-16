@@ -9,6 +9,7 @@ from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from django.utils.timezone import now
 
+from post_office.connections import ConnectionHandler
 from post_office.models import STATUS, Attachment, Email
 
 
@@ -146,30 +147,29 @@ class CommandTest(TestCase):
     )
     def test_send_queued_mail_threads_use_independent_connections(self):
         """
-        Worker threads must each obtain their own thread-local connection from the
-        registry rather than sharing the connection embedded during prepare_email_message().
+        Worker threads must each obtain their own thread-local connection from
+        ConnectionHandler so that no single connection is shared across threads.
         """
         for _ in range(3):
             Email.objects.create(from_email='from@example.com', to=['to@example.com'], status=STATUS.queued)
 
-        # Map thread_id -> set of connection object ids seen via email_message()
+        # Map thread_id -> set of connection object ids fetched from ConnectionHandler
         conn_usage: dict[int, set[int]] = {}
         usage_lock = threading.Lock()
-        original_email_message = Email.email_message
+        original_getitem = ConnectionHandler.__getitem__
 
-        def tracking_email_message(self):
-            msg = original_email_message(self)
+        def tracking_getitem(self, alias):
+            conn = original_getitem(self, alias)
             with usage_lock:
-                conn_usage.setdefault(threading.current_thread().ident, set()).add(id(msg.connection))
-            return msg
+                conn_usage.setdefault(threading.current_thread().ident, set()).add(id(conn))
+            return conn
 
-        with patch.object(Email, 'email_message', tracking_email_message):
+        with patch.object(ConnectionHandler, '__getitem__', tracking_getitem):
             call_command('send_queued_mail', processes=1)
 
         self.assertEqual(Email.objects.filter(status=STATUS.sent).count(), 3)
 
-        # email_message() is only called inside worker threads (dispatch runs in the pool)
-        self.assertGreater(len(conn_usage), 0, 'No email_message() calls were tracked')
+        self.assertGreater(len(conn_usage), 0, 'No connections were fetched from ConnectionHandler')
 
         # Build a map from connection id -> set of threads that used it
         conn_to_threads: dict[int, set[int]] = {}
