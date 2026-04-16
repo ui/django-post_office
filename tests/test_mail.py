@@ -140,31 +140,38 @@ class MailTest(TransactionTestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'send bulk')
 
-    @override_settings(EMAIL_BACKEND='tests.test_mail.ConnectionTestingBackend')
+    @override_settings(
+        EMAIL_BACKEND='tests.test_mail.ConnectionTestingBackend',
+        POST_OFFICE={
+            'BACKENDS': {
+                'connection_tester': 'tests.test_mail.ConnectionTestingBackend',
+            },
+            'THREADS_PER_PROCESS': 1,
+        },
+    )
     def test_send_bulk_reuses_open_connection(self):
         """
-        Ensure _send_bulk() only opens connection once to send multiple emails.
+        Ensure _send_bulk() opens one connection per thread, not one per email.
+        With THREADS_PER_PROCESS=1: main thread opens one during prepare, worker
+        thread opens one during send — total 2 opens for any number of emails.
         """
         global connection_counter
         self.assertEqual(connection_counter, 0)
-        email = Email.objects.create(
-            to=['to@example.com'],
-            from_email='bob@example.com',
-            subject='',
-            message='',
-            status=STATUS.queued,
-            backend_alias='connection_tester',
+        email_1, email_2, email_3 = Email.objects.bulk_create(
+            [
+                Email(
+                    to=['to@example.com'],
+                    from_email='bob@example.com',
+                    subject='',
+                    message='',
+                    status=STATUS.queued,
+                    backend_alias='connection_tester',
+                )
+                for _ in range(3)
+            ]
         )
-        email_2 = Email.objects.create(
-            to=['to@example.com'],
-            from_email='bob@example.com',
-            subject='',
-            message='',
-            status=STATUS.queued,
-            backend_alias='connection_tester',
-        )
-        _send_bulk([email, email_2])
-        self.assertEqual(connection_counter, 1)
+        _send_bulk([email_1, email_2, email_3])
+        self.assertEqual(connection_counter, 2)
 
     def test_get_queued(self):
         """
@@ -390,9 +397,9 @@ class MailTest(TransactionTestCase):
         email = create(sender='from@example.com', recipients=['to@example.com'], template=template, context=context)
         today = timezone.datetime.today()
         current_year = today.year
-        self.assertEqual(email.subject, 'Subject %d' % current_year)
-        self.assertEqual(email.message, 'Content %d' % current_year)
-        self.assertEqual(email.html_message, 'HTML %d' % current_year)
+        self.assertEqual(email.subject, f'Subject {current_year}')
+        self.assertEqual(email.message, f'Content {current_year}')
+        self.assertEqual(email.html_message, f'HTML {current_year}')
         self.assertEqual(email.context, None)
         self.assertIsNotNone(email.template)
 

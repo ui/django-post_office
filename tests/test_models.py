@@ -1,7 +1,7 @@
 import json
 import os
-
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
 from django.conf import settings as django_settings, settings
 from django.core import mail
@@ -12,6 +12,7 @@ from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
+from django.core.mail.backends.locmem import EmailBackend as LocMemEmailBackend
 
 from post_office.models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from post_office.mail import send
@@ -109,6 +110,30 @@ class ModelTest(TestCase):
         )
         email.dispatch()
         self.assertEqual(mail.outbox[0].to, ['override@gmail.com'])
+
+    def test_dispatch_uses_provided_connection(self):
+        """
+        Ensure dispatch() overrides msg.connection with the explicitly passed
+        connection, even when prepare_email_message() already embedded one.
+        """
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='from@example.com',
+            subject='Test provided connection',
+            message='Message',
+            backend_alias='locmem',
+        )
+
+        mocked_connection = MagicMock()
+        mocked_connection.send_messages.return_value = 1
+
+        # sanity check, original connection embedded in email_message() should be a LocMemEmailBackend instance
+        self.assertTrue(isinstance(email.email_message().connection, LocMemEmailBackend))
+
+        email.dispatch(connection=mocked_connection)
+        # message object's connection should be overridden by the provided one
+        self.assertEqual(email.email_message().connection, mocked_connection)
+        mocked_connection.send_messages.assert_called_once()
 
     def test_status_and_log(self):
         """

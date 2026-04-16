@@ -3,7 +3,7 @@ import os
 
 from django.core.files.base import ContentFile
 from django.core.management import call_command
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils.timezone import now
 

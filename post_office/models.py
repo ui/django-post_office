@@ -104,7 +104,7 @@ class Email(models.Model):
         self._cached_email_message = None
 
     def __repr__(self):
-        return '<%s: %s>' % (self.__class__.__name__, self.to)
+        return f'<{self.__class__.__name__}: {self.to}>'
 
     def __str__(self):
         return f'{", ".join(self.to)}'
@@ -206,12 +206,20 @@ class Email(models.Model):
         self._cached_email_message = msg
         return msg
 
-    def dispatch(self, log_level=None, disconnect_after_delivery=True, commit=True):
+    def dispatch(self, log_level=None, disconnect_after_delivery=True, commit=True, connection=None):
         """
         Sends email and log the result.
+
+        If ``connection`` is provided, it overrides the connection embedded in
+        the email message by ``prepare_email_message()``. This allows callers
+        (e.g. worker threads) to supply a thread-local connection rather than
+        reusing one that was opened in a different thread.
         """
         try:
-            self.email_message().send()
+            msg = self.email_message()
+            if connection is not None:
+                msg.connection = connection
+            msg.send()
             status = STATUS.sent
             message = ''
             exception_type = ''
@@ -325,7 +333,7 @@ class EmailTemplate(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return '%s %s' % (self.name, self.language)
+        return f'{self.name} {self.language}'
 
     def natural_key(self):
         return (self.name, self.language, self.default_template)
