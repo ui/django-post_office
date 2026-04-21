@@ -202,9 +202,16 @@ def send(
             template = template
             # If language is specified, ensure template uses the right language
             if language and template.language != language:
-                template = template.translated_templates.get(language=language)
+                                    try:
+                                                                template = template.translated_templates.get(language=language)
+                                    except EmailTemplate.DoesNotExist:
+                                                                pass  # Keep original template if translation not found
         else:
-            template = get_email_template(template, language)
+            try:
+                                template = get_email_template(template, language)
+            except EmailTemplate.DoesNotExist:
+                                # Fallback to template without language if translation not found
+                                template = get_email_template(template)
 
     if backend and backend not in get_available_backends().keys():
         raise ValueError(f'{backend} is not a valid backend alias')
