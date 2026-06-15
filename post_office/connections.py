@@ -1,4 +1,4 @@
-from threading import local
+import threading
 
 from django.core.mail import get_connection
 
@@ -10,19 +10,23 @@ class ConnectionHandler:
     """
     A Cache Handler to manage access to Cache instances.
 
-    Ensures only one instance of each alias exists per thread.
+    Ensures only one instance of each alias exists per thread. The registry is
+    a process-wide dict keyed by (thread_ident, alias) rather than threading.local
+    so close() called from one thread can reach and close connections opened by
+    worker threads — otherwise SMTP sockets opened inside a ThreadPool worker
+    would leak when _send_bulk closes from the main thread.
     """
 
     def __init__(self):
-        self._connections = local()
+        self._lock = threading.Lock()
+        self._connections = {}
 
     def __getitem__(self, alias):
-        try:
-            return self._connections.connections[alias]
-        except AttributeError:
-            self._connections.connections = {}
-        except KeyError:
-            pass
+        key = (threading.get_ident(), alias)
+        with self._lock:
+            connection = self._connections.get(key)
+        if connection is not None:
+            return connection
 
         try:
             backend = get_backend(alias)
@@ -31,20 +35,24 @@ class ConnectionHandler:
 
         connection = get_connection(backend)
         connection.open()
-        self._connections.connections[alias] = connection
+        with self._lock:
+            self._connections[key] = connection
         return connection
 
     def all(self):
-        return getattr(self._connections, 'connections', {}).values()
+        with self._lock:
+            return list(self._connections.values())
 
     def close(self):
-        for connection in self.all():
+        with self._lock:
+            connections = list(self._connections.values())
+            # Evict closed connections so the next __getitem__ reopens them.
+            # Keeping closed connections cached breaks backends (e.g. Amazon SES)
+            # whose close() nulls out internal clients — subsequent batches would
+            # hand workers a dead connection and race inside send_messages.
+            self._connections.clear()
+        for connection in connections:
             connection.close()
-        # Evict closed connections so the next __getitem__ reopens them.
-        # Keeping closed connections cached breaks backends (e.g. Amazon SES)
-        # whose close() nulls out internal clients — subsequent batches would
-        # hand workers a dead connection and race inside send_messages.
-        self._connections.connections = {}
 
 
 connections = ConnectionHandler()

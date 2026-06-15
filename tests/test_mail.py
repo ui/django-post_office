@@ -1,4 +1,5 @@
 import re
+import threading
 import time
 from datetime import timedelta
 from multiprocessing.context import TimeoutError
@@ -34,6 +35,9 @@ from post_office.settings import (
 
 connection_counter = 0
 
+open_close_counter = {'opens': 0, 'closes': 0}
+open_close_counter_lock = threading.Lock()
+
 
 class ConnectionTestingBackend(mail.backends.base.BaseEmailBackend):
     """
@@ -46,6 +50,24 @@ class ConnectionTestingBackend(mail.backends.base.BaseEmailBackend):
 
     def send_messages(self, email_messages):
         pass
+
+
+class OpenCloseCountingBackend(mail.backends.base.BaseEmailBackend):
+    """
+    An EmailBackend that tracks opens and closes (thread-safe) so tests can
+    verify every opened connection is also closed.
+    """
+
+    def open(self):
+        with open_close_counter_lock:
+            open_close_counter['opens'] += 1
+
+    def close(self):
+        with open_close_counter_lock:
+            open_close_counter['closes'] += 1
+
+    def send_messages(self, email_messages):
+        return len(email_messages)
 
 
 class SlowTestBackend(mail.backends.base.BaseEmailBackend):
@@ -172,6 +194,40 @@ class MailTest(TransactionTestCase):
         )
         _send_bulk([email_1, email_2, email_3])
         self.assertEqual(connection_counter, 2)
+
+    @override_settings(
+        EMAIL_BACKEND='tests.test_mail.OpenCloseCountingBackend',
+        POST_OFFICE={
+            'BACKENDS': {
+                'open_close_tester': 'tests.test_mail.OpenCloseCountingBackend',
+            },
+            'THREADS_PER_PROCESS': 2,
+        },
+    )
+    def test_send_bulk_closes_worker_connections(self):
+        """
+        Every connection opened (including those opened on ThreadPool workers)
+        must be closed when _send_bulk finishes. Otherwise SMTP sockets opened
+        on worker threads leak (ResourceWarning: unclosed <ssl.SSLSocket ...>).
+        """
+        open_close_counter['opens'] = 0
+        open_close_counter['closes'] = 0
+        emails = Email.objects.bulk_create(
+            [
+                Email(
+                    to=['to@example.com'],
+                    from_email='bob@example.com',
+                    subject='',
+                    message='',
+                    status=STATUS.queued,
+                    backend_alias='open_close_tester',
+                )
+                for _ in range(5)
+            ]
+        )
+        _send_bulk(emails)
+        self.assertGreater(open_close_counter['opens'], 0)
+        self.assertEqual(open_close_counter['opens'], open_close_counter['closes'])
 
     def test_get_queued(self):
         """

@@ -1,6 +1,9 @@
 Changelog
 =========
 
+## Unreleased
+* Fixed a bug where SMTP connections opened on `_send_bulk` worker threads were never closed (causing `ResourceWarning: unclosed <ssl.SSLSocket ...>` leaks in production). `ConnectionHandler` now tracks connections across threads so `close()` from the main thread reaches every worker's connection.
+
 ## Version 3.11.2 (2026-04-16)
 * `_send_email` should dispatch email using it's own connection. Thanks @ibadarrohman!
 
