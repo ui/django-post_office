@@ -30,7 +30,7 @@
         CodeMirror.fromTextArea($('#id_content')[0], options);
         CodeMirror.fromTextArea($('#id_html_content')[0], options);
 
-        $('.CodeMirror').css('height', 'auto');
+        $('.CodeMirror').css('height', 'auto').css('min-width', '30%').css('border', '1px solid var(--border-color)');
       })(django.jQuery);
     </script>
 {% endblock %}
