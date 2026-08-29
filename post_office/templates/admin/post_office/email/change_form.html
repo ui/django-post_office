@@ -1,5 +1,8 @@
 {% extends "admin/change_form.html" %}{% load i18n %}
 {% block object-tools-items %}
     {{ block.super }}
+    {% if show_html_preview %}
+    <li><a href="{% url 'admin:post_office_email_preview' original.pk %}" target="_blank" rel="noopener" class="btn btn-high btn-success">{% trans "Preview HTML" %}</a></li>
+    {% endif %}
     <li><a href="{% url 'admin:resend' original.pk %}" class="btn btn-high btn-success">{% trans "Resend" %}</a></li>
 {% endblock object-tools-items %}
