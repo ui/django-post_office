@@ -1,9 +1,14 @@
 import importlib
-from unittest import mock
+from unittest import mock, skipUnless
 
 from django.db import transaction
 from django.test import TransactionTestCase
 from django.test.utils import override_settings
+
+try:
+    import celery  # noqa: F401
+except ImportError:
+    celery = None
 
 
 @override_settings(
@@ -14,6 +19,7 @@ from django.test.utils import override_settings
         'CELERY_ENABLED': True,
     }
 )
+@skipUnless(celery is not None, 'celery is not installed')
 class QueuedMailHandlerCeleryTests(TransactionTestCase):
     """
     CELERY_ENABLED + an open transaction must not dispatch send_queued_mail
