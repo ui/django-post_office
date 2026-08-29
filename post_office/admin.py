@@ -262,13 +262,16 @@ class EmailAdmin(admin.ModelAdmin):
     @admin.display(description=_('HTML Body'))
     def render_html_body(self, instance):
         html = self._get_html_body(instance)
-        return clean_html(html) if html else None
-
-    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
-        extra_context = extra_context or {}
-        obj = self.get_object(request, object_id) if object_id else None
-        extra_context['show_html_preview'] = obj is not None and self._get_html_payload(obj) is not None
-        return super().changeform_view(request, object_id, form_url, extra_context)
+        if not html:
+            return None
+        # ``a.button`` in the admin CSS uses a smaller padding than submit buttons; match the submit row.
+        return format_html(
+            '<div style="margin-bottom: 10px;"><a href="{}" target="_blank" rel="noopener" class="button" '
+            'style="display: inline-block; padding: 10px 15px; text-decoration: none;">{}</a></div>{}',
+            reverse('admin:post_office_email_preview', args=[instance.pk]),
+            _('Preview'),
+            clean_html(html),
+        )
 
     def preview_html(self, request, pk):
         """Serve the unsanitized HTML body in a sandboxed document, for previewing in a new tab."""
