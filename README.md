@@ -827,16 +827,11 @@ pip install -e ".[test]"
 pytest
 ```
 
-You can run the full test suite for all supported versions of Django and Python with:
+The full matrix of supported Python and Django versions is tested on CI. To run
+the suite locally against a specific combination:
 
 ```sh
-tox
-```
-
-or:
-
-```sh
-pytest
+uv run --python 3.13 --with "django~=6.1.0" --extra test pytest
 ```
 
 
