@@ -122,6 +122,8 @@ class Email(models.Model):
         """
         Returns a django ``EmailMessage`` or ``EmailMultiAlternatives`` object,
         depending on whether html_message is empty.
+
+        No connection is attached; ``dispatch()`` selects the backend.
         """
         if get_override_recipients():
             self.to = get_override_recipients()
@@ -139,7 +141,6 @@ class Email(models.Model):
             multipart_template = None
             html_message = self.html_message
 
-        connection = connections[self.backend_alias or 'default']
         if isinstance(self.headers, dict) or self.expires_at or self.message_id:
             headers = dict(self.headers or {})
             if self.expires_at:
@@ -159,7 +160,6 @@ class Email(models.Model):
                     bcc=self.bcc,
                     cc=self.cc,
                     headers=headers,
-                    connection=connection,
                 )
                 msg.attach_alternative(html_message, 'text/html')
             else:
@@ -171,7 +171,6 @@ class Email(models.Model):
                     bcc=self.bcc,
                     cc=self.cc,
                     headers=headers,
-                    connection=connection,
                 )
                 msg.content_subtype = 'html'
             if hasattr(multipart_template, 'attach_related'):
@@ -186,7 +185,6 @@ class Email(models.Model):
                 bcc=self.bcc,
                 cc=self.cc,
                 headers=headers,
-                connection=connection,
             )
 
         for attachment in self.attachments.all():
@@ -210,16 +208,16 @@ class Email(models.Model):
         """
         Sends email and log the result.
 
-        If ``connection`` is provided, it overrides the connection embedded in
-        the email message by ``prepare_email_message()``. This allows callers
-        (e.g. worker threads) to supply a thread-local connection rather than
-        reusing one that was opened in a different thread.
+        ``connection`` overrides the backend resolved from ``backend_alias``.
         """
         try:
             msg = self.email_message()
-            if connection is not None:
-                msg.connection = connection
-            msg.send()
+            # An email without recipients is marked sent, not failed: retrying
+            # can never succeed. This matches msg.send() returning 0.
+            if msg.recipients():
+                if connection is None:
+                    connection = connections[self.backend_alias or 'default']
+                connection.send_messages([msg])
             status = STATUS.sent
             message = ''
             exception_type = ''
