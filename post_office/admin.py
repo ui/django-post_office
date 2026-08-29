@@ -22,6 +22,10 @@ from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
 from .settings import PRE_DJANGO_6
 
+# URI schemes are case-insensitive; the Content-ID ends at whitespace, a quote, a tag delimiter or a
+# CSS ``url(...)`` parenthesis.
+CID_PATTERN = re.compile(r'cid:([^\s"\'<>()]+)', re.IGNORECASE)
+
 
 @admin.display(description='Message')
 def get_message_preview(instance):
@@ -237,7 +241,7 @@ class EmailAdmin(admin.ModelAdmin):
         html = self._get_html_payload(instance)
         if html is None:
             return None
-        pattern = re.compile('cid:([0-9a-f]{32})')
+        pattern = re.compile(r'(?i:cid):([0-9a-f]{32})')
         url = reverse('admin:post_office_email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
         url = url.replace(32 * '0', r'\1')
         return pattern.sub(url, html)
@@ -257,7 +261,7 @@ class EmailAdmin(admin.ModelAdmin):
             if part.get_content_maintype() == 'image' and content_id:
                 data = base64.b64encode(part.get_payload(decode=True)).decode('ascii')
                 images[content_id.strip('<>')] = f'data:{part.get_content_type()};base64,{data}'
-        return re.sub(r'cid:([^\s"\'>]+)', lambda match: images.get(match.group(1), match.group(0)), html)
+        return CID_PATTERN.sub(lambda match: images.get(match.group(1), match.group(0)), html)
 
     @admin.display(description=_('HTML Body'))
     def render_html_body(self, instance):
