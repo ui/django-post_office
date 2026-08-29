@@ -1,12 +1,14 @@
+import base64
 import re
 
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
+from django.http import Http404
 from django.http.response import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.template import Context, Template
 from django.urls import path
@@ -104,16 +106,28 @@ class EmailAdmin(admin.ModelAdmin):
     actions = [requeue]
 
     def get_urls(self):
+        admin_view = self.admin_site.admin_view
         urls = [
             re_path(
                 r'^(?P<pk>\d+)/image/(?P<content_id>[0-9a-f]{32})$',
-                self.fetch_email_image,
+                admin_view(self.fetch_email_image),
                 name='post_office_email_image',
             ),
-            path('<int:pk>/resend/', self.resend, name='resend'),
+            path('<int:pk>/preview/', admin_view(self.preview_html), name='post_office_email_preview'),
+            path('<int:pk>/resend/', admin_view(self.resend), name='resend'),
         ]
         urls.extend(super().get_urls())
         return urls
+
+    def _get_object_or_deny(self, request, pk, permission='view'):
+        """Fetch an Email by pk, raising 404 if missing or 403 if the user lacks the given permission."""
+        obj = self.get_object(request, pk)
+        if obj is None:
+            raise Http404
+        has_permission = getattr(self, f'has_{permission}_permission')
+        if not has_permission(request, obj):
+            raise PermissionDenied
+        return obj
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('template')
@@ -207,25 +221,87 @@ class EmailAdmin(admin.ModelAdmin):
             if self._is_text_body(part) and part.get_content_type() == 'text/plain':
                 return format_html('<pre>{}</pre>', part.get_payload())
 
-    @admin.display(description=_('HTML Body'))
-    def render_html_body(self, instance):
+    def _get_html_payload(self, instance):
+        """Return the decoded text/html body of the email, or None if it has no HTML part."""
+        for part in instance.email_message().message().walk():
+            if self._is_text_body(part) and part.get_content_type() == 'text/html':
+                payload = part.get_payload(decode=True)
+                if payload is None:
+                    return part.get_payload()
+                charset = part.get_content_charset() or 'utf-8'
+                return payload.decode(charset, errors='replace')
+        return None
+
+    def _get_html_body(self, instance):
+        """Return the HTML body with ``cid:`` references rewritten to admin image URLs, or None."""
+        html = self._get_html_payload(instance)
+        if html is None:
+            return None
         pattern = re.compile('cid:([0-9a-f]{32})')
         url = reverse('admin:post_office_email_image', kwargs={'pk': instance.id, 'content_id': 32 * '0'})
         url = url.replace(32 * '0', r'\1')
+        return pattern.sub(url, html)
+
+    def _get_html_preview(self, instance):
+        """Return the HTML body with ``cid:`` references replaced by ``data:`` URIs, or None.
+
+        The preview is served in a sandboxed document with an opaque origin, which does not send
+        the admin session cookie, so inline images are embedded rather than linked.
+        """
+        html = self._get_html_payload(instance)
+        if html is None:
+            return None
+        images = {}
         for part in instance.email_message().message().walk():
-            if self._is_text_body(part) and part.get_content_type() == 'text/html':
-                payload = part.get_payload(decode=True).decode('utf-8')
-                return clean_html(pattern.sub(url, payload))
+            content_id = part.get('Content-Id')
+            if part.get_content_maintype() == 'image' and content_id:
+                data = base64.b64encode(part.get_payload(decode=True)).decode('ascii')
+                images[content_id.strip('<>')] = f'data:{part.get_content_type()};base64,{data}'
+        return re.sub(r'cid:([^\s"\'>]+)', lambda match: images.get(match.group(1), match.group(0)), html)
+
+    @admin.display(description=_('HTML Body'))
+    def render_html_body(self, instance):
+        html = self._get_html_body(instance)
+        if not html:
+            return None
+        # ``a.button`` in the admin CSS uses a smaller padding than submit buttons; match the submit row.
+        return format_html(
+            '<div style="margin-bottom: 10px;"><a href="{}" target="_blank" rel="noopener" class="button" '
+            'style="display: inline-block; padding: 10px 15px; text-decoration: none;">{}</a></div>{}',
+            reverse('admin:post_office_email_preview', args=[instance.pk]),
+            _('Preview'),
+            clean_html(html),
+        )
+
+    def preview_html(self, request, pk):
+        """Serve the unsanitized HTML body in a sandboxed document, for previewing in a new tab."""
+        instance = self._get_object_or_deny(request, pk, 'view')
+        html = self._get_html_preview(instance)
+        if html is None:
+            return HttpResponseNotFound()
+        response = HttpResponse(html)
+        # ``sandbox`` gives the document an opaque origin and blocks scripts, forms and popups,
+        # so unsanitized email content cannot reach the admin session. Inline CSS is allowed so
+        # the email renders faithfully; images may be embedded or loaded from anywhere.
+        response['Content-Security-Policy'] = (
+            "sandbox; default-src 'none'; img-src data: https: http:; style-src 'unsafe-inline'; font-src https: data:"
+        )
+        response['X-Content-Type-Options'] = 'nosniff'
+        # Don't leak the admin URL to remote images (e.g. tracking pixels).
+        response['Referrer-Policy'] = 'no-referrer'
+        return response
 
     def fetch_email_image(self, request, pk, content_id):
-        instance = self.get_object(request, pk)
+        instance = self._get_object_or_deny(request, pk, 'view')
         for message in instance.email_message().message().walk():
-            if message.get_content_maintype() == 'image' and message.get('Content-Id')[1:33] == content_id:
+            if message.get_content_maintype() != 'image':
+                continue
+            if (message.get('Content-Id') or '')[1:33] == content_id:
                 return HttpResponse(message.get_payload(decode=True), content_type=message.get_content_type())
         return HttpResponseNotFound()
 
     def resend(self, request, pk):
-        instance = self.get_object(request, pk)
+        instance = self._get_object_or_deny(request, pk, 'change')
         instance.dispatch()
         messages.info(request, 'Email has been sent again')
         return HttpResponseRedirect(reverse('admin:post_office_email_change', args=[instance.pk]))
