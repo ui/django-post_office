@@ -37,7 +37,7 @@ Add `post_office` to your INSTALLED_APPS in django's `settings.py`:
 ```python
 INSTALLED_APPS = (
     # other apps
-    "post_office",
+    'post_office',
 )
 ```
 
@@ -61,7 +61,7 @@ Send a simple email is really easy:
 from post_office import mail
 
 mail.send(
-    'recipient@example.com', # List of email addresses also accepted
+    'recipient@example.com',  # List of email addresses also accepted
     'from@example.com',
     subject='My email',
     message='Hi there!',
@@ -77,9 +77,9 @@ following:
 from post_office import mail
 
 mail.send(
-    'recipient@example.com', # List of email addresses also accepted
+    'recipient@example.com',  # List of email addresses also accepted
     'from@example.com',
-    template='welcome_email', # Could be an EmailTemplate instance or name
+    template='welcome_email',  # Could be an EmailTemplate instance or name
     context={'foo': 'bar'},
 )
 ```
@@ -176,7 +176,7 @@ mail.send(
         'attachment1.doc': '/path/to/file/file1.doc',
         'attachment2.txt': ContentFile('file content'),
         'attachment3.txt': {'file': ContentFile('file content'), 'mimetype': 'text/plain'},
-    }
+    },
 )
 ```
 
@@ -205,7 +205,7 @@ mail.send(
 )
 
 # This will create an email with the following content:
-subject = 'Morning, Alice',
+subject = ('Morning, Alice',)
 content = 'Hi alice, how are you feeling today?'
 content = 'Hi <strong>alice</strong>, how are you feeling today?'
 ```
@@ -222,10 +222,7 @@ template = EmailTemplate.objects.create(
 )
 
 # Add an Indonesian version of this template:
-indonesian_template = template.translated_templates.create(
-    language='id',
-    subject='Halo Dunia!'
-)
+indonesian_template = template.translated_templates.create(language='id', subject='Halo Dunia!')
 ```
 
 Sending an email using template in a non default language is similarly easy:
@@ -234,14 +231,14 @@ Sending an email using template in a non default language is similarly easy:
 mail.send(
     ['recipient@example.com'],
     'from@example.com',
-    template=template, # Sends using the default template
+    template=template,  # Sends using the default template
 )
 
 mail.send(
     ['recipient@example.com'],
     'from@example.com',
     template=template,
-    language='id', # Sends using Indonesian template
+    language='id',  # Sends using Indonesian template
 )
 ```
 
@@ -256,9 +253,8 @@ First we must add a special Django template backend to our list of template engi
 
 ```python
 TEMPLATES = [
+    {...},
     {
-        ...
-    }, {
         'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
         'APP_DIRS': True,
         'DIRS': [],
@@ -272,8 +268,8 @@ TEMPLATES = [
                 'django.template.context_processors.tz',
                 'django.template.context_processors.request',
             ]
-        }
-    }
+        },
+    },
 ]
 ```
 
@@ -311,8 +307,8 @@ inlined images, use the following code snippet:
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
 
-subject, body = "Hello", "Plain text body"
-from_email, to_email = "no-reply@example.com", "john@example.com"
+subject, body = 'Hello', 'Plain text body'
+from_email, to_email = 'no-reply@example.com', 'john@example.com'
 email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
 template = get_template('email-template-name.html', using='post_office')
 context = {...}
@@ -329,7 +325,7 @@ plain text body, use this code snippet:
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import get_template
 
-subject, from_email, to_email = "Hello", "no-reply@example.com", "john@example.com"
+subject, from_email, to_email = 'Hello', 'no-reply@example.com', 'john@example.com'
 template = get_template('email-template-name.html', using='post_office')
 context = {...}
 html = template.render(context)
@@ -426,13 +422,13 @@ Each webhook event is normalized into an `ESPEvent` object:
 
 ```python
 ESPEvent(
-    raw_event='delivered',                 # raw ESP event name
+    raw_event='delivered',  # raw ESP event name
     delivery_status=RecipientDeliveryStatus.DELIVERED,
-    recipient='user@example.com',          # recipient email
-    message_id='<abc123@example.com>',     # message-id header or provider id
-    timestamp=timezone.now(),              # datetime if available
-    subject='Hello',                       # subject if provided
-    to_addresses=['a@example.com'],        # all recipients if provided
+    recipient='user@example.com',  # recipient email
+    message_id='<abc123@example.com>',  # message-id header or provider id
+    timestamp=timezone.now(),  # datetime if available
+    subject='Hello',  # subject if provided
+    to_addresses=['a@example.com'],  # all recipients if provided
 )
 ```
 
@@ -733,20 +729,16 @@ For example:
 
 ```python
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "post_office": {
-            "format": "[%(levelname)s]%(asctime)s PID %(process)d: %(message)s",
-            "datefmt": "%d-%m-%Y %H:%M:%S",
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'post_office': {
+            'format': '[%(levelname)s]%(asctime)s PID %(process)d: %(message)s',
+            'datefmt': '%d-%m-%Y %H:%M:%S',
         },
     },
-    "handlers": {
-        "post_office": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "post_office"
-        },
+    'handlers': {
+        'post_office': {'level': 'DEBUG', 'class': 'logging.StreamHandler', 'formatter': 'post_office'},
         # If you use sentry for logging
         'sentry': {
             'level': 'ERROR',
@@ -754,10 +746,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        "post_office": {
-            "handlers": ["post_office", "sentry"],
-            "level": "INFO"
-        },
+        'post_office': {'handlers': ['post_office', 'sentry'], 'level': 'INFO'},
     },
 }
 ```
@@ -819,14 +808,9 @@ first_email = {
     'sender': 'from@example.com',
     'recipients': ['alice@example.com'],
     'subject': 'Hi!',
-    'message': 'Hi Alice!'
+    'message': 'Hi Alice!',
 }
-second_email = {
-    'sender': 'from@example.com',
-    'recipients': ['bob@example.com'],
-    'subject': 'Hi!',
-    'message': 'Hi Bob!'
-}
+second_email = {'sender': 'from@example.com', 'recipients': ['bob@example.com'], 'subject': 'Hi!', 'message': 'Hi Bob!'}
 kwargs_list = [first_email, second_email]
 
 mail.send_many(kwargs_list)
@@ -946,7 +930,7 @@ try:
         call_command('send_queued_mail', processes=1)
 
 except ImportError:
-    print("uwsgidecorators not found. Cron and timers are disabled")
+    print('uwsgidecorators not found. Cron and timers are disabled')
 ```
 
 Alternatively you can also use the decorator
@@ -974,9 +958,10 @@ handler `email_queued`, for instance:
 from django.dispatch import receiver
 from post_office.signals import email_queued
 
+
 @receiver(email_queued)
 def my_callback(sender, emails, **kwargs):
-    print("Added {} mails to the sending queue".format(len(emails)))
+    print('Added {} mails to the sending queue'.format(len(emails)))
 ```
 
 The Emails objects added to the queue are passed as list to the callback
