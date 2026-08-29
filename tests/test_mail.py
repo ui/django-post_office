@@ -33,6 +33,7 @@ from post_office.settings import (
 )
 
 connection_counter = 0
+close_counter = 0
 
 
 class ConnectionTestingBackend(mail.backends.base.BaseEmailBackend):
@@ -43,6 +44,10 @@ class ConnectionTestingBackend(mail.backends.base.BaseEmailBackend):
     def open(self):
         global connection_counter
         connection_counter += 1
+
+    def close(self):
+        global close_counter
+        close_counter += 1
 
     def send_messages(self, email_messages):
         pass
@@ -172,6 +177,46 @@ class MailTest(TransactionTestCase):
         )
         _send_bulk([email_1, email_2, email_3])
         self.assertEqual(connection_counter, 2)
+
+    @override_settings(
+        EMAIL_BACKEND='tests.test_mail.ConnectionTestingBackend',
+        POST_OFFICE={
+            'BACKENDS': {
+                'connection_tester': 'tests.test_mail.ConnectionTestingBackend',
+            },
+            'THREADS_PER_PROCESS': 2,
+        },
+    )
+    def test_send_bulk_closes_worker_connections(self):
+        """
+        Ensure _send_bulk() closes the connections opened inside the worker
+        threads. These live in each worker's thread-local cache, which the main
+        thread's connections.close() cannot reach, so without explicit cleanup
+        their sockets leak until garbage collection.
+        """
+        global connection_counter, close_counter
+        connection_counter = 0
+        close_counter = 0
+        emails = Email.objects.bulk_create(
+            [
+                Email(
+                    to=['to@example.com'],
+                    from_email='bob@example.com',
+                    subject='',
+                    message='',
+                    status=STATUS.queued,
+                    backend_alias='connection_tester',
+                )
+                for _ in range(6)
+            ]
+        )
+        try:
+            _send_bulk(emails)
+            self.assertGreater(connection_counter, 0)
+            self.assertEqual(close_counter, connection_counter)
+        finally:
+            connection_counter = 0
+            close_counter = 0
 
     def test_get_queued(self):
         """

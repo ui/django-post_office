@@ -1,6 +1,9 @@
 Changelog
 =========
 
+## Master
+* Fixed a connection leak in `_send_bulk()`.
+
 ## Version 3.11.2 (2026-04-16)
 * `_send_email` should dispatch email using it's own connection. Thanks @ibadarrohman!
 

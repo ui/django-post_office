@@ -39,17 +39,6 @@ from .utils import (
 logger = setup_loghandlers('INFO')
 
 
-def _send_email(email: Email, log_level: int) -> tuple[bool, Optional[Exception]]:
-    try:
-        connection = connections[email.backend_alias or 'default']
-        email.dispatch(log_level=log_level, commit=False, disconnect_after_delivery=False, connection=connection)
-        logger.debug(f'Successfully sent email #{email.id}')
-        return True, None
-    except Exception as e:
-        logger.exception(f'Failed to send email #{email.id}')
-        return False, e
-
-
 def create(
     sender,
     recipients=None,
@@ -380,12 +369,34 @@ def _send_bulk(
             logger.exception(f'Failed to prepare email #{email.id}')
             failed_emails.append((email, e))
 
+    # The ThreadPool workers open their own connections lazily and reuse them
+    # for every mail they handle. However, those connections cannot be closed by
+    # the main thread's connections.close(). So we collect them and explicitly
+    # close them once all threads have finished.
+    opened_connections = set()
+
+    def _send_email(email):
+        try:
+            connection = connections[email.backend_alias or 'default']
+            opened_connections.add(connection)
+            email.dispatch(
+                log_level=log_level,
+                commit=False,
+                disconnect_after_delivery=False,
+                connection=connection,
+            )
+            logger.debug(f'Successfully sent email #{email.id}')
+            return True, None
+        except Exception as e:
+            logger.exception(f'Failed to send email #{email.id}')
+            return False, e
+
     number_of_threads = min(get_threads_per_process(), email_count)
     try:
         with ThreadPool(number_of_threads) as pool:
             results = []
             for email in emails_to_send:
-                results.append((email, pool.apply_async(_send_email, args=(email, log_level))))
+                results.append((email, pool.apply_async(_send_email, args=(email,))))
 
             timeout = get_batch_delivery_timeout()
 
@@ -398,6 +409,14 @@ def _send_bulk(
                 else:
                     failed_emails.append((email, exception))
     finally:
+        # Close the connections opened inside the worker threads.
+        for connection in opened_connections:
+            try:
+                connection.close()
+            except Exception:
+                logger.exception('Failed to close email connection')
+        opened_connections.clear()
+        # Close any connection opened in the main thread.
         connections.close()
 
     # Update statuses of sent emails
