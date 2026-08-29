@@ -403,6 +403,14 @@ class EmailAdminTest(TestCase):
             response, reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': 32 * 'a'})
         )
 
+    def test_change_view_cid_uppercase_hex_unchanged(self):
+        """Only the scheme is case-insensitive: an uppercase-hex Content-ID has no image URL and is left alone."""
+        content_id = 32 * 'A'
+        email, _ = self._send_html_email_with_image(f'<img src="cid:{content_id}">', content_id)
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, f'/image/{content_id}')
+
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_change_view_cid_uppercase_scheme(self):
         """The change view rewrites ``CID:`` references to the admin image URL as well."""
