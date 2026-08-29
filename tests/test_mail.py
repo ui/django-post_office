@@ -157,8 +157,7 @@ class MailTest(TransactionTestCase):
     def test_send_bulk_reuses_open_connection(self):
         """
         Ensure _send_bulk() opens one connection per thread, not one per email.
-        With THREADS_PER_PROCESS=1: main thread opens one during prepare, worker
-        thread opens one during send — total 2 opens for any number of emails.
+        Preparing opens nothing, so THREADS_PER_PROCESS=1 means one open total.
         """
         global connection_counter
         self.assertEqual(connection_counter, 0)
@@ -176,7 +175,7 @@ class MailTest(TransactionTestCase):
             ]
         )
         _send_bulk([email_1, email_2, email_3])
-        self.assertEqual(connection_counter, 2)
+        self.assertEqual(connection_counter, 1)
 
     @override_settings(
         EMAIL_BACKEND='tests.test_mail.ConnectionTestingBackend',

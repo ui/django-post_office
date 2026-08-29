@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.conf import settings as django_settings, settings
 from django.core import mail
@@ -12,10 +12,11 @@ from django.forms.models import modelform_factory
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
-from django.core.mail.backends.locmem import EmailBackend as LocMemEmailBackend
 
 from post_office.models import Email, Log, PRIORITY, STATUS, EmailTemplate, Attachment
 from post_office.mail import send
+
+from . import test_mail
 
 
 class ModelTest(TestCase):
@@ -113,8 +114,7 @@ class ModelTest(TestCase):
 
     def test_dispatch_uses_provided_connection(self):
         """
-        Ensure dispatch() overrides msg.connection with the explicitly passed
-        connection, even when prepare_email_message() already embedded one.
+        Ensure dispatch() uses the given connection instead of backend_alias.
         """
         email = Email.objects.create(
             to=['to@example.com'],
@@ -127,13 +127,72 @@ class ModelTest(TestCase):
         mocked_connection = MagicMock()
         mocked_connection.send_messages.return_value = 1
 
-        # sanity check, original connection embedded in email_message() should be a LocMemEmailBackend instance
-        self.assertTrue(isinstance(email.email_message().connection, LocMemEmailBackend))
+        with patch('post_office.models.connections') as mocked_connections:
+            email.dispatch(connection=mocked_connection)
 
-        email.dispatch(connection=mocked_connection)
-        # message object's connection should be overridden by the provided one
-        self.assertEqual(email.email_message().connection, mocked_connection)
-        mocked_connection.send_messages.assert_called_once()
+        mocked_connection.send_messages.assert_called_once_with([email.email_message()])
+        mocked_connections.__getitem__.assert_not_called()
+
+    def test_dispatch_routes_by_backend_alias(self):
+        """
+        Ensure dispatch() sends only through the backend named by backend_alias.
+        """
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='from@example.com',
+            subject='Test alias routing',
+            message='Message',
+            backend_alias='b',
+        )
+        backend_a, backend_b = MagicMock(), MagicMock()
+        backends = {'a': backend_a, 'b': backend_b}
+
+        with patch('post_office.models.connections') as mocked_connections:
+            mocked_connections.__getitem__.side_effect = backends.__getitem__
+            email.dispatch()
+
+        mocked_connections.__getitem__.assert_called_once_with('b')
+        backend_b.send_messages.assert_called_once_with([email.email_message()])
+        backend_a.send_messages.assert_not_called()
+
+    def test_dispatch_without_recipients(self):
+        """
+        An email with no recipients is marked sent without opening a connection.
+        """
+        email = Email.objects.create(
+            from_email='from@example.com',
+            subject='No recipients',
+            message='Message',
+            backend_alias='connection_tester',
+        )
+        test_mail.connection_counter = 0
+        try:
+            email.dispatch()
+            self.assertEqual(test_mail.connection_counter, 0)
+        finally:
+            test_mail.connection_counter = 0
+
+        self.assertEqual(email.status, STATUS.sent)
+        self.assertEqual(mail.outbox, [])
+
+    def test_dispatch_commit_false_reraises(self):
+        """
+        With commit=False, failures are re-raised and nothing is persisted.
+        """
+        email = Email.objects.create(
+            to=['to@example.com'],
+            from_email='from@example.com',
+            subject='Test',
+            message='Message',
+            status=STATUS.queued,
+            backend_alias='error',
+        )
+        with self.assertRaisesMessage(Exception, 'Fake Error'):
+            email.dispatch(commit=False)
+
+        email.refresh_from_db()
+        self.assertEqual(email.status, STATUS.queued)
+        self.assertFalse(Log.objects.filter(email=email).exists())
 
     def test_status_and_log(self):
         """
