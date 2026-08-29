@@ -160,9 +160,6 @@ class ModelTest(TestCase):
         An email with no recipients is marked sent without opening a connection.
         """
         email = Email.objects.create(
-            to=[],
-            cc=[],
-            bcc=[],
             from_email='from@example.com',
             subject='No recipients',
             message='Message',
