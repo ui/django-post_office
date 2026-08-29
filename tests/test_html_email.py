@@ -342,6 +342,95 @@ class EmailAdminTest(TestCase):
         self.assertContains(response, f'src="data:image/png;base64,{image_data}"')
         self.assertNotContains(response, 'cid:')
 
+    def _send_html_email_with_image(self, html, content_id):
+        """Send an HTML email with ``dummy.png`` attached inline under the given Content-ID."""
+        msg = EmailMultiAlternatives('inline image', 'Plain text body', to=['john@example.com'])
+        msg.attach_alternative(html, 'text/html')
+        with open(os.path.join(os.path.dirname(__file__), 'static/dummy.png'), 'rb') as f:
+            image = MIMEImage(f.read())
+        image.add_header('Content-Disposition', 'inline', filename='dummy.png')
+        image.add_header('Content-ID', f'<{content_id}>')
+        msg.attach(image)
+        with override_settings(EMAIL_BACKEND='post_office.EmailBackend'):
+            msg.send()
+        email = Email.objects.latest('id')
+        image_data = base64.b64encode(image.get_payload(decode=True)).decode('ascii')
+        return email, f'data:image/png;base64,{image_data}'
+
+    def test_email_preview_view_cid_quoted_img(self):
+        email, data_uri = self._send_html_email_with_image('<img src="cid:abc">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, f'<img src="{data_uri}">')
+        self.assertNotContains(response, 'cid:')
+
+    def test_email_preview_view_cid_css_url(self):
+        """An unquoted CSS ``url(cid:...)`` reference ends at the closing parenthesis."""
+        email, data_uri = self._send_html_email_with_image(
+            '<div style="background-image: url(cid:abc)">Hello</div>', 'abc'
+        )
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, f'<div style="background-image: url({data_uri})">Hello</div>')
+        self.assertNotContains(response, 'cid:')
+
+    def test_email_preview_view_cid_uppercase_scheme(self):
+        """URI schemes are case-insensitive, so ``CID:`` must be recognised too."""
+        email, data_uri = self._send_html_email_with_image('<img src="CID:abc">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, f'<img src="{data_uri}">')
+        self.assertNotContains(response, 'CID:')
+
+    def test_email_preview_view_cid_unknown_unchanged(self):
+        """References to a Content-ID that is not attached are left untouched."""
+        email, data_uri = self._send_html_email_with_image('<img src="cid:nope">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, '<img src="cid:nope">')
+        self.assertNotContains(response, data_uri)
+
+    def test_email_preview_view_cid_inside_word_unchanged(self):
+        """``cid:`` inside a longer word (``acid:``) is not a URI scheme and must not be rewritten."""
+        email, data_uri = self._send_html_email_with_image('<p>acid:abc</p><img src="cid:abc">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, '<p>acid:abc</p>')
+        self.assertContains(response, f'<img src="{data_uri}">')
+
+    def test_change_view_cid_longer_than_md5_unchanged(self):
+        """A Content-ID that merely starts with 32 hex characters is not rewritten to the image URL."""
+        content_id = 32 * 'a' + '-extra'
+        email, _ = self._send_html_email_with_image(f'<img src="cid:{content_id}">', content_id)
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(
+            response, reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': 32 * 'a'})
+        )
+
+    def test_change_view_cid_uppercase_hex_unchanged(self):
+        """Only the scheme is case-insensitive: an uppercase-hex Content-ID has no image URL and is left alone."""
+        content_id = 32 * 'A'
+        email, _ = self._send_html_email_with_image(f'<img src="cid:{content_id}">', content_id)
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, f'/image/{content_id}')
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_change_view_cid_uppercase_scheme(self):
+        """The change view rewrites ``CID:`` references to the admin image URL as well."""
+        template = get_template('image.html', using='post_office')
+        body = template.render({'imgsrc': 'dummy.png'}).replace('cid:', 'CID:')
+        self.assertIn('CID:', body)
+        msg = EmailMultiAlternatives('attached image', 'Plain text body', to=['john@example.com'])
+        msg.attach_alternative(body, 'text/html')
+        template.attach_related(msg)
+        msg.send()
+
+        email = Email.objects.latest('id')
+        image_parts = [p for p in email.email_message().message().walk() if p.get_content_type() == 'image/png']
+        content_id = image_parts[0]['Content-Id'][1:33]
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertContains(
+            response, reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': content_id})
+        )
+        self.assertNotContains(response, 'CID:')
+
     def test_email_preview_view_plaintext_only(self):
         email = send(recipients=['john@example.com'], subject='Plain', message='Plain text body')
         response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
