@@ -4,6 +4,7 @@ import re
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
+from django.contrib.auth import get_permission_codename
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models
 from django.forms import BaseInlineFormSet
@@ -16,6 +17,7 @@ from django.urls import re_path, reverse
 from django.utils.html import format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.http import require_POST
 
 from .fields import CommaSeparatedEmailField
 from .models import STATUS, Attachment, Email, EmailTemplate, Log
@@ -114,7 +116,8 @@ class EmailAdmin(admin.ModelAdmin):
                 name='post_office_email_image',
             ),
             path('<int:pk>/preview/', admin_view(self.preview_html), name='post_office_email_preview'),
-            path('<int:pk>/resend/', admin_view(self.resend), name='resend'),
+            # admin_view outside: anonymous requests redirect to login; require_POST inside: no state change on GET.
+            path('<int:pk>/resend/', admin_view(require_POST(self.resend)), name='resend'),
         ]
         urls.extend(super().get_urls())
         return urls
@@ -301,10 +304,20 @@ class EmailAdmin(admin.ModelAdmin):
         return HttpResponseNotFound()
 
     def resend(self, request, pk):
-        instance = self._get_object_or_deny(request, pk, 'change')
+        instance = self._get_object_or_deny(request, pk, 'view')
+        change_url = reverse('admin:post_office_email_change', args=[instance.pk])
+        if not self.has_change_permission(request, instance):
+            # The Resend button is shown to view-only users too; tell them what they need instead of a bare 403.
+            permission = f'{self.opts.app_label}.{get_permission_codename("change", self.opts)}'
+            messages.error(
+                request,
+                _('Resending requires the "%(permission)s" permission. Ask an administrator to grant it.')
+                % {'permission': permission},
+            )
+            return HttpResponseRedirect(change_url)
         instance.dispatch()
         messages.info(request, 'Email has been sent again')
-        return HttpResponseRedirect(reverse('admin:post_office_email_change', args=[instance.pk]))
+        return HttpResponseRedirect(change_url)
 
 
 @admin.register(Log)

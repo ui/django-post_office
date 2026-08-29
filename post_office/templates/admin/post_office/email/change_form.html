@@ -1,5 +1,10 @@
 {% extends "admin/change_form.html" %}{% load i18n %}
 {% block object-tools-items %}
     {{ block.super }}
-    <li><a href="{% url 'admin:resend' original.pk %}" class="btn btn-high btn-success">{% trans "Resend" %}</a></li>
+    <li>
+        <form method="post" action="{% url 'admin:resend' original.pk %}">
+            {% csrf_token %}
+            <input type="submit" class="button" value="{% translate 'Resend' %}">
+        </form>
+    </li>
 {% endblock object-tools-items %}
