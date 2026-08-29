@@ -386,6 +386,23 @@ class EmailAdminTest(TestCase):
         self.assertContains(response, '<img src="cid:nope">')
         self.assertNotContains(response, data_uri)
 
+    def test_email_preview_view_cid_inside_word_unchanged(self):
+        """``cid:`` inside a longer word (``acid:``) is not a URI scheme and must not be rewritten."""
+        email, data_uri = self._send_html_email_with_image('<p>acid:abc</p><img src="cid:abc">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, '<p>acid:abc</p>')
+        self.assertContains(response, f'<img src="{data_uri}">')
+
+    def test_change_view_cid_longer_than_md5_unchanged(self):
+        """A Content-ID that merely starts with 32 hex characters is not rewritten to the image URL."""
+        content_id = 32 * 'a' + '-extra'
+        email, _ = self._send_html_email_with_image(f'<img src="cid:{content_id}">', content_id)
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(
+            response, reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': 32 * 'a'})
+        )
+
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_change_view_cid_uppercase_scheme(self):
         """The change view rewrites ``CID:`` references to the admin image URL as well."""
