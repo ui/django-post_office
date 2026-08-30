@@ -7,6 +7,7 @@ of auto-discovering tasks in "tasks" submodules.
 
 import datetime
 
+from django.db import transaction
 from django.utils.timezone import now
 
 from post_office.mail import send_queued_mail_until_done
@@ -37,9 +38,12 @@ else:
 
     def queued_mail_handler(sender, **kwargs):
         """
-        Trigger an asynchronous mail delivery.
+        Trigger an asynchronous mail delivery after the current transaction commits.
+
+        With ATOMIC_REQUESTS the email row is not visible to the worker until
+        commit; dispatching immediately races get_queued() (#518).
         """
-        send_queued_mail.delay()
+        transaction.on_commit(send_queued_mail.delay)
 
     @shared_task(ignore_result=True)
     def cleanup_mail(*args, **kwargs):
