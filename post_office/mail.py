@@ -16,7 +16,7 @@ from .lockfile import FileLock, FileLocked, default_lockfile
 from .logutils import setup_loghandlers
 from .models import PRIORITY, STATUS, Email, EmailTemplate, Log
 from .settings import (
-    get_available_backends,
+    get_backend_aliases,
     get_batch_delivery_timeout,
     get_batch_size,
     get_log_level,
@@ -195,7 +195,7 @@ def send(
         else:
             template = get_email_template(template, language)
 
-    if backend and backend not in get_available_backends().keys():
+    if backend and backend not in get_backend_aliases():
         raise ValueError(f'{backend} is not a valid backend alias')
 
     email = create(

@@ -2,7 +2,7 @@ from threading import local
 
 from django.core.mail import get_connection
 
-from .settings import get_backend
+from .settings import get_backend, mailers_are_configured
 
 
 # Copied from Django 1.8's django.core.cache.CacheHandler
@@ -24,12 +24,20 @@ class ConnectionHandler:
         except KeyError:
             pass
 
-        try:
-            backend = get_backend(alias)
-        except KeyError:
-            raise KeyError('%s is not a valid backend alias' % alias)
+        if mailers_are_configured():
+            # Django >= 6.1 only; keep the import lazy so older versions import cleanly.
+            from django.core.mail import mailers
 
-        connection = get_connection(backend)
+            # MailerDoesNotExist is a KeyError subclass, so existing handlers keep
+            # working while callers get the MAILERS-aware error.
+            connection = mailers[alias]
+        else:
+            try:
+                backend = get_backend(alias)
+            except KeyError:
+                raise KeyError('%s is not a valid backend alias' % alias)
+            connection = get_connection(backend)
+
         connection.open()
         self._connections.connections[alias] = connection
         return connection

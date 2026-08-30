@@ -11,6 +11,30 @@ from django.template import engines as template_engines
 from django.utils.module_loading import import_string
 
 PRE_DJANGO_6 = django.VERSION < (6, 0)
+# settings.MAILERS was introduced in Django 6.1; it does not exist on 6.0.
+DJANGO_HAS_MAILERS = django.VERSION >= (6, 1)
+
+
+def mailers_are_configured():
+    """True when the project has opted into Django 6.1+ ``settings.MAILERS``.
+
+    Once ``MAILERS`` is defined Django gates every legacy ``EMAIL_*`` setting,
+    so backends must be resolved through ``django.core.mail.mailers`` instead
+    of ``POST_OFFICE['BACKENDS']`` / ``EMAIL_BACKEND``.
+    """
+    return DJANGO_HAS_MAILERS and hasattr(settings, 'MAILERS')
+
+
+def get_backend_aliases():
+    """Aliases accepted by ``mail.send(backend=...)`` / ``Email.backend_alias``.
+
+    Membership only: this never constructs a backend. ``mailers[alias]`` builds a
+    fresh instance on every lookup, so validating by constructing would read
+    credentials and create third-party clients merely to enqueue an email.
+    """
+    if mailers_are_configured():
+        return settings.MAILERS.keys()
+    return get_available_backends().keys()
 
 
 def get_backend(alias='default'):
