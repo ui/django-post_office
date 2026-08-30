@@ -2,7 +2,50 @@ from threading import local
 
 from django.core.mail import get_connection
 
-from .settings import get_backend, mailers_are_configured
+from .backends import EmailBackend as PostOfficeEmailBackend
+from .settings import get_backend, get_default_mailer, mailers_are_configured
+
+
+def _resolve_mailer(alias):
+    """
+    Resolve ``alias`` through Django 6.1+ ``settings.MAILERS``.
+
+    A mailer that is itself a post_office queue backend cannot deliver anything:
+    sending through it would just enqueue a new Email row, forever. Such aliases
+    are redirected to POST_OFFICE['DEFAULT_MAILER'], and every redirect
+    target that would still recurse is rejected with an error naming the source
+    alias, the delivery alias and the setting to fix.
+
+    The check is ``isinstance`` on the resolved instance, never a match on the
+    dotted path, so equivalent paths and user subclasses are all caught.
+    """
+    # Django >= 6.1 only; keep the import lazy so older versions import cleanly.
+    from django.core.mail import InvalidMailer, MailerDoesNotExist, mailers
+
+    # MailerDoesNotExist is a KeyError subclass, so existing handlers keep
+    # working while callers get the MAILERS-aware error.
+    mailer = mailers[alias]
+    if not isinstance(mailer, PostOfficeEmailBackend):
+        return mailer
+
+    delivery_alias = get_default_mailer()
+    try:
+        delivery_mailer = mailers[delivery_alias]
+    except MailerDoesNotExist as exc:
+        raise InvalidMailer(
+            f"Mailer {alias!r} queues to post_office, but POST_OFFICE['DEFAULT_MAILER'] "
+            f'({delivery_alias!r}) is not a configured mailer.',
+            alias=alias,
+        ) from exc
+    # Covers a direct self-reference (including DEFAULT_MAILER left unset, which
+    # defaults to 'default') and a different alias that also queues.
+    if isinstance(delivery_mailer, PostOfficeEmailBackend):
+        raise InvalidMailer(
+            f"Mailer {alias!r} queues to post_office, and POST_OFFICE['DEFAULT_MAILER'] "
+            f'({delivery_alias!r}) also queues to post_office. Set it to a mailer that delivers email.',
+            alias=alias,
+        )
+    return delivery_mailer
 
 
 # Copied from Django 1.8's django.core.cache.CacheHandler
@@ -25,12 +68,9 @@ class ConnectionHandler:
             pass
 
         if mailers_are_configured():
-            # Django >= 6.1 only; keep the import lazy so older versions import cleanly.
-            from django.core.mail import mailers
-
-            # MailerDoesNotExist is a KeyError subclass, so existing handlers keep
-            # working while callers get the MAILERS-aware error.
-            connection = mailers[alias]
+            # Cached under the requested alias: a redirected alias and its delivery
+            # alias used directly hold two instances per thread. Accepted trade-off.
+            connection = _resolve_mailer(alias)
         else:
             try:
                 backend = get_backend(alias)

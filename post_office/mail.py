@@ -19,6 +19,7 @@ from .settings import (
     get_backend_aliases,
     get_batch_delivery_timeout,
     get_batch_size,
+    get_default_mailer,
     get_log_level,
     get_max_retries,
     get_message_id_enabled,
@@ -377,7 +378,7 @@ def _send_bulk(
 
     def _send_email(email):
         try:
-            connection = connections[email.backend_alias or 'default']
+            connection = connections[email.backend_alias or get_default_mailer()]
             opened_connections.add(connection)
             email.dispatch(
                 log_level=log_level,

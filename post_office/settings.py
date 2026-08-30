@@ -118,6 +118,16 @@ def get_default_priority():
     return get_config().get('DEFAULT_PRIORITY', 'medium')
 
 
+def get_default_mailer():
+    """Alias post_office delivers through when an Email has no ``backend_alias``.
+
+    Under Django 6.1+ MAILERS this is usually a real transport (e.g. ``'smtp'``)
+    because ``MAILERS['default']`` is post_office's own queue backend. Falls
+    back to ``'default'``, which preserves legacy behaviour.
+    """
+    return get_config().get('DEFAULT_MAILER') or 'default'
+
+
 def get_log_level():
     return get_config().get('LOG_LEVEL', 2)
 
