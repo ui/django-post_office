@@ -393,6 +393,15 @@ class EmailAdminTest(TestCase):
         self.assertContains(response, '<p>acid:abc</p>')
         self.assertContains(response, f'<img src="{data_uri}">')
 
+    def test_email_preview_view_cid_in_text_unchanged(self):
+        """``cid:`` mentioned in the email's text is not an image reference and must not be rewritten."""
+        email, data_uri = self._send_html_email_with_image(
+            '<p>Referenced via cid:abc and <code>cid:abc</code></p><img src="cid:abc">', 'abc'
+        )
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, '<p>Referenced via cid:abc and <code>cid:abc</code></p>')
+        self.assertContains(response, f'<img src="{data_uri}">')
+
     def test_change_view_cid_longer_than_md5_unchanged(self):
         """A Content-ID that merely starts with 32 hex characters is not rewritten to the image URL."""
         content_id = 32 * 'a' + '-extra'

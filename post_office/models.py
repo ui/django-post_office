@@ -16,7 +16,14 @@ from post_office.fields import CommaSeparatedEmailField
 
 from .connections import connections
 from .logutils import setup_loghandlers
-from .settings import context_field_class, get_file_storage, get_log_level, get_template_engine, get_override_recipients
+from .settings import (
+    context_field_class,
+    get_default_mailer,
+    get_file_storage,
+    get_log_level,
+    get_override_recipients,
+    get_template_engine,
+)
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -216,7 +223,7 @@ class Email(models.Model):
             # can never succeed. This matches msg.send() returning 0.
             if msg.recipients():
                 if connection is None:
-                    connection = connections[self.backend_alias or 'default']
+                    connection = connections[self.backend_alias or get_default_mailer()]
                 connection.send_messages([msg])
             status = STATUS.sent
             message = ''

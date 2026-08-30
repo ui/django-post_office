@@ -47,11 +47,53 @@ Run `migrate`:
 python manage.py migrate
 ```
 
-Set `post_office.EmailBackend` as your `EMAIL_BACKEND` in Django's `settings.py`:
+Finally, tell Django to hand outgoing email to `post_office`. How you do this
+depends on your Django version, because Django 6.1 replaces `EMAIL_BACKEND`
+with `MAILERS`:
+
+<table>
+<tr>
+<th>Django &lt; 6.1</th>
+<th>Django &gt;= 6.1</th>
+</tr>
+<tr>
+<td>
 
 ```python
+# settings.py
 EMAIL_BACKEND = 'post_office.EmailBackend'
 ```
+
+`post_office` delivers queued email through
+Django's `EMAIL_HOST`, `EMAIL_PORT`, etc.
+
+</td>
+<td>
+
+```python
+# settings.py
+MAILERS = {
+    'default': {
+        'BACKEND': 'post_office.EmailBackend',
+    },
+    'smtp': {
+        'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+        'OPTIONS': {'host': 'smtp.example.com', 'port': 587},
+    },
+}
+POST_OFFICE = {'DEFAULT_MAILER': 'smtp'}
+```
+
+`MAILERS['default']` is where your app queues
+email; `DEFAULT_MAILER` names the mailer
+`post_office` delivers it through.
+
+</td>
+</tr>
+</table>
+
+Both paths let you route individual emails to other backends — see
+[Custom Email Backends](#custom-email-backends).
 
 ## Quickstart
 
@@ -337,33 +379,72 @@ email_message.send()
 
 ### Custom Email Backends
 
-By default, `post_office` uses django's `smtp.EmailBackend`. If you want
-to use a different backend, you can do so by configuring `BACKENDS`.
+By default, `post_office` delivers email through Django's `smtp.EmailBackend`.
+You can define several backends under aliases and pick one per email. Where the
+aliases are configured depends on your Django version — for example, to add
+[django-ses](https://github.com/hmarr/django-ses):
 
-For example if you want to use [django-ses](https://github.com/hmarr/django-ses):
+<table>
+<tr>
+<th>Django &lt; 6.1</th>
+<th>Django &gt;= 6.1</th>
+</tr>
+<tr>
+<td>
 
 ```python
-# Put this in settings.py
+# settings.py
+EMAIL_BACKEND = 'post_office.EmailBackend'
+
 POST_OFFICE = {
     ...
     'BACKENDS': {
-        'default': 'smtp.EmailBackend',
+        'default': 'django.core.mail.backends.smtp.EmailBackend',
         'ses': 'django_ses.SESBackend',
-    }
+    },
 }
 ```
 
-You can then choose what backend you want to use when sending mail:
+Aliases are keys of `POST_OFFICE['BACKENDS']`.
+Emails without a `backend` use `default`.
+
+</td>
+<td>
 
 ```python
-# If you omit `backend_alias` argument, `default` will be used
+# settings.py
+MAILERS = {
+    'default': {'BACKEND': 'post_office.EmailBackend'},
+    'smtp': {
+        'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+        'OPTIONS': {'host': 'smtp.example.com', 'port': 587},
+    },
+    'ses': {'BACKEND': 'django_ses.SESBackend'},
+}
+
+POST_OFFICE = {
+    'DEFAULT_MAILER': 'smtp',
+}
+```
+
+Aliases are keys of `MAILERS`; `POST_OFFICE['BACKENDS']`
+is ignored. Emails without a `backend` use `DEFAULT_MAILER`.
+
+</td>
+</tr>
+</table>
+
+Sending is the same on both:
+
+```python
+# Delivered through `default` (Django < 6.1) or `DEFAULT_MAILER` (Django >= 6.1)
 mail.send(
     ['recipient@example.com'],
     'from@example.com',
     subject='Hello',
 )
 
-# If you want to send using `ses` backend
+# Delivered through the `ses` backend
 mail.send(
     ['recipient@example.com'],
     'from@example.com',
@@ -371,6 +452,20 @@ mail.send(
     backend='ses',
 )
 ```
+
+Notes for `MAILERS`:
+
+* Django 6.1 replaces `EMAIL_BACKEND` and the other `EMAIL_*` settings with
+  `MAILERS`; the old settings keep working until Django 7.0, with deprecation
+  warnings.
+* `MAILERS['default']` is `post_office` itself, so it cannot deliver anything —
+  sending through it would only requeue the email. Any alias that points at
+  `post_office.EmailBackend` is redirected to `DEFAULT_MAILER` on delivery, and
+  `post_office` raises `InvalidMailer` if `DEFAULT_MAILER` is unset, missing
+  from `MAILERS`, or is itself a `post_office` backend.
+* `post_office` reads its configuration from `POST_OFFICE`, never from a
+  mailer's `OPTIONS`; giving a `post_office.EmailBackend` mailer any `OPTIONS`
+  raises `InvalidMailer`.
 
 ### Management Commands
 
@@ -591,6 +686,22 @@ setting `DEFAULT_PRIORITY`. Integration with asynchronous email backends
 POST_OFFICE = {
     ...
     'DEFAULT_PRIORITY': 'now',
+}
+```
+
+### Default Mailer
+
+Emails sent without a `backend` argument are delivered through the `default`
+backend alias. Set `DEFAULT_MAILER` to deliver them through a different alias
+instead. On Django 6.1+ with `MAILERS`, where the `default` mailer is normally
+`post_office` itself, this setting is required — see
+[Custom Email Backends](#custom-email-backends).
+
+```python
+# Put this in settings.py
+POST_OFFICE = {
+    ...
+    'DEFAULT_MAILER': 'smtp',
 }
 ```
 

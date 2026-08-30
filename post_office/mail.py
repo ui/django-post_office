@@ -16,9 +16,10 @@ from .lockfile import FileLock, FileLocked, default_lockfile
 from .logutils import setup_loghandlers
 from .models import PRIORITY, STATUS, Email, EmailTemplate, Log
 from .settings import (
-    get_available_backends,
+    get_backend_aliases,
     get_batch_delivery_timeout,
     get_batch_size,
+    get_default_mailer,
     get_log_level,
     get_max_retries,
     get_message_id_enabled,
@@ -195,7 +196,7 @@ def send(
         else:
             template = get_email_template(template, language)
 
-    if backend and backend not in get_available_backends().keys():
+    if backend and backend not in get_backend_aliases():
         raise ValueError(f'{backend} is not a valid backend alias')
 
     email = create(
@@ -377,7 +378,7 @@ def _send_bulk(
 
     def _send_email(email):
         try:
-            connection = connections[email.backend_alias or 'default']
+            connection = connections[email.backend_alias or get_default_mailer()]
             opened_connections.add(connection)
             email.dispatch(
                 log_level=log_level,

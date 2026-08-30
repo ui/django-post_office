@@ -64,6 +64,25 @@ class BackendTest(TestCase):
             delattr(settings, 'EMAIL_BACKEND')
         setattr(settings, 'POST_OFFICE', previous_settings)
 
+    # One test per legacy precedence level. These run on every supported
+    # Django version; on 6.1 they exercise the path taken when MAILERS is unset.
+    @override_settings(POST_OFFICE={'BACKENDS': {'default': 'tests.backend_one'}})
+    def test_backend_precedence_post_office_backends(self):
+        self.assertEqual(get_backend(), 'tests.backend_one')
+
+    @override_settings(POST_OFFICE={'EMAIL_BACKEND': 'tests.backend_two'})
+    def test_backend_precedence_post_office_email_backend(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(get_backend(), 'tests.backend_two')
+
+    @override_settings(POST_OFFICE={}, EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_backend_precedence_django_email_backend(self):
+        self.assertEqual(get_backend(), 'django.core.mail.backends.locmem.EmailBackend')
+
+    @override_settings(POST_OFFICE={}, EMAIL_BACKEND='post_office.EmailBackend')
+    def test_backend_precedence_post_office_self_reference_falls_back_to_smtp(self):
+        self.assertEqual(get_backend(), 'django.core.mail.backends.smtp.EmailBackend')
+
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_sending_html_email(self):
         """
