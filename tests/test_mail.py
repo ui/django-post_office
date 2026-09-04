@@ -1,7 +1,6 @@
 import re
 import time
 from datetime import timedelta
-from multiprocessing.context import TimeoutError
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -630,7 +629,8 @@ class MailTest(TransactionTestCase):
 
     def test_batch_delivery_timeout(self):
         """
-        Ensure that batch delivery timeout is respected.
+        Ensure that batch delivery timeout is respected, and that a timed-out
+        email is requeued rather than left to blow up send_queued().
         """
         _ = Email.objects.create(
             to=['to@example.com'],
@@ -641,13 +641,46 @@ class MailTest(TransactionTestCase):
             backend_alias='slow_backend',
         )
         start_time = timezone.now()
-        # slow backend sleeps for 5 seconds, so we should get a timeout error since we set
+        # slow backend sleeps for 5 seconds, so we should get a timeout since we set
         # BATCH_DELIVERY_TIMEOUT timeout to 2 seconds in this test
-        with self.assertRaises(TimeoutError):
-            send_queued()
+        total_sent, total_failed, total_requeued = send_queued()
         end_time = timezone.now()
         # Assert that running time is less than 3 seconds (2 seconds timeout + 1 second buffer)
         self.assertTrue(end_time - start_time < timezone.timedelta(seconds=3))
+        self.assertEqual(total_sent, 0)
+        self.assertEqual(total_requeued, 1)
+
+    def test_batch_delivery_timeout_does_not_lose_already_sent_emails(self):
+        """
+        Regression test: when one email in a batch times out, emails that
+        already sent successfully earlier in the same batch must still be
+        marked as STATUS.sent, otherwise they get resent on the next run.
+        """
+        fast_email = Email.objects.create(
+            to=['fast@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='locmem',
+        )
+        slow_email = Email.objects.create(
+            to=['slow@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='slow_backend',
+        )
+        total_sent, total_failed, total_requeued = _send_bulk(
+            [fast_email, slow_email], uses_multiprocessing=False
+        )
+        self.assertEqual(total_sent, 1)
+        self.assertEqual(total_requeued, 1)
+        fast_email.refresh_from_db()
+        slow_email.refresh_from_db()
+        self.assertEqual(fast_email.status, STATUS.sent)
+        self.assertEqual(slow_email.status, STATUS.requeued)
 
     def test_send_bulk_closes_connections_on_exception(self):
         """
