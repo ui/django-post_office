@@ -314,13 +314,10 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
                 for email_list in email_lists:
                     tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
 
-                timeout = get_batch_delivery_timeout()
-                results = []
-
-                # Wait for all tasks to complete with a timeout
-                # The get method is used with a timeout to wait for each result
-                for task in tasks:
-                    results.append(task.get(timeout=timeout))
+                # _send_bulk handles delivery timeouts. A parent-side timeout
+                # can terminate workers before they persist completed sends,
+                # leaving those emails queued for duplicate delivery.
+                results = [task.get() for task in tasks]
 
             total_sent = sum(result[0] for result in results)
             total_failed = sum(result[1] for result in results)
