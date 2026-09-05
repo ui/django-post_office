@@ -103,6 +103,28 @@ class MailTest(TransactionTestCase):
         total_sent, total_failed, total_requeued = send_queued(processes=2)
         self.assertEqual(total_sent, 3)
 
+    def test_multiprocess_timeout_preserves_completed_results(self):
+        """Workers must persist their results before the parent closes the pool."""
+        batches = []
+        for _ in range(2):
+            batch = []
+            for backend_alias in ('locmem', 'slow_backend'):
+                batch.append(
+                    Email.objects.create(
+                        to=['to@example.com'],
+                        from_email='bob@example.com',
+                        subject='Test',
+                        message='Message',
+                        status=STATUS.queued,
+                        backend_alias=backend_alias,
+                    )
+                )
+            batches.append(batch)
+
+        # Ensure each worker has both a successful send and a timed-out send.
+        with patch('post_office.mail.split_emails', return_value=batches):
+            self.assertEqual(send_queued(processes=2), (2, 0, 2))
+
     def test_send_bulk(self):
         """
         Ensure _send_bulk() properly sends out emails.
@@ -672,9 +694,7 @@ class MailTest(TransactionTestCase):
             status=STATUS.queued,
             backend_alias='slow_backend',
         )
-        total_sent, total_failed, total_requeued = _send_bulk(
-            [fast_email, slow_email], uses_multiprocessing=False
-        )
+        total_sent, total_failed, total_requeued = _send_bulk([fast_email, slow_email], uses_multiprocessing=False)
         self.assertEqual(total_sent, 1)
         self.assertEqual(total_requeued, 1)
         fast_email.refresh_from_db()
