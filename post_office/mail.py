@@ -404,7 +404,11 @@ def _send_bulk(
             # Wait for all tasks to complete with a timeout
             # The get method is used with a timeout to wait for each result
             for email, result in results:
-                success, exception = result.get(timeout=timeout)
+                try:
+                    success, exception = result.get(timeout=timeout)
+                except multiprocessing.TimeoutError as e:
+                    logger.warning('Email #%d timed out after %s seconds', email.id, timeout)
+                    success, exception = False, e
                 if success:
                     sent_emails.append(email)
                 else:
