@@ -1,7 +1,10 @@
+import multiprocessing
+import os
 import re
+import tempfile
 import time
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -650,6 +653,101 @@ class MailTest(TransactionTestCase):
         self.assertEqual(total_sent, 0)
         self.assertEqual(total_requeued, 1)
 
+    def test_batch_delivery_timeout_applies_to_whole_batch(self):
+        """
+        BATCH_DELIVERY_TIMEOUT is a deadline for the entire batch, not a fresh
+        window per email. With several slow emails, the batch must still finish
+        within roughly the timeout instead of timeout * number_of_emails.
+        """
+        emails = [
+            Email.objects.create(
+                to=[f'to{i}@example.com'],
+                from_email='bob@example.com',
+                status=STATUS.queued,
+                backend_alias='slow_backend',
+            )
+            for i in range(3)
+        ]
+        start_time = time.monotonic()
+        total_sent, _, total_requeued = _send_bulk(emails, uses_multiprocessing=False)
+        elapsed = time.monotonic() - start_time
+        # 2 seconds timeout + 1 second buffer. A per-email timeout would take ~6 seconds.
+        self.assertLess(elapsed, 3)
+        self.assertEqual(total_sent, 0)
+        self.assertEqual(total_requeued, 3)
+        for email in emails:
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.requeued)
+
+    def test_batch_delivery_timeout_multi_processes(self):
+        """
+        With multiple processes, the parent must wait long enough for a worker
+        that hit its own delivery deadline to finish writing statuses, instead
+        of timing out first and terminating it mid-update.
+
+        Only the returned counts are checked: the test database is in-memory
+        SQLite, so forked workers' writes are invisible here. The counts are
+        computed after _send_bulk's status writes, so collecting them proves
+        the worker finished before the parent gave up.
+        """
+        for backend_alias in ('locmem', 'slow_backend', 'locmem', 'slow_backend'):
+            Email.objects.create(
+                to=['to@example.com'],
+                from_email='bob@example.com',
+                status=STATUS.queued,
+                backend_alias=backend_alias,
+            )
+        total_sent, total_failed, total_requeued = send_queued(processes=2)
+        self.assertEqual((total_sent, total_failed, total_requeued), (2, 0, 2))
+
+    def test_send_queued_parent_timeout_collects_then_raises(self):
+        """
+        When a worker does not return within BATCH_DELIVERY_TIMEOUT plus the
+        grace period, the parent logs it, keeps collecting the remaining
+        workers with the time left on the shared deadline, and then raises.
+        """
+        for _ in range(2):
+            Email.objects.create(to=['to@example.com'], from_email='bob@example.com', status=STATUS.queued)
+
+        stuck_result = Mock()
+        stuck_result.get.side_effect = multiprocessing.TimeoutError
+        done_result = Mock()
+        done_result.get.return_value = (1, 0, 0)
+
+        fake_ctx = MagicMock()
+        fake_pool = fake_ctx.Pool.return_value.__enter__.return_value
+        fake_pool.apply_async.side_effect = [stuck_result, done_result]
+
+        # One call for the deadline, then one per worker. Timeout is 2s in test
+        # settings plus a 30s grace, so the deadline is 132.
+        with (
+            patch('post_office.mail.multiprocessing.get_context', return_value=fake_ctx),
+            patch('post_office.mail.time') as fake_time,
+            self.assertLogs('post_office', level='WARNING') as logs,
+            self.assertRaises(multiprocessing.TimeoutError),
+        ):
+            fake_time.monotonic.side_effect = [100, 100, 140]
+            send_queued(processes=2)
+
+        stuck_result.get.assert_called_once_with(timeout=32)
+        # Past the deadline, but still collected with whatever is ready.
+        done_result.get.assert_called_once_with(timeout=0)
+        self.assertIn('Worker 0 did not return within 32 seconds', logs.output[0])
+        self.assertIn('Partial totals from 1 of 2 workers: 1 sent, 0 failed, 0 requeued', logs.output[1])
+
+    def test_send_queued_mail_until_done_stops_on_parent_timeout(self):
+        """
+        A parent timeout must propagate out of send_queued_mail_until_done so
+        the drain loop does not immediately re-select the stuck worker's emails.
+        """
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch('post_office.mail.send_queued', side_effect=multiprocessing.TimeoutError) as mock_send,
+            self.assertRaises(multiprocessing.TimeoutError),
+        ):
+            send_queued_mail_until_done(lockfile=os.path.join(tmpdir, 'lock'), processes=2)
+        mock_send.assert_called_once()
+
     def test_batch_delivery_timeout_does_not_lose_already_sent_emails(self):
         """
         Regression test: when one email in a batch times out, emails that
@@ -672,9 +770,7 @@ class MailTest(TransactionTestCase):
             status=STATUS.queued,
             backend_alias='slow_backend',
         )
-        total_sent, total_failed, total_requeued = _send_bulk(
-            [fast_email, slow_email], uses_multiprocessing=False
-        )
+        total_sent, total_failed, total_requeued = _send_bulk([fast_email, slow_email], uses_multiprocessing=False)
         self.assertEqual(total_sent, 1)
         self.assertEqual(total_requeued, 1)
         fast_email.refresh_from_db()
