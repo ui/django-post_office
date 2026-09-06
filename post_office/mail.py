@@ -40,6 +40,9 @@ from .utils import (
 
 logger = setup_loghandlers('INFO')
 
+# Extra time (seconds) the parent gives workers to finish writing statuses after their own deadline.
+WORKER_COMPLETION_GRACE_PERIOD = 30
+
 
 def create(
     sender,
@@ -310,23 +313,46 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
             # Use 'fork' context to ensure child processes inherit Django setup.
             # This is required for Python 3.14+ where the default start method is 'forkserver' on Linux.
             ctx = multiprocessing.get_context('fork')
+            # Workers enforce their own deadline in _send_bulk; the parent only waits a bit longer.
+            parent_timeout = get_batch_delivery_timeout() + WORKER_COMPLETION_GRACE_PERIOD
+            parent_deadline = time.monotonic() + parent_timeout
+            results = []
+            timed_out_workers = []
+
             with ctx.Pool(processes) as pool:
                 tasks = []
                 for email_list in email_lists:
                     tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
 
-                # A single deadline for the whole batch. Each get() only waits for
-                # the time remaining, so a batch never runs longer than the timeout.
-                deadline = time.monotonic() + get_batch_delivery_timeout()
-                results = []
-
-                for task in tasks:
-                    remaining = max(0, deadline - time.monotonic())
-                    results.append(task.get(timeout=remaining))
+                for index, task in enumerate(tasks):
+                    remaining = max(0, parent_deadline - time.monotonic())
+                    try:
+                        results.append(task.get(timeout=remaining))
+                    except multiprocessing.TimeoutError:
+                        timed_out_workers.append(index)
+                        logger.warning(
+                            'Worker %s did not return within %s seconds; its emails are excluded from the totals below',
+                            index,
+                            parent_timeout,
+                        )
 
             total_sent = sum(result[0] for result in results)
             total_failed = sum(result[1] for result in results)
             total_requeued = sum(result[2] for result in results)
+
+            if timed_out_workers:
+                # Raise so send_queued_mail_until_done() stops instead of re-selecting the stuck emails.
+                logger.warning(
+                    'Partial totals from %s of %s workers: %s sent, %s failed, %s requeued',
+                    len(results),
+                    len(tasks),
+                    total_sent,
+                    total_failed,
+                    total_requeued,
+                )
+                raise multiprocessing.TimeoutError(
+                    f'Workers {timed_out_workers} did not return within {parent_timeout} seconds'
+                )
 
     logger.info(
         '%s emails attempted, %s sent, %s failed, %s requeued',
@@ -401,8 +427,7 @@ def _send_bulk(
             for email in emails_to_send:
                 results.append((email, pool.apply_async(_send_email, args=(email,))))
 
-            # A single deadline for the whole batch. Each get() only waits for
-            # the time remaining, so a batch never runs longer than the timeout.
+            # One deadline for all result waits; each get() only waits for the time remaining.
             timeout = get_batch_delivery_timeout()
             deadline = time.monotonic() + timeout
 
