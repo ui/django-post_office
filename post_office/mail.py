@@ -1,4 +1,5 @@
 import multiprocessing
+import time
 from collections.abc import Sequence
 from email.utils import make_msgid
 from multiprocessing.dummy import Pool as ThreadPool
@@ -314,13 +315,14 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
                 for email_list in email_lists:
                     tasks.append(pool.apply_async(_send_bulk, args=(email_list,)))
 
-                timeout = get_batch_delivery_timeout()
+                # A single deadline for the whole batch. Each get() only waits for
+                # the time remaining, so a batch never runs longer than the timeout.
+                deadline = time.monotonic() + get_batch_delivery_timeout()
                 results = []
 
-                # Wait for all tasks to complete with a timeout
-                # The get method is used with a timeout to wait for each result
                 for task in tasks:
-                    results.append(task.get(timeout=timeout))
+                    remaining = max(0, deadline - time.monotonic())
+                    results.append(task.get(timeout=remaining))
 
             total_sent = sum(result[0] for result in results)
             total_failed = sum(result[1] for result in results)
@@ -399,15 +401,17 @@ def _send_bulk(
             for email in emails_to_send:
                 results.append((email, pool.apply_async(_send_email, args=(email,))))
 
+            # A single deadline for the whole batch. Each get() only waits for
+            # the time remaining, so a batch never runs longer than the timeout.
             timeout = get_batch_delivery_timeout()
+            deadline = time.monotonic() + timeout
 
-            # Wait for all tasks to complete with a timeout
-            # The get method is used with a timeout to wait for each result
             for email, result in results:
+                remaining = max(0, deadline - time.monotonic())
                 try:
-                    success, exception = result.get(timeout=timeout)
+                    success, exception = result.get(timeout=remaining)
                 except multiprocessing.TimeoutError as e:
-                    logger.warning('Email #%d timed out after %s seconds', email.id, timeout)
+                    logger.warning('Email #%d timed out: batch exceeded %s seconds', email.id, timeout)
                     success, exception = False, e
                 if success:
                     sent_emails.append(email)

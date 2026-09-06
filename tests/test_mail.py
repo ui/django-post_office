@@ -650,6 +650,32 @@ class MailTest(TransactionTestCase):
         self.assertEqual(total_sent, 0)
         self.assertEqual(total_requeued, 1)
 
+    def test_batch_delivery_timeout_applies_to_whole_batch(self):
+        """
+        BATCH_DELIVERY_TIMEOUT is a deadline for the entire batch, not a fresh
+        window per email. With several slow emails, the batch must still finish
+        within roughly the timeout instead of timeout * number_of_emails.
+        """
+        emails = [
+            Email.objects.create(
+                to=[f'to{i}@example.com'],
+                from_email='bob@example.com',
+                status=STATUS.queued,
+                backend_alias='slow_backend',
+            )
+            for i in range(3)
+        ]
+        start_time = time.monotonic()
+        total_sent, _, total_requeued = _send_bulk(emails, uses_multiprocessing=False)
+        elapsed = time.monotonic() - start_time
+        # 2 seconds timeout + 1 second buffer. A per-email timeout would take ~6 seconds.
+        self.assertLess(elapsed, 3)
+        self.assertEqual(total_sent, 0)
+        self.assertEqual(total_requeued, 3)
+        for email in emails:
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.requeued)
+
     def test_batch_delivery_timeout_does_not_lose_already_sent_emails(self):
         """
         Regression test: when one email in a batch times out, emails that
