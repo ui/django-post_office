@@ -165,7 +165,8 @@ def cleanup_expired_mails(cutoff_date, delete_attachments=True, batch_size=1000)
     total_deleted_emails = 0
 
     while True:
-        email_ids = Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)[:batch_size]
+        # A list, not a sliced queryset: MySQL and MariaDB reject LIMIT in an IN subquery.
+        email_ids = list(Email.objects.filter(created__lt=cutoff_date).values_list('id', flat=True)[:batch_size])
         if not email_ids:
             break
 

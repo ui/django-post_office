@@ -1,6 +1,13 @@
 Changelog
 =========
 
+## Master
+* Fixed JSON lookups on PostgreSQL databases created before 3.7.0: `Email.headers`, `Email.context` and `Attachment.headers` are converted from `text` to `jsonb` (#514).
+* Fixed `cleanup_mail` on MySQL and MariaDB, which reject `LIMIT` in an `IN` subquery (#456).
+* Like Django's `send_mail()`, email text is no longer rendered as a template unless a `template` or `context` is given, so text containing `{{` or `{%` is sent as written instead of failing or being altered (#478).
+* Fixed an unclosed file when reading the `send_queued_mail` lock file.
+* On Django 6.0+, attachments and inline images use `email.message.MIMEPart` instead of the deprecated `MIMEBase`; `MIMEBase` attachments from apps are still accepted.
+
 ## Version 3.12 (2026-10-08)
 * Added support for `MAILERS` in Django 6.1. Thanks @selwin!
 * Defer Celery's `send_queued_mail` until DB transaction commits. Thanks @Steve0x2a!

@@ -69,10 +69,10 @@ class MailersConnectionTest(MailersTestCase):
 
     @override_settings(MAILERS={'default': {'BACKEND': LOCMEM}})
     def test_no_deprecation_warning(self):
-        from django.utils.deprecation import RemovedInDjango70Warning
+        from django.utils.deprecation import RemovedInDjango2028Warning
 
         with warnings.catch_warnings():
-            warnings.simplefilter('error', RemovedInDjango70Warning)
+            warnings.simplefilter('error', RemovedInDjango2028Warning)
             connections['default']
 
     @override_settings(MAILERS={'default': {'BACKEND': LOCMEM}})

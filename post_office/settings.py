@@ -1,5 +1,8 @@
 import datetime
+import email
+import email.policy
 import warnings
+from email.message import MIMEPart
 
 import django
 from django.conf import settings
@@ -13,6 +16,22 @@ from django.utils.module_loading import import_string
 PRE_DJANGO_6 = django.VERSION < (6, 0)
 # settings.MAILERS was introduced in Django 6.1; it does not exist on 6.0.
 DJANGO_HAS_MAILERS = django.VERSION >= (6, 1)
+
+
+def to_attachment_part(part):
+    """Return a ``MIMEBase`` part in the form ``EmailMessage.attach()`` expects.
+
+    Django 6.0 deprecated ``MIMEBase`` attachments in favour of ``email.message.MIMEPart``;
+    older versions only accept ``MIMEBase``. The part is re-parsed from its own bytes, so
+    headers, transfer encoding and content are unchanged.
+    """
+    if PRE_DJANGO_6:
+        if part.get_content_maintype() in ('multipart', 'message'):
+            parsed = email.message_from_bytes(part.as_bytes())
+            if parsed.is_multipart():
+                part.set_payload(parsed.get_payload())
+        return part
+    return email.message_from_bytes(part.as_bytes(), _class=MIMEPart, policy=email.policy.default)
 
 
 def mailers_are_configured():
