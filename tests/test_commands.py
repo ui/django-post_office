@@ -3,8 +3,9 @@ import os
 
 from django.core.files.base import ContentFile
 from django.core.management import call_command
+from django.db import connection
 from django.test import TestCase
-from django.test.utils import override_settings
+from django.test.utils import CaptureQueriesContext, override_settings
 from django.utils.timezone import now
 
 from post_office.models import STATUS, Attachment, Email
@@ -70,8 +71,12 @@ class CommandTest(TestCase):
         # Email older than 30 days should be deleted
         email.created = now() - datetime.timedelta(31)
         email.save()
-        call_command('cleanup_mail', days=30)
+        with CaptureQueriesContext(connection) as queries:
+            call_command('cleanup_mail', days=30)
         self.assertEqual(Email.objects.count(), 0)
+        # MySQL and MariaDB reject LIMIT in an IN subquery (#456).
+        for query in queries.captured_queries:
+            self.assertFalse('IN (SELECT' in query['sql'] and 'LIMIT' in query['sql'], query['sql'])
 
     @override_settings(
         POST_OFFICE={

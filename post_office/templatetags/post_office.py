@@ -8,6 +8,8 @@ from django.contrib.staticfiles import finders
 from django.core.files import File
 from django.core.files.images import ImageFile
 
+from post_office.settings import to_attachment_part
+
 register = template.Library()
 
 
@@ -35,5 +37,5 @@ def inline_image(context, file):
     md5sum = hashlib.md5(raw_data).hexdigest()
     image.add_header('Content-Disposition', 'inline', filename=md5sum)
     image.add_header('Content-ID', f'<{md5sum}>')
-    context.template._attached_images.append(image)
+    context.template._attached_images.append(to_attachment_part(image))
     return f'cid:{md5sum}'
