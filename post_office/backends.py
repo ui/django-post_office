@@ -1,4 +1,8 @@
 from collections import OrderedDict
+from copy import deepcopy
+from email import encoders, policy
+from uuid import uuid4
+from email.message import MIMEPart
 from email.mime.base import MIMEBase
 from django.core.files.base import ContentFile
 from django.core.mail.backends.base import BaseEmailBackend
@@ -44,9 +48,24 @@ class EmailBackend(BaseEmailBackend):
 
             attachment_files = {}
             for attachment in email_message.attachments:
-                if isinstance(attachment, MIMEBase):
-                    attachment_files[attachment.get_filename()] = {
-                        'file': ContentFile(attachment.get_payload()),
+                # Django 6.0+ apps attach MIMEPart; earlier versions use MIMEBase
+                if isinstance(attachment, (MIMEBase, MIMEPart)):
+                    if isinstance(attachment, MIMEPart):
+                        # Preserve binary bytes and multipart structure without mutating the caller's part.
+                        attachment = deepcopy(attachment)
+                        for part in attachment.walk():
+                            if not part.is_multipart():
+                                payload = part.get_payload(decode=True)
+                                if payload is not None:
+                                    part.set_payload(payload)
+                                    del part['Content-Transfer-Encoding']
+                                    encoders.encode_base64(part)
+                        payload = attachment.as_bytes(policy=policy.default).partition(b'\n\n')[2]
+                    else:
+                        payload = attachment.get_payload()
+                    filename = attachment.get_filename() or f'attachment-{uuid4().hex}'
+                    attachment_files[filename] = {
+                        'file': ContentFile(payload),
                         'mimetype': attachment.get_content_type(),
                         'headers': OrderedDict(attachment.items()),
                     }

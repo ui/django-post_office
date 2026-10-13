@@ -1,6 +1,9 @@
 Changelog
 =========
 
+## Master
+* On Django 6.0+, attachments and inline images use MIMEPart; legacy MIMEBase attachments remain accepted.
+
 ## Version 3.12 (2026-10-08)
 * Added support for `MAILERS` in Django 6.1. Thanks @selwin!
 * Defer Celery's `send_queued_mail` until DB transaction commits. Thanks @Steve0x2a!

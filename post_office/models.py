@@ -23,6 +23,7 @@ from .settings import (
     get_log_level,
     get_override_recipients,
     get_template_engine,
+    to_attachment_part,
 )
 from .validators import validate_email_with_name, validate_template_syntax
 
@@ -203,7 +204,7 @@ class Email(models.Model):
                         mime_part.replace_header(key, val)
                     except KeyError:
                         mime_part.add_header(key, val)
-                msg.attach(mime_part)
+                msg.attach(to_attachment_part(mime_part))
             else:
                 msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype or None)
             attachment.file.close()
