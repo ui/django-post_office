@@ -1,6 +1,9 @@
 Changelog
 =========
 
+## Master
+* Fixed `cleanup_mail` on MySQL and MariaDB, which reject `LIMIT` in an `IN` subquery (#456).
+
 ## Version 3.12 (2026-10-08)
 * Added support for `MAILERS` in Django 6.1. Thanks @selwin!
 * Defer Celery's `send_queued_mail` until DB transaction commits. Thanks @Steve0x2a!
