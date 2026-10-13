@@ -71,3 +71,26 @@ jobs:
       - name: Run Test
         run: |
           pytest
+
+  postgres-migrations:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        django-version: ["4.2", "6.1"]
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: post_office
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[test]" "Django~=${{ matrix.django-version }}.0" "psycopg[binary]"
+      - run: pytest tests/test_migrations.py --ds=tests.postgres_settings

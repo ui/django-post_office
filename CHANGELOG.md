@@ -1,6 +1,22 @@
 Changelog
 =========
 
+## Master
+* Fixed legacy PostgreSQL JSON columns by converting text to jsonb; custom context serializers are preserved (#514).
+
+### Upgrading legacy PostgreSQL databases
+
+Migration `0015` converts legacy text columns to `jsonb`. PostgreSQL takes an
+`ACCESS EXCLUSIVE` lock on each affected table and rewrites it. Both Email columns
+are converted together to avoid rewriting `post_office_email` twice, but this
+table can still be large. Consider running `cleanup_mail` with your retention
+policy first, and plan a maintenance window for the migration.
+
+Invalid JSON causes the migration to fail atomically; existing data is not
+silently discarded. Repair invalid values before retrying. If you perform the
+equivalent SQL conversions manually, verify the resulting column types and data
+before marking migration `0015` applied with `--fake`.
+
 ## Version 3.12 (2026-10-08)
 * Added support for `MAILERS` in Django 6.1. Thanks @selwin!
 * Defer Celery's `send_queued_mail` until DB transaction commits. Thanks @Steve0x2a!
