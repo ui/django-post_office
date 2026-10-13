@@ -348,6 +348,21 @@ class MailTest(TransactionTestCase):
         self.assertEqual(email.headers, {'header': 'Test header'})
         self.assertTrue(re.match(r'<\d+\.\d+\.\d+@example.com>', email.message_id))
 
+    def test_create_with_explicit_empty_context(self):
+        for context, expected in ((None, 'Hello {{ name }}'), ({}, 'Hello ')):
+            with self.subTest(context=context):
+                email = create(
+                    sender='from@example.com',
+                    recipients=['to@example.com'],
+                    subject='Hello {{ name }}',
+                    message='Hello {{ name }}',
+                    html_message='Hello {{ name }}',
+                    context=context,
+                )
+                self.assertEqual(email.subject, expected)
+                self.assertEqual(email.message, expected)
+                self.assertEqual(email.html_message, expected)
+
     def test_send_many(self):
         """Test send_many creates the right emails"""
         kwargs_list = [
