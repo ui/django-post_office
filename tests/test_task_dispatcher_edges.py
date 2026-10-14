@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from post_office import mail as post_mail
 from post_office.models import STATUS, Email
-from post_office.tasks import queued_mail_handler
+from post_office.task_dispatch import queued_mail_handler
 
 
 def enqueue_noop():
@@ -103,10 +103,10 @@ class DispatcherTransactionEdgeTests(TransactionTestCase):
             self.assertEqual(row_counts, [20])
 
     def test_receiver_can_be_disconnected_by_function(self):
-        from post_office import tasks
+        from post_office import task_dispatch
         from post_office.signals import email_queued
 
-        receiver = tasks.queued_mail_handler
+        receiver = task_dispatch.queued_mail_handler
         try:
             self.assertTrue(email_queued.disconnect(receiver))
             with mock.patch('tests.test_task_dispatcher_edges.enqueue_noop') as enqueue:

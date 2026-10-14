@@ -108,30 +108,21 @@ def get_celery_enabled():
 
 
 def get_task_dispatcher():
-    """Resolve an explicit enqueue callable, otherwise retain the Celery setting."""
-    config = get_config()
-    if 'TASK_DISPATCHER' in config:
-        dispatcher = config['TASK_DISPATCHER']
-        if dispatcher is None:
-            return None
-        if isinstance(dispatcher, str):
-            try:
-                dispatcher = import_string(dispatcher)
-            except ImportError as exc:
-                raise ImproperlyConfigured('Unable to import POST_OFFICE TASK_DISPATCHER.') from exc
-        if not callable(dispatcher):
-            raise ImproperlyConfigured(
-                'POST_OFFICE TASK_DISPATCHER must be a synchronous enqueue callable or None. '
-                'For task objects, configure an enqueue callable instead.'
-            )
-        return dispatcher
-    if get_celery_enabled():
-        from . import tasks
-
-        task = getattr(tasks, 'send_queued_mail', None)
-        if task is not None:
-            return task.delay
-    return None
+    """Resolve the explicitly configured enqueue callable."""
+    dispatcher = get_config().get('TASK_DISPATCHER')
+    if dispatcher is None:
+        return None
+    if isinstance(dispatcher, str):
+        try:
+            dispatcher = import_string(dispatcher)
+        except ImportError as exc:
+            raise ImproperlyConfigured('Unable to import POST_OFFICE TASK_DISPATCHER.') from exc
+    if not callable(dispatcher):
+        raise ImproperlyConfigured(
+            'POST_OFFICE TASK_DISPATCHER must be a synchronous enqueue callable or None. '
+            'For task objects, configure an enqueue callable instead.'
+        )
+    return dispatcher
 
 
 def get_lock_file_name():

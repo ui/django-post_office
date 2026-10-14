@@ -1051,7 +1051,7 @@ queue. Other task systems can enqueue a worker calling
 
 ### Delivery and recovery
 
-Automatic dispatch waits for the email database transaction to commit. For direct
+Custom dispatchers wait for the email database transaction to commit. For direct
 task enqueueing against uncommitted data, use `transaction.on_commit()` on that
 database. Workers must read the database containing the emails.
 
