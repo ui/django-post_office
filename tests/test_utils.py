@@ -13,7 +13,11 @@ from post_office.utils import (
     send_mail,
     split_emails,
 )
-from post_office.validators import validate_email_with_name, validate_comma_separated_emails
+from post_office.validators import (
+    validate_comma_separated_emails,
+    validate_email_with_name,
+    validate_template_syntax,
+)
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
@@ -50,6 +54,10 @@ class UtilsTest(TestCase):
         self.assertRaises(ValidationError, validate_email_with_name, 'invalid')
         self.assertRaises(ValidationError, validate_email_with_name, 'Al <ab>')
         self.assertRaises(ValidationError, validate_email_with_name, 'Al <>')
+        self.assertRaises(ValidationError, validate_email_with_name, 'Al <email@example.com> junk')
+        # Line breaks could be used to inject headers
+        self.assertRaises(ValidationError, validate_email_with_name, 'Al\nBcc: evil@example.com <email@example.com>')
+        self.assertRaises(ValidationError, validate_email_with_name, 'Al\r\n<email@example.com>')
 
     def test_comma_separated_email_list_validator(self):
         # These should validate
@@ -64,6 +72,50 @@ class UtilsTest(TestCase):
         self.assertRaises(
             ValidationError, validate_comma_separated_emails, ['email@example.com', 'invalid_mail', 'email@example.com']
         )
+
+    def test_template_syntax_validator(self):
+        # These should validate
+        valid = [
+            'Hello {{ user.fullname }}',
+            'Hello {{ name|default:"there" }}',
+            '{% if user %}{% for i in items %}{{ i }}{% endfor %}{% endif %}',
+            '{# a comment #}',
+            # CSS in HTML emails uses braces and percent signs
+            '<style>@media{.a{width:100%}}</style>',
+            '<style>.a{width: 100%}</style>',
+            '<style>.btn{color:{{ color }}}</style>',
+            # Literal tags in verbatim and comment blocks are intentional
+            '{% verbatim %}{{ not a tag {% endverbatim %}',
+            '{% comment %}{{ draft{% endcomment %}',
+        ]
+        for source in valid:
+            with self.subTest(source=source):
+                validate_template_syntax(source)
+
+        # These are rendered as literal text by Django, so they should raise ValidationError
+        invalid = [
+            'Hello {{ user.fullname }',
+            'Hello {{ user.fullname ]}',
+            'Hello { user.fullname }}',
+            'Hello {{ user.fullname',
+            '{{ user\n.fullname }}',
+            '{% if user }Hi{% endif %}',
+            '{ if user %}Hi',
+            '{# unclosed comment',
+            '{% if user %}{{ user.fullname }{% endif %}',
+            # Errors raised by Django itself
+            '{{ }}',
+            '{{ name|nonexistent }}',
+            '{% if user %}',
+        ]
+        for source in invalid:
+            with self.subTest(source=source):
+                self.assertRaises(ValidationError, validate_template_syntax, source)
+
+    def test_template_syntax_validator_message(self):
+        with self.assertRaises(ValidationError) as cm:
+            validate_template_syntax('Hi,\n{{ user.fullname }\nBye')
+        self.assertEqual(cm.exception.messages, ["Unclosed variable tag on line 2: '{{ user.fullname }'"])
 
     def test_get_template_email(self):
         # Sanity Check
