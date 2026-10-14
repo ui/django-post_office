@@ -1,19 +1,21 @@
 """
-Only define the tasks and handler if we can import celery.
+Only define Celery tasks when enabled and Celery can be imported.
 This allows the module to be imported in environments without Celery, for
 example by other task queue systems such as Huey, which use the same pattern
 of auto-discovering tasks in "tasks" submodules.
 """
 
 import datetime
+import inspect
 
+from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 from django.utils.timezone import now
 
 from post_office.mail import send_queued_mail_until_done
 from post_office.utils import cleanup_expired_mails
 
-from .settings import get_celery_enabled
+from .settings import get_celery_enabled, get_task_dispatcher
 
 try:
     if get_celery_enabled():
@@ -21,12 +23,7 @@ try:
     else:
         raise NotImplementedError()
 except (ImportError, NotImplementedError):
-
-    def queued_mail_handler(sender, **kwargs):
-        """
-        To be called by :func:`post_office.signals.email_queued.send()` for triggering asynchronous
-        mail delivery – if provided by an external queue, such as Celery.
-        """
+    pass
 else:
 
     @shared_task(ignore_result=True)
@@ -36,18 +33,29 @@ else:
         """
         send_queued_mail_until_done()
 
-    def queued_mail_handler(sender, **kwargs):
-        """
-        Trigger an asynchronous mail delivery after the current transaction commits.
-
-        With ATOMIC_REQUESTS the email row is not visible to the worker until
-        commit; dispatching immediately races get_queued() (#518).
-        """
-        transaction.on_commit(send_queued_mail.delay)
-
     @shared_task(ignore_result=True)
     def cleanup_mail(*args, **kwargs):
         days = kwargs.get('days', 90)
         cutoff_date = now() - datetime.timedelta(days)
         delete_attachments = kwargs.get('delete_attachments', True)
         cleanup_expired_mails(cutoff_date, delete_attachments)
+
+
+def queued_mail_handler(sender, **kwargs):
+    """Enqueue queue processing after commit, using one selected dispatcher."""
+    dispatcher = get_task_dispatcher()
+    if dispatcher is not None:
+
+        def enqueue():
+            result = dispatcher()
+            if inspect.isawaitable(result) or inspect.isgenerator(result) or inspect.isasyncgen(result):
+                if inspect.iscoroutine(result) or inspect.isgenerator(result):
+                    result.close()
+                raise ImproperlyConfigured(
+                    'POST_OFFICE TASK_DISPATCHER returned an awaitable or generator; '
+                    'it must enqueue work synchronously.'
+                )
+
+        emails = kwargs.get('emails') or ()
+        using = kwargs.get('using') or (emails[0]._state.db if emails else None)
+        transaction.on_commit(enqueue, using=using)

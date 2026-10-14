@@ -1013,6 +1013,68 @@ done by adding another periodic tasks for `post_office.tasks.cleanup_mail`, whic
 week or month.
 
 
+## Task dispatchers and Django Tasks
+
+### Configuration
+
+`POST_OFFICE['TASK_DISPATCHER']` accepts a synchronous, zero-argument enqueue
+callable or its import path. It overrides `CELERY_ENABLED`; `None` disables
+automatic dispatch. Leave it unset to retain existing Celery or cron/manual
+behavior. Celery dispatch requires Celery to be installed; otherwise configure
+another dispatcher or periodic processing.
+
+The callable must enqueue work. Celery task objects execute synchronously, so
+custom Celery wrappers must call `.delay()`. Import and callability errors fail
+at startup; argument errors propagate when called. Awaitable/generator results
+(including async/generator functions) raise an error during dispatch. Configure
+this hook only from trusted application code, never request data.
+
+For Django 6+ built-in Tasks (not the django-tasks backport; no Celery required):
+
+```python
+POST_OFFICE = {
+    # ...existing settings...
+    'TASK_DISPATCHER': 'post_office.django_tasks.enqueue',
+}
+```
+
+Configure a production `TASKS` backend and run its worker. Django's built-in
+backends are for development/testing; the default `ImmediateBackend` can drain
+the entire mail backlog synchronously inside one request.
+
+`post_office.django_tasks.send_queued_mail` and `cleanup_mail` also support direct
+`.enqueue()` calls. For a named backend/queue, use a custom dispatcher calling
+`send_queued_mail.using(backend='mail', queue_name='emails').enqueue()`.
+Importing the adapter still requires a `default` backend accepting the `default`
+queue. Other task systems can enqueue a worker calling
+`post_office.mail.send_queued_mail_until_done`.
+
+### Delivery and recovery
+
+Automatic dispatch waits for the email database transaction to commit. For direct
+task enqueueing against uncommitted data, use `transaction.on_commit()` on that
+database. Workers must read the database containing the emails.
+
+Persistence and enqueueing are not atomic: enqueue failures, termination after
+commit, or rollback on a separate task database can strand queued mail. Retain
+periodic processing for recovery, scheduled sends, and retries. Enqueue failures
+propagate after commit; retrying the request can create another email.
+
+The PID-based lock coordinates local processes only. Use one active mail
+processor across hosts or containers; delivery is not guaranteed exactly once.
+
+### Switching dispatchers
+
+1. Deploy this version to producers and workers. Set `TASK_DISPATCHER=None` and
+   restart producers; mail persists, but delivery waits for a processor.
+2. Pause periodic processing and drain old jobs. Keep `CELERY_ENABLED=True` on
+   legacy Celery workers until drained, then stop old processing.
+3. Start the replacement processor, enable its dispatcher, and restart producers.
+   Enqueue queue processing once for backlog and restore periodic processing.
+
+To return to Celery, remove `TASK_DISPATCHER`, retain `CELERY_ENABLED=True`, and
+follow the same switching sequence.
+
 ## Integration with uWSGI
 
 If setting up Celery is too daunting and you use
