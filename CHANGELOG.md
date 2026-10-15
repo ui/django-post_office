@@ -2,7 +2,7 @@ Changelog
 =========
 
 ## Master
-* On Django 6.0+, attachments and inline images use MIMEPart; legacy MIMEBase attachments remain accepted.
+* Fixed an unclosed file when reading the send_queued_mail lock file.
 
 ## Version 3.12 (2026-10-08)
 * Added support for `MAILERS` in Django 6.1. Thanks @selwin!
