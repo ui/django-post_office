@@ -1,5 +1,8 @@
+from typing import Any
+
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.http import HttpRequest
 from django.template import TemplateDoesNotExist
 from django.template.backends.base import BaseEngine
 from django.template.backends.django import Template as DjangoTemplate, reraise, get_installed_libraries
@@ -15,7 +18,7 @@ class Template(DjangoTemplate):
         super().__init__(template, backend)
         self._attached_images = []
 
-    def render(self, context=None, request=None):
+    def render(self, context: dict[str, Any] | None = None, request: HttpRequest | None = None) -> str:
         # The compiled template is shared, so images from the latest render are kept on this wrapper.
         self._attached_images = []
         context = make_context(context, request, autoescape=self.backend.engine.autoescape)

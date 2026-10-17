@@ -1,10 +1,13 @@
 from functools import lru_cache
+from typing import Any
 
+from django.template import Engine
+from django.template.backends.base import BaseEngine
 from django.template.loader import get_template, select_template
 
 
 @lru_cache(maxsize=512)
-def compile_template(template_code, engine):
+def compile_template(template_code: str, engine: Engine | BaseEngine) -> Any:
     """
     Returns engine.from_string(template_code), reusing compiled templates for matching source and engine
     while cached (per process). Only use with engines whose templates are safe to share between renders.
