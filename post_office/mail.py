@@ -76,6 +76,7 @@ def create(
         cc = []
     if bcc is None:
         bcc = []
+    has_context = context is not None
     if context is None:
         context = ''
     message_id = make_msgid(domain=get_message_id_fqdn()) if get_message_id_enabled() else None
@@ -101,13 +102,14 @@ def create(
 
     else:
         _context = Context(context or {})
+        # Like Django's send_mail(), text is only rendered as a template when templating is requested (#478).
         if template:
             # Same engine as django.template.Template; only templates are cached since one-off messages rarely repeat
             engine = Engine.get_default()
             subject = compile_template(template.subject, engine).render(_context)
             message = compile_template(template.content, engine).render(_context)
             html_message = compile_template(template.html_content, engine).render(_context)
-        else:
+        elif has_context:
             subject = Template(subject).render(_context)
             message = Template(message).render(_context)
             html_message = Template(html_message).render(_context)
