@@ -390,6 +390,30 @@ class ModelTest(TestCase):
         )
         self.assertIn(form.errors['subject'], [['Empty variable tag'], ['Empty variable tag on line 1']])
 
+    def test_malformed_tags(self):
+        """
+        Ensures that tags with a missing brace, which Django renders as plain
+        text, result in validation errors when saving a ModelForm of an EmailTemplate.
+        """
+        data = dict(
+            name='welcome',
+            subject='Hi {{ user.fullname }',
+            content='Welcome { user.fullname }} to the site.',
+            html_content='{% if user }<h1>Welcome</h1>',
+            default_template='',
+        )
+
+        EmailTemplateForm = modelform_factory(EmailTemplate, exclude=['template'])
+        form = EmailTemplateForm(data)
+
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors['subject'], ["Unclosed variable tag on line 1: 'Hi {{ user.fullname }'"])
+        self.assertEqual(
+            form.errors['content'],
+            ["Variable tag is missing an opening brace on line 1: 'Welcome { user.fullname }} to the site.'"],
+        )
+        self.assertEqual(form.errors['html_content'], ["Unclosed block tag on line 1: '{% if user }<h1>Welcome</h1>'"])
+
     def test_string_priority(self):
         """
         Regression test for:
