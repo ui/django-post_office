@@ -10,7 +10,7 @@ from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
 from django.http import Http404
 from django.http.response import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
-from django.template import Context, Template
+from django.template import Context, Engine
 from django.urls import path
 from django.urls import re_path, reverse
 from django.utils.html import format_html
@@ -21,6 +21,7 @@ from .fields import CommaSeparatedEmailField
 from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
 from .settings import PRE_DJANGO_6
+from .template import compile_template
 
 # URI schemes are case-insensitive. Only rewrite ``cid:`` where it starts an attribute value or a CSS
 # ``url(...)`` argument (preceded by a quote, ``=`` or ``(``), so that ``cid:`` mentioned in the email's
@@ -164,12 +165,7 @@ class EmailAdmin(admin.ModelAdmin):
     )
     def shortened_subject(self, instance):
         if instance.context:
-            template_cache_key = '_subject_template_' + str(instance.template_id)
-            template = getattr(self, template_cache_key, None)
-            if template is None:
-                # cache compiled template to speed up rendering of list view
-                template = Template(instance.template.subject)
-                setattr(self, template_cache_key, template)
+            template = compile_template(instance.template.subject, Engine.get_default())
             subject = template.render(Context(instance.context))
         else:
             subject = instance.subject
