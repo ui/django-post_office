@@ -8,6 +8,7 @@ from typing import Any, Optional
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
+from django.db import router
 from django.db.models import Q, QuerySet
 from django.template import Context, Template
 from django.utils import timezone
@@ -245,8 +246,9 @@ def send_many(kwargs_list: list[dict[str, Any]]) -> list[Email]:
     """
     emails = [send(commit=False, **kwargs) for kwargs in kwargs_list]
     if emails:
-        Email.objects.bulk_create(emails)
-        email_queued.send(sender=Email, emails=emails)
+        using = router.db_for_write(Email)
+        Email.objects.using(using).bulk_create(emails)
+        email_queued.send(sender=Email, emails=emails, using=using)
 
     return emails
 
