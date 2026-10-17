@@ -1,21 +1,24 @@
 import base64
+import hashlib
 import os
 import unittest
 from email.mime.image import MIMEImage
+from io import BytesIO
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.images import ImageFile
 from django.core.mail import EmailMultiAlternatives
+from django.template import Context, Engine, engines
 from django.template.loader import get_template
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 
 from post_office.mail import send, send_queued
 from post_office.models import STATUS, Email, EmailTemplate
 from post_office.settings import PRE_DJANGO_6
-from post_office.template import render_to_string
+from post_office.template import compile_template, render_to_string
 from post_office.template.backends.post_office import PostOfficeTemplates
 
 if PRE_DJANGO_6:
@@ -230,6 +233,72 @@ class HTMLMailTest(TestCase):
         queued_mail = Email.objects.get(id=queued_mail.id)
         send_queued()
         self.assertEqual(Email.objects.get(id=queued_mail.id).status, STATUS.sent)
+
+
+class TemplateCacheTest(SimpleTestCase):
+    def test_compile_template(self):
+        engine = Engine.get_default()
+        template = compile_template('Hi {{ name }}', engine)
+        self.assertIs(compile_template('Hi {{ name }}', engine), template)
+        self.assertIsNot(compile_template('Hi {{ name }}', Engine()), template)
+        self.assertEqual(compile_template('Bye {{ name }}', engine).render(Context({'name': 'Ann'})), 'Bye Ann')
+
+    def test_post_office_from_string_shares_compiled_template(self):
+        engine = engines['post_office']
+        first = engine.from_string('<p>{{ foo }}</p>')
+        second = engine.from_string('<p>{{ foo }}</p>')
+        self.assertIsNot(first, second)
+        self.assertIs(first.template, second.template)
+
+    def test_inline_images_isolated_between_renders(self):
+        engine = engines['post_office']
+        with open(os.path.join(os.path.dirname(__file__), 'static/dummy.png'), 'rb') as fh:
+            png = fh.read()
+        get_wrappers = {
+            'include': lambda: engine.from_string('{% include "image.html" %}'),
+            'include only': lambda: engine.from_string('{% include "image.html" with imgsrc=imgsrc only %}'),
+            'get_template': lambda: get_template('image.html', using='post_office'),
+        }
+        for name, get_wrapper in get_wrappers.items():
+            with self.subTest(name):
+                first, second = get_wrapper(), get_wrapper()
+                self.assertIs(first.template, second.template)
+                # inline_image reads the file to the end, so each subtest needs its own
+                images = [ImageFile(BytesIO(png + suffix), name='dummy.png') for suffix in (b'1', b'2', b'3')]
+                expected_ids = [f'<{hashlib.md5(png + suffix).hexdigest()}>' for suffix in (b'1', b'2', b'3')]
+
+                for wrapper, image, expected_id in [
+                    (first, images[0], expected_ids[0]),
+                    (second, images[1], expected_ids[1]),
+                    (first, images[2], expected_ids[2]),
+                ]:
+                    wrapper.render({'imgsrc': image})
+                    self.assertEqual([img['Content-ID'] for img in wrapper._attached_images], [expected_id])
+                self.assertEqual([img['Content-ID'] for img in second._attached_images], [expected_ids[1]])
+
+    def test_render_to_string_does_not_retry_on_error(self):
+        class Boom:
+            calls = 0
+
+            def __str__(self):
+                Boom.calls += 1
+                raise ValueError('boom')
+
+        with self.assertRaises(ValueError):
+            render_to_string('hello.html', {'foo': Boom()}, using='post_office')
+        self.assertEqual(Boom.calls, 1)
+
+    def test_render_to_string_returns_string_for_django_backend(self):
+        templates = [
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'DIRS': [os.path.join(os.path.dirname(__file__), 'templates')],
+            }
+        ]
+        with override_settings(TEMPLATES=templates):
+            content = render_to_string('hello.html', {'foo': 'Bar'}, using='django')
+        self.assertIsInstance(content, str)
+        self.assertHTMLEqual(content, '<h1>Bar</h1>')
 
 
 class EmailAdminTest(TestCase):

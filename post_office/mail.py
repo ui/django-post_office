@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection as db_connection
 from django.db.models import Q, QuerySet
-from django.template import Context, Template
+from django.template import Context, Engine, Template
 from django.utils import timezone
 
 from .connections import connections
@@ -30,6 +30,7 @@ from .settings import (
     get_threads_per_process,
 )
 from .signals import email_queued
+from .template import compile_template
 from .utils import (
     create_attachments,
     get_email_template,
@@ -99,15 +100,17 @@ def create(
         )
 
     else:
-        if template:
-            subject = template.subject
-            message = template.content
-            html_message = template.html_content
-
         _context = Context(context or {})
-        subject = Template(subject).render(_context)
-        message = Template(message).render(_context)
-        html_message = Template(html_message).render(_context)
+        if template:
+            # Same engine as django.template.Template; only templates are cached since one-off messages rarely repeat
+            engine = Engine.get_default()
+            subject = compile_template(template.subject, engine).render(_context)
+            message = compile_template(template.content, engine).render(_context)
+            html_message = compile_template(template.html_content, engine).render(_context)
+        else:
+            subject = Template(subject).render(_context)
+            message = Template(message).render(_context)
+            html_message = Template(html_message).render(_context)
 
         email = Email(
             from_email=sender,

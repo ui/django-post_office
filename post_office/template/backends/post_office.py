@@ -3,21 +3,34 @@ from django.core.mail import EmailMultiAlternatives
 from django.template import TemplateDoesNotExist
 from django.template.backends.base import BaseEngine
 from django.template.backends.django import Template as DjangoTemplate, reraise, get_installed_libraries
+from django.template.context import make_context
 from django.template.engine import Engine
 
 from post_office.settings import PRE_DJANGO_6
+from post_office.template import compile_template
 
 
 class Template(DjangoTemplate):
     def __init__(self, template, backend):
-        template._attached_images = []
         super().__init__(template, backend)
+        self._attached_images = []
+
+    def render(self, context=None, request=None):
+        # The compiled template is shared, so images from the latest render are kept on this wrapper.
+        self._attached_images = []
+        context = make_context(context, request, autoescape=self.backend.engine.autoescape)
+        # Stored on the context rather than its template because it survives the copies made by `include ... only`
+        context._post_office_attached_images = self._attached_images
+        try:
+            return self.template.render(context)
+        except TemplateDoesNotExist as exc:
+            reraise(exc, self.backend)
 
     def attach_related(self, email_message):
         assert isinstance(email_message, EmailMultiAlternatives), 'Parameter must be of type EmailMultiAlternatives'
         if PRE_DJANGO_6:
             email_message.mixed_subtype = 'related'
-        for attachment in self.template._attached_images:
+        for attachment in self._attached_images:
             email_message.attach(attachment)
 
 
@@ -44,7 +57,7 @@ class PostOfficeTemplates(BaseEngine):
         self.engine = Engine(self.dirs, self.app_dirs, **options)
 
     def from_string(self, template_code):
-        return Template(self.engine.from_string(template_code), self)
+        return Template(compile_template(template_code, self.engine), self)
 
     def get_template(self, template_name):
         try:

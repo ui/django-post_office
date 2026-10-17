@@ -9,6 +9,7 @@ from django.core import serializers
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.forms.models import modelform_factory
+from django.template import engines
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
@@ -20,6 +21,30 @@ from . import test_mail
 
 
 class ModelTest(TestCase):
+    def test_prepare_email_message_caches_compiled_templates(self):
+        template = EmailTemplate.objects.create(
+            name='cached', subject='Hi {{ name }}', content='Text {{ name }}', html_content='<p>{{ name }}</p>'
+        )
+        emails = [
+            Email.objects.create(
+                to=['to@example.com'], from_email='from@example.com', template=template, context={'name': name}
+            )
+            for name in ('Ann', 'Bob')
+        ]
+        backends = {
+            'django': 'django.template.backends.django.DjangoTemplates',
+            'jinja2': 'django.template.backends.jinja2.Jinja2',
+        }
+        for name, backend in backends.items():
+            templates = [{'BACKEND': backend, 'NAME': name, 'DIRS': [], 'APP_DIRS': False, 'OPTIONS': {}}]
+            with self.subTest(name), override_settings(TEMPLATES=templates, POST_OFFICE={'TEMPLATE_ENGINE': name}):
+                engine = engines[name]
+                with patch.object(engine, 'from_string', wraps=engine.from_string) as from_string:
+                    messages = [email.prepare_email_message() for email in emails]
+                # Each of the three distinct sources is compiled once across both emails
+                self.assertEqual(from_string.call_count, 3)
+                self.assertEqual([message.subject for message in messages], ['Hi Ann', 'Hi Bob'])
+
     def test_email_message(self):
         """
         Test to make sure that model's "email_message" method
