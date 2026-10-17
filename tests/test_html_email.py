@@ -1,6 +1,7 @@
 import base64
 import os
 import unittest
+import warnings
 from email.mime.image import MIMEImage
 
 from django.contrib.auth import get_user_model
@@ -14,7 +15,7 @@ from django.urls import reverse
 
 from post_office.mail import send, send_queued
 from post_office.models import STATUS, Email, EmailTemplate
-from post_office.settings import PRE_DJANGO_6
+from post_office.settings import PRE_DJANGO_6, to_attachment_part
 from post_office.template import render_to_string
 from post_office.template.backends.post_office import PostOfficeTemplates
 
@@ -135,11 +136,12 @@ class HTMLMailTest(TestCase):
         )
         subject = '[Django Post-Office unit tests] attached image'
         msg = EmailMultiAlternatives(subject, body, to=['john@example.com'])
-        template.attach_related(msg)
-        msg.content_subtype = 'html'
-        # mixed_subtype no longer exists in Django 6+
-        # this message can be send by email
-        message = msg.message()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            template.attach_related(msg)
+            msg.content_subtype = 'html'
+            message = msg.message()
+        self.assertEqual([str(w.message) for w in caught if 'MIMEBase' in str(w.message)], [])
         parts = list(message.walk())
         # Check that we have the expected parts: root, body, and image
         self.assertGreaterEqual(len(parts), 2)
@@ -350,7 +352,7 @@ class EmailAdminTest(TestCase):
             image = MIMEImage(f.read())
         image.add_header('Content-Disposition', 'inline', filename='dummy.png')
         image.add_header('Content-ID', f'<{content_id}>')
-        msg.attach(image)
+        msg.attach(to_attachment_part(image))
         with override_settings(EMAIL_BACKEND='post_office.EmailBackend'):
             msg.send()
         email = Email.objects.latest('id')
