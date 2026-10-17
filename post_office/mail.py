@@ -3,7 +3,7 @@ import time
 from collections.abc import Sequence
 from email.utils import make_msgid
 from multiprocessing.dummy import Pool as ThreadPool
-from typing import Any, Optional
+from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -285,7 +285,7 @@ def attach_templates(emails: list[Email]) -> None:
             email.template = template_map.get(email.template_id)
 
 
-def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[int, int, int]:
+def send_queued(processes: int = 1, log_level: int | None = None) -> tuple[int, int, int]:
     """
     Sends out all queued mails that has scheduled_time less than now or None
     """
@@ -369,7 +369,7 @@ def send_queued(processes: int = 1, log_level: Optional[int] = None) -> tuple[in
 
 
 def _send_bulk(
-    emails: Sequence[Email], uses_multiprocessing: bool = True, log_level: Optional[int] = None
+    emails: Sequence[Email], uses_multiprocessing: bool = True, log_level: int | None = None
 ) -> tuple[int, int, int]:
     # Multiprocessing does not play well with database connection
     # Fix: Close connections on forking process
@@ -518,7 +518,7 @@ def _send_bulk(
 
 
 def send_queued_mail_until_done(
-    lockfile: str = default_lockfile, processes: int = 1, log_level: Optional[int] = None
+    lockfile: str = default_lockfile, processes: int = 1, log_level: int | None = None
 ) -> None:
     """
     Send mail in queue batch by batch, until all emails have been processed.
