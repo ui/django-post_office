@@ -35,6 +35,12 @@ class BackendTest(TestCase):
         self.assertEqual(email.status, STATUS.queued)
         self.assertEqual(email.priority, PRIORITY.medium)
 
+        # Like Django, message text is sent as written, not rendered as a template (#478).
+        send_mail('Token {{ x }}', 'Use {{{TEST}}} and {% if user %}', 'from@example.com', ['to@example.com'])
+        email = Email.objects.latest('id')
+        self.assertEqual(email.subject, 'Token {{ x }}')
+        self.assertEqual(email.message, 'Use {{{TEST}}} and {% if user %}')
+
     def test_email_backend_setting(self):
         """ """
         old_email_backend = getattr(settings, 'EMAIL_BACKEND', None)
