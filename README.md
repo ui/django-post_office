@@ -284,6 +284,28 @@ mail.send(
 )
 ```
 
+### Previewing Templates in the Admin
+
+The change page of an `EmailTemplate` has a *Preview* section. Enter an
+example context as JSON and the subject, text content and HTML content are
+rendered with it, so you can see how an email looks before anything is sent.
+Translations are rendered with the same context, next to their own content.
+
+```python
+template = EmailTemplate.objects.create(
+    name='welcome',
+    subject='Welcome {{ name }}!',
+    html_content='<h1>Hello {{ name }}</h1>',
+    example_context={'name': 'Alice'},
+)
+```
+
+The text and HTML previews are rendered in a separate request, so a
+template error shows up inside the preview instead of breaking the change
+page. The rendered HTML is served with a sandboxing `Content-Security-Policy`
+and shown in a sandboxed `<iframe>`, so scripts in a template cannot run in
+the admin. Images added with `inline_image` are embedded in the preview.
+
 ### Inlined Images
 
 Often one wants to render images inside a template, which are attached

@@ -5,22 +5,23 @@ from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.mail import EmailMultiAlternatives
 from django.db import models
 from django.forms import BaseInlineFormSet
 from django.forms.widgets import TextInput
 from django.http import Http404
 from django.http.response import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
-from django.template import Context, Template
+from django.template import Context, Template, TemplateDoesNotExist, TemplateSyntaxError
 from django.urls import path
 from django.urls import re_path, reverse
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from .fields import CommaSeparatedEmailField
 from .models import STATUS, Attachment, Email, EmailTemplate, Log
 from .sanitizer import clean_html
-from .settings import PRE_DJANGO_6
+from .settings import PRE_DJANGO_6, get_template_engine
 
 # URI schemes are case-insensitive. Only rewrite ``cid:`` where it starts an attribute value or a CSS
 # ``url(...)`` argument (preceded by a quote, ``=`` or ``(``), so that ``cid:`` mentioned in the email's
@@ -31,6 +32,56 @@ CID_PATTERN = re.compile(r'(?<=["\'=(])cid:([^\s"\'<>()]+)', re.IGNORECASE | re.
 # Content-IDs are case-sensitive, and the route rejects uppercase hex. The lookahead avoids rewriting
 # a prefix of a longer Content-ID.
 CID_MD5_PATTERN = re.compile(r'(?<=["\'=(])(?i:cid):([0-9a-f]{32})(?=$|[\s"\'<>()])', re.ASCII)
+
+# ``sandbox`` gives the document an opaque origin and blocks scripts, forms and popups, so unsanitized
+# email content cannot reach the admin session. Inline CSS is allowed so the email renders faithfully;
+# images may be embedded or loaded from anywhere.
+PREVIEW_CSP = (
+    "sandbox; default-src 'none'; img-src data: https: http:; style-src 'unsafe-inline'; font-src https: data:"
+)
+# Errors a template preview shows in the document instead of raising.
+PREVIEW_ERRORS = (TemplateSyntaxError, TemplateDoesNotExist, ValueError)
+
+
+def sandboxed_html_response(html):
+    """Serve untrusted HTML in a document that cannot run scripts or reach the admin session."""
+    response = HttpResponse(html)
+    response['Content-Security-Policy'] = PREVIEW_CSP
+    response['X-Content-Type-Options'] = 'nosniff'
+    # Don't leak the admin URL to remote images (e.g. tracking pixels).
+    response['Referrer-Policy'] = 'no-referrer'
+    return response
+
+
+def embed_inline_images(html, message):
+    """Replace ``cid:`` references in ``html`` with ``data:`` URIs of the image parts in ``message``.
+
+    A sandboxed preview has an opaque origin, which does not send the admin session cookie, so inline
+    images are embedded rather than linked. ``message`` is an ``email.message.Message``.
+    """
+    images = {}
+    for part in message.walk():
+        content_id = part.get('Content-Id')
+        if part.get_content_maintype() == 'image' and content_id:
+            data = base64.b64encode(part.get_payload(decode=True)).decode('ascii')
+            images[content_id.strip('<>')] = f'data:{part.get_content_type()};base64,{data}'
+    return CID_PATTERN.sub(lambda match: images.get(match.group(1), match.group(0)), html)
+
+
+def preview_iframe(url, height):
+    """An iframe for a sandboxed preview. The frame is sandboxed as well, in case the headers get lost."""
+    return format_html(
+        '<iframe src="{}" sandbox '
+        'style="width: 48em; max-width: 100%; height: {}px; border: 1px solid var(--border-color); '
+        'background: white;"></iframe>',
+        url,
+        height,
+    )
+
+
+def text_preview_height(text):
+    """A height in pixels that shows a short text without a scrollbar and caps a long one."""
+    return min(max(text.count('\n') * 22 + 60, 120), 800)
 
 
 @admin.display(description='Message')
@@ -260,13 +311,7 @@ class EmailAdmin(admin.ModelAdmin):
         html = self._get_html_payload(instance)
         if html is None:
             return None
-        images = {}
-        for part in instance.email_message().message().walk():
-            content_id = part.get('Content-Id')
-            if part.get_content_maintype() == 'image' and content_id:
-                data = base64.b64encode(part.get_payload(decode=True)).decode('ascii')
-                images[content_id.strip('<>')] = f'data:{part.get_content_type()};base64,{data}'
-        return CID_PATTERN.sub(lambda match: images.get(match.group(1), match.group(0)), html)
+        return embed_inline_images(html, instance.email_message().message())
 
     @admin.display(description=_('HTML Body'))
     def render_html_body(self, instance):
@@ -288,17 +333,7 @@ class EmailAdmin(admin.ModelAdmin):
         html = self._get_html_preview(instance)
         if html is None:
             return HttpResponseNotFound()
-        response = HttpResponse(html)
-        # ``sandbox`` gives the document an opaque origin and blocks scripts, forms and popups,
-        # so unsanitized email content cannot reach the admin session. Inline CSS is allowed so
-        # the email renders faithfully; images may be embedded or loaded from anywhere.
-        response['Content-Security-Policy'] = (
-            "sandbox; default-src 'none'; img-src data: https: http:; style-src 'unsafe-inline'; font-src https: data:"
-        )
-        response['X-Content-Type-Options'] = 'nosniff'
-        # Don't leak the admin URL to remote images (e.g. tracking pixels).
-        response['Referrer-Policy'] = 'no-referrer'
-        return response
+        return sandboxed_html_response(html)
 
     def fetch_email_image(self, request, pk, content_id):
         instance = self._get_object_or_deny(request, pk, 'view')
@@ -354,7 +389,16 @@ class EmailTemplateAdminForm(forms.ModelForm):
 
     class Meta:
         model = EmailTemplate
-        fields = ['name', 'description', 'subject', 'content', 'html_content', 'language', 'default_template']
+        fields = [
+            'name',
+            'description',
+            'subject',
+            'content',
+            'html_content',
+            'language',
+            'default_template',
+            'example_context',
+        ]
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
@@ -362,13 +406,85 @@ class EmailTemplateAdminForm(forms.ModelForm):
         if instance and instance.language:
             self.fields['language'].disabled = True
 
+    def clean_example_context(self):
+        context = self.cleaned_data.get('example_context')
+        if context is not None and not isinstance(context, dict):
+            raise ValidationError(_('The example context must be a JSON object.'))
+        return context
 
-class EmailTemplateInline(admin.StackedInline):
+
+def render_template_preview(template, part):
+    """Render one part ('subject', 'text' or 'html') of an EmailTemplate with its example context.
+
+    A translation shares the example context of its default template. The text part is returned
+    escaped inside ``<pre>``; the HTML part has its ``inline_image`` attachments embedded as ``data:`` URIs.
+    """
+    default_template = template.default_template or template
+    context = default_template.example_context or {}
+    if not isinstance(context, dict):
+        # The admin form rejects this, but the field can be set from code or by a custom field class.
+        raise ValueError(_('The example context must be a JSON object, not %s.') % type(context).__name__)
+    engine = get_template_engine()
+    # ``render()`` returns a SafeString, which the admin and ``format_html`` would insert as-is.
+    if part == 'subject':
+        return escape(engine.from_string(template.subject).render(context))
+    if part == 'text':
+        rendered = engine.from_string(template.content).render(context)
+        return format_html('<pre style="white-space: pre-wrap;">{}</pre>', escape(rendered))
+    compiled = engine.from_string(template.html_content)
+    html = compiled.render(context)
+    if hasattr(compiled, 'attach_related'):
+        message = EmailMultiAlternatives()
+        compiled.attach_related(message)
+        html = embed_inline_images(html, message.message())
+    return html
+
+
+class EmailTemplatePreviewMixin:
+    """Read-only admin fields that show a template rendered with its example context.
+
+    The subject is rendered on the page itself, the contents in sandboxed iframes.
+    """
+
+    @admin.display(description=_('Rendered subject'))
+    def rendered_subject(self, instance):
+        if not instance.pk or not instance.subject:
+            return ''
+        try:
+            return render_template_preview(instance, 'subject')
+        except PREVIEW_ERRORS as exc:
+            return format_html('<span class="errornote">{}</span>', exc)
+
+    @admin.display(description=_('Rendered content'))
+    def rendered_content(self, instance):
+        if not instance.pk or not instance.content:
+            return ''
+        url = reverse('admin:post_office_emailtemplate_preview', kwargs={'pk': instance.pk, 'part': 'text'})
+        return preview_iframe(url, text_preview_height(instance.content))
+
+    @admin.display(description=_('Rendered HTML content'))
+    def rendered_html_content(self, instance):
+        if not instance.pk or not instance.html_content:
+            return ''
+        url = reverse('admin:post_office_emailtemplate_preview', kwargs={'pk': instance.pk, 'part': 'html'})
+        return preview_iframe(url, 800)
+
+
+class EmailTemplateInline(EmailTemplatePreviewMixin, admin.StackedInline):
     form = EmailTemplateAdminForm
     formset = EmailTemplateAdminFormSet
     model = EmailTemplate
     extra = 0
-    fields = ('language', 'subject', 'content', 'html_content')
+    fields = (
+        'language',
+        'subject',
+        'rendered_subject',
+        'content',
+        'rendered_content',
+        'html_content',
+        'rendered_html_content',
+    )
+    readonly_fields = ('rendered_subject', 'rendered_content', 'rendered_html_content')
     formfield_overrides = {models.CharField: {'widget': SubjectField}}
 
     def get_max_num(self, request, obj=None, **kwargs):
@@ -376,19 +492,58 @@ class EmailTemplateInline(admin.StackedInline):
 
 
 @admin.register(EmailTemplate)
-class EmailTemplateAdmin(admin.ModelAdmin):
+class EmailTemplateAdmin(EmailTemplatePreviewMixin, admin.ModelAdmin):
     form = EmailTemplateAdminForm
     list_display = ('name', 'description_shortened', 'subject', 'languages_compact', 'created')
     search_fields = ('name', 'description', 'subject')
+    readonly_fields = ('rendered_subject', 'rendered_content', 'rendered_html_content')
     fieldsets = [
         (None, {'fields': ('name', 'description')}),
         (_('Default Content'), {'fields': ('subject', 'content', 'html_content')}),
+        (
+            _('Preview'),
+            {
+                'fields': ('example_context', 'rendered_subject', 'rendered_content', 'rendered_html_content'),
+                'description': _('The subject and contents rendered with the example context. Save to refresh.'),
+            },
+        ),
     ]
     inlines = (EmailTemplateInline,) if settings.USE_I18N else ()
     formfield_overrides = {models.CharField: {'widget': SubjectField}}
 
+    def get_urls(self):
+        admin_view = self.admin_site.admin_view
+        urls = [
+            path(
+                '<int:pk>/preview/<str:part>/',
+                admin_view(self.preview),
+                name='post_office_emailtemplate_preview',
+            ),
+        ]
+        urls.extend(super().get_urls())
+        return urls
+
     def get_queryset(self, request):
         return self.model.objects.filter(default_template__isnull=True)
+
+    def preview(self, request, pk, part):
+        """Serve the template's text or HTML content, rendered with the example context, in a sandboxed document.
+
+        Translations are looked up by their own pk, which ``get_queryset`` excludes, so the lookup bypasses
+        ``get_object``. A template error is shown in the document instead of breaking the change page.
+        """
+        if part not in ('text', 'html'):
+            raise Http404
+        instance = self.model._default_manager.filter(pk=pk).first()
+        if instance is None:
+            raise Http404
+        if not self.has_view_permission(request, instance):
+            raise PermissionDenied
+        try:
+            html = render_template_preview(instance, part)
+        except PREVIEW_ERRORS as exc:
+            html = format_html('<pre style="color: #ba2121; white-space: pre-wrap;">{}</pre>', exc)
+        return sandboxed_html_response(html)
 
     @admin.display(
         description=_('Description'),

@@ -2,6 +2,7 @@ Changelog
 =========
 
 ## Master
+* Added a rendered preview of email templates to the admin, using a new `example_context` field on `EmailTemplate`. Run `migrate` after upgrading. Thanks @wolph!
 * Fixed an unclosed file when reading the send_queued_mail lock file.
 
 ## Version 3.12 (2026-10-08)
