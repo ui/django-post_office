@@ -327,6 +327,12 @@ class EmailTemplate(models.Model):
         verbose_name=_('Default template'),
         on_delete=models.CASCADE,
     )
+    example_context = context_field_class(
+        _('Example context'),
+        blank=True,
+        null=True,
+        help_text=_('Context used to render the preview in the admin, as JSON. Translations share this context.'),
+    )
 
     objects = EmailTemplateManager()
 
