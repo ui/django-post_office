@@ -6,11 +6,11 @@ from django.template.backends.base import BaseEngine
 from django.template.loader import get_template, select_template
 
 
-@lru_cache(maxsize=512)
+@lru_cache(maxsize=128)
 def compile_template(template_code: str, engine: Engine | BaseEngine) -> Any:
     """
-    Returns engine.from_string(template_code), reusing compiled templates for matching source and engine
-    while cached (per process). Only use with engines whose templates are safe to share between renders.
+    Memoized engine.from_string(), per process and keyed on source and engine.
+    Only for engines whose templates hold no per-render state.
     """
     return engine.from_string(template_code)
 

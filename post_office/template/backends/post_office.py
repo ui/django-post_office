@@ -22,7 +22,7 @@ class Template(DjangoTemplate):
         # The compiled template is shared, so images from the latest render are kept on this wrapper.
         self._attached_images = []
         context = make_context(context, request, autoescape=self.backend.engine.autoescape)
-        # Stored on the context rather than its template because it survives the copies made by `include ... only`
+        # An attribute, not a context variable, because `include ... only` drops variables but keeps attributes
         context._post_office_attached_images = self._attached_images
         try:
             return self.template.render(context)

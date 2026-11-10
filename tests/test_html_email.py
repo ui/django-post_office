@@ -259,22 +259,30 @@ class TemplateCacheTest(SimpleTestCase):
             'include only': lambda: engine.from_string('{% include "image.html" with imgsrc=imgsrc only %}'),
             'get_template': lambda: get_template('image.html', using='post_office'),
         }
+
+        def render(wrapper, suffix):
+            # A new file each time because inline_image reads it to the end
+            wrapper.render({'imgsrc': ImageFile(BytesIO(png + suffix), name='dummy.png')})
+
+        def attached_ids(wrapper):
+            return [img['Content-ID'] for img in wrapper._attached_images]
+
+        def content_id(suffix):
+            return f'<{hashlib.md5(png + suffix).hexdigest()}>'
+
         for name, get_wrapper in get_wrappers.items():
             with self.subTest(name):
                 first, second = get_wrapper(), get_wrapper()
                 self.assertIs(first.template, second.template)
-                # inline_image reads the file to the end, so each subtest needs its own
-                images = [ImageFile(BytesIO(png + suffix), name='dummy.png') for suffix in (b'1', b'2', b'3')]
-                expected_ids = [f'<{hashlib.md5(png + suffix).hexdigest()}>' for suffix in (b'1', b'2', b'3')]
+                render(first, b'1')
+                render(second, b'2')
+                self.assertEqual(attached_ids(first), [content_id(b'1')])
+                self.assertEqual(attached_ids(second), [content_id(b'2')])
 
-                for wrapper, image, expected_id in [
-                    (first, images[0], expected_ids[0]),
-                    (second, images[1], expected_ids[1]),
-                    (first, images[2], expected_ids[2]),
-                ]:
-                    wrapper.render({'imgsrc': image})
-                    self.assertEqual([img['Content-ID'] for img in wrapper._attached_images], [expected_id])
-                self.assertEqual([img['Content-ID'] for img in second._attached_images], [expected_ids[1]])
+                # Re-rendering replaces the wrapper's images without touching the other wrapper's
+                render(first, b'3')
+                self.assertEqual(attached_ids(first), [content_id(b'3')])
+                self.assertEqual(attached_ids(second), [content_id(b'2')])
 
     def test_render_to_string_does_not_retry_on_error(self):
         class Boom:
