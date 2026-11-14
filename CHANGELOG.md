@@ -2,7 +2,15 @@ Changelog
 =========
 
 ## Master
-* Fixed a connection leak in `_send_bulk()`.
+* Fixed an unclosed file when reading the send_queued_mail lock file.
+
+## Version 3.12 (2026-10-08)
+* Added support for `MAILERS` in Django 6.1. Thanks @selwin!
+* Defer Celery's `send_queued_mail` until DB transaction commits. Thanks @Steve0x2a!
+* Improved `BATCH_DELIVERY_TIMEOUT` handling. Thanks @juneja-varun and @selwin!
+
+## Version 3.11.3 (2026-08-29)
+* Fixed a connection leak in `_send_bulk()`. Thanks @simonphilips!
 
 ## Version 3.11.2 (2026-04-16)
 * `_send_email` should dispatch email using it's own connection. Thanks @ibadarrohman!

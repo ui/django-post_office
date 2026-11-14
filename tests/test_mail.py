@@ -1,8 +1,10 @@
+import multiprocessing
+import os
 import re
+import tempfile
 import time
 from datetime import timedelta
-from multiprocessing.context import TimeoutError
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -157,8 +159,7 @@ class MailTest(TransactionTestCase):
     def test_send_bulk_reuses_open_connection(self):
         """
         Ensure _send_bulk() opens one connection per thread, not one per email.
-        With THREADS_PER_PROCESS=1: main thread opens one during prepare, worker
-        thread opens one during send — total 2 opens for any number of emails.
+        Preparing opens nothing, so THREADS_PER_PROCESS=1 means one open total.
         """
         global connection_counter
         self.assertEqual(connection_counter, 0)
@@ -176,7 +177,7 @@ class MailTest(TransactionTestCase):
             ]
         )
         _send_bulk([email_1, email_2, email_3])
-        self.assertEqual(connection_counter, 2)
+        self.assertEqual(connection_counter, 1)
 
     @override_settings(
         EMAIL_BACKEND='tests.test_mail.ConnectionTestingBackend',
@@ -346,6 +347,21 @@ class MailTest(TransactionTestCase):
         self.assertEqual(email.scheduled_time, scheduled_time)
         self.assertEqual(email.headers, {'header': 'Test header'})
         self.assertTrue(re.match(r'<\d+\.\d+\.\d+@example.com>', email.message_id))
+
+    def test_create_with_explicit_empty_context(self):
+        for context, expected in ((None, 'Hello {{ name }}'), ({}, 'Hello ')):
+            with self.subTest(context=context):
+                email = create(
+                    sender='from@example.com',
+                    recipients=['to@example.com'],
+                    subject='Hello {{ name }}',
+                    message='Hello {{ name }}',
+                    html_message='Hello {{ name }}',
+                    context=context,
+                )
+                self.assertEqual(email.subject, expected)
+                self.assertEqual(email.message, expected)
+                self.assertEqual(email.html_message, expected)
 
     def test_send_many(self):
         """Test send_many creates the right emails"""
@@ -631,7 +647,8 @@ class MailTest(TransactionTestCase):
 
     def test_batch_delivery_timeout(self):
         """
-        Ensure that batch delivery timeout is respected.
+        Ensure that batch delivery timeout is respected, and that a timed-out
+        email is requeued rather than left to blow up send_queued().
         """
         _ = Email.objects.create(
             to=['to@example.com'],
@@ -642,13 +659,139 @@ class MailTest(TransactionTestCase):
             backend_alias='slow_backend',
         )
         start_time = timezone.now()
-        # slow backend sleeps for 5 seconds, so we should get a timeout error since we set
+        # slow backend sleeps for 5 seconds, so we should get a timeout since we set
         # BATCH_DELIVERY_TIMEOUT timeout to 2 seconds in this test
-        with self.assertRaises(TimeoutError):
-            send_queued()
+        total_sent, total_failed, total_requeued = send_queued()
         end_time = timezone.now()
         # Assert that running time is less than 3 seconds (2 seconds timeout + 1 second buffer)
         self.assertTrue(end_time - start_time < timezone.timedelta(seconds=3))
+        self.assertEqual(total_sent, 0)
+        self.assertEqual(total_requeued, 1)
+
+    def test_batch_delivery_timeout_applies_to_whole_batch(self):
+        """
+        BATCH_DELIVERY_TIMEOUT is a deadline for the entire batch, not a fresh
+        window per email. With several slow emails, the batch must still finish
+        within roughly the timeout instead of timeout * number_of_emails.
+        """
+        emails = [
+            Email.objects.create(
+                to=[f'to{i}@example.com'],
+                from_email='bob@example.com',
+                status=STATUS.queued,
+                backend_alias='slow_backend',
+            )
+            for i in range(3)
+        ]
+        start_time = time.monotonic()
+        total_sent, _, total_requeued = _send_bulk(emails, uses_multiprocessing=False)
+        elapsed = time.monotonic() - start_time
+        # 2 seconds timeout + 1 second buffer. A per-email timeout would take ~6 seconds.
+        self.assertLess(elapsed, 3)
+        self.assertEqual(total_sent, 0)
+        self.assertEqual(total_requeued, 3)
+        for email in emails:
+            email.refresh_from_db()
+            self.assertEqual(email.status, STATUS.requeued)
+
+    def test_batch_delivery_timeout_multi_processes(self):
+        """
+        With multiple processes, the parent must wait long enough for a worker
+        that hit its own delivery deadline to finish writing statuses, instead
+        of timing out first and terminating it mid-update.
+
+        Only the returned counts are checked: the test database is in-memory
+        SQLite, so forked workers' writes are invisible here. The counts are
+        computed after _send_bulk's status writes, so collecting them proves
+        the worker finished before the parent gave up.
+        """
+        for backend_alias in ('locmem', 'slow_backend', 'locmem', 'slow_backend'):
+            Email.objects.create(
+                to=['to@example.com'],
+                from_email='bob@example.com',
+                status=STATUS.queued,
+                backend_alias=backend_alias,
+            )
+        total_sent, total_failed, total_requeued = send_queued(processes=2)
+        self.assertEqual((total_sent, total_failed, total_requeued), (2, 0, 2))
+
+    def test_send_queued_parent_timeout_collects_then_raises(self):
+        """
+        When a worker does not return within BATCH_DELIVERY_TIMEOUT plus the
+        grace period, the parent logs it, keeps collecting the remaining
+        workers with the time left on the shared deadline, and then raises.
+        """
+        for _ in range(2):
+            Email.objects.create(to=['to@example.com'], from_email='bob@example.com', status=STATUS.queued)
+
+        stuck_result = Mock()
+        stuck_result.get.side_effect = multiprocessing.TimeoutError
+        done_result = Mock()
+        done_result.get.return_value = (1, 0, 0)
+
+        fake_ctx = MagicMock()
+        fake_pool = fake_ctx.Pool.return_value.__enter__.return_value
+        fake_pool.apply_async.side_effect = [stuck_result, done_result]
+
+        # One call for the deadline, then one per worker. Timeout is 2s in test
+        # settings plus a 30s grace, so the deadline is 132.
+        with (
+            patch('post_office.mail.multiprocessing.get_context', return_value=fake_ctx),
+            patch('post_office.mail.time') as fake_time,
+            self.assertLogs('post_office', level='WARNING') as logs,
+            self.assertRaises(multiprocessing.TimeoutError),
+        ):
+            fake_time.monotonic.side_effect = [100, 100, 140]
+            send_queued(processes=2)
+
+        stuck_result.get.assert_called_once_with(timeout=32)
+        # Past the deadline, but still collected with whatever is ready.
+        done_result.get.assert_called_once_with(timeout=0)
+        self.assertIn('Worker 0 did not return within 32 seconds', logs.output[0])
+        self.assertIn('Partial totals from 1 of 2 workers: 1 sent, 0 failed, 0 requeued', logs.output[1])
+
+    def test_send_queued_mail_until_done_stops_on_parent_timeout(self):
+        """
+        A parent timeout must propagate out of send_queued_mail_until_done so
+        the drain loop does not immediately re-select the stuck worker's emails.
+        """
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch('post_office.mail.send_queued', side_effect=multiprocessing.TimeoutError) as mock_send,
+            self.assertRaises(multiprocessing.TimeoutError),
+        ):
+            send_queued_mail_until_done(lockfile=os.path.join(tmpdir, 'lock'), processes=2)
+        mock_send.assert_called_once()
+
+    def test_batch_delivery_timeout_does_not_lose_already_sent_emails(self):
+        """
+        Regression test: when one email in a batch times out, emails that
+        already sent successfully earlier in the same batch must still be
+        marked as STATUS.sent, otherwise they get resent on the next run.
+        """
+        fast_email = Email.objects.create(
+            to=['fast@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='locmem',
+        )
+        slow_email = Email.objects.create(
+            to=['slow@example.com'],
+            from_email='bob@example.com',
+            subject='',
+            message='',
+            status=STATUS.queued,
+            backend_alias='slow_backend',
+        )
+        total_sent, total_failed, total_requeued = _send_bulk([fast_email, slow_email], uses_multiprocessing=False)
+        self.assertEqual(total_sent, 1)
+        self.assertEqual(total_requeued, 1)
+        fast_email.refresh_from_db()
+        slow_email.refresh_from_db()
+        self.assertEqual(fast_email.status, STATUS.sent)
+        self.assertEqual(slow_email.status, STATUS.requeued)
 
     def test_send_bulk_closes_connections_on_exception(self):
         """

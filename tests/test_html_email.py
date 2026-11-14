@@ -1,20 +1,24 @@
+import base64
+import hashlib
 import os
 import unittest
 from email.mime.image import MIMEImage
+from io import BytesIO
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.images import ImageFile
 from django.core.mail import EmailMultiAlternatives
+from django.template import Context, Engine, engines
 from django.template.loader import get_template
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 
 from post_office.mail import send, send_queued
 from post_office.models import STATUS, Email, EmailTemplate
 from post_office.settings import PRE_DJANGO_6
-from post_office.template import render_to_string
+from post_office.template import compile_template, render_to_string
 from post_office.template.backends.post_office import PostOfficeTemplates
 
 if PRE_DJANGO_6:
@@ -231,6 +235,80 @@ class HTMLMailTest(TestCase):
         self.assertEqual(Email.objects.get(id=queued_mail.id).status, STATUS.sent)
 
 
+class TemplateCacheTest(SimpleTestCase):
+    def test_compile_template(self):
+        engine = Engine.get_default()
+        template = compile_template('Hi {{ name }}', engine)
+        self.assertIs(compile_template('Hi {{ name }}', engine), template)
+        self.assertIsNot(compile_template('Hi {{ name }}', Engine()), template)
+        self.assertEqual(compile_template('Bye {{ name }}', engine).render(Context({'name': 'Ann'})), 'Bye Ann')
+
+    def test_post_office_from_string_shares_compiled_template(self):
+        engine = engines['post_office']
+        first = engine.from_string('<p>{{ foo }}</p>')
+        second = engine.from_string('<p>{{ foo }}</p>')
+        self.assertIsNot(first, second)
+        self.assertIs(first.template, second.template)
+
+    def test_inline_images_isolated_between_renders(self):
+        engine = engines['post_office']
+        with open(os.path.join(os.path.dirname(__file__), 'static/dummy.png'), 'rb') as fh:
+            png = fh.read()
+        get_wrappers = {
+            'include': lambda: engine.from_string('{% include "image.html" %}'),
+            'include only': lambda: engine.from_string('{% include "image.html" with imgsrc=imgsrc only %}'),
+            'get_template': lambda: get_template('image.html', using='post_office'),
+        }
+
+        def render(wrapper, suffix):
+            # A new file each time because inline_image reads it to the end
+            wrapper.render({'imgsrc': ImageFile(BytesIO(png + suffix), name='dummy.png')})
+
+        def attached_ids(wrapper):
+            return [img['Content-ID'] for img in wrapper._attached_images]
+
+        def content_id(suffix):
+            return f'<{hashlib.md5(png + suffix).hexdigest()}>'
+
+        for name, get_wrapper in get_wrappers.items():
+            with self.subTest(name):
+                first, second = get_wrapper(), get_wrapper()
+                self.assertIs(first.template, second.template)
+                render(first, b'1')
+                render(second, b'2')
+                self.assertEqual(attached_ids(first), [content_id(b'1')])
+                self.assertEqual(attached_ids(second), [content_id(b'2')])
+
+                # Re-rendering replaces the wrapper's images without touching the other wrapper's
+                render(first, b'3')
+                self.assertEqual(attached_ids(first), [content_id(b'3')])
+                self.assertEqual(attached_ids(second), [content_id(b'2')])
+
+    def test_render_to_string_does_not_retry_on_error(self):
+        class Boom:
+            calls = 0
+
+            def __str__(self):
+                Boom.calls += 1
+                raise ValueError('boom')
+
+        with self.assertRaises(ValueError):
+            render_to_string('hello.html', {'foo': Boom()}, using='post_office')
+        self.assertEqual(Boom.calls, 1)
+
+    def test_render_to_string_returns_string_for_django_backend(self):
+        templates = [
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'DIRS': [os.path.join(os.path.dirname(__file__), 'templates')],
+            }
+        ]
+        with override_settings(TEMPLATES=templates):
+            content = render_to_string('hello.html', {'foo': 'Bar'}, using='django')
+        self.assertIsInstance(content, str)
+        self.assertHTMLEqual(content, '<h1>Bar</h1>')
+
+
 class EmailAdminTest(TestCase):
     def setUp(self) -> None:
         self.client = Client()
@@ -322,10 +400,143 @@ class EmailAdminTest(TestCase):
         # Unlike the inline admin preview, the <style> block must survive.
         self.assertContains(response, '<style>h1 { color: red; }</style>')
 
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_email_preview_view_inline_image(self):
+        """cid: references are replaced by data: URIs, since the sandboxed preview cannot use the session."""
+        template = get_template('image.html', using='post_office')
+        body = template.render({'imgsrc': 'dummy.png'})
+        msg = EmailMultiAlternatives('attached image', 'Plain text body', to=['john@example.com'])
+        msg.attach_alternative(body, 'text/html')
+        template.attach_related(msg)
+        msg.send()
+
+        email = Email.objects.latest('id')
+        image_parts = [p for p in email.email_message().message().walk() if p.get_content_type() == 'image/png']
+        image_data = base64.b64encode(image_parts[0].get_payload(decode=True)).decode('ascii')
+
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, 'Testing image attachments')
+        self.assertContains(response, f'src="data:image/png;base64,{image_data}"')
+        self.assertNotContains(response, 'cid:')
+
+    def _send_html_email_with_image(self, html, content_id):
+        """Send an HTML email with ``dummy.png`` attached inline under the given Content-ID."""
+        msg = EmailMultiAlternatives('inline image', 'Plain text body', to=['john@example.com'])
+        msg.attach_alternative(html, 'text/html')
+        with open(os.path.join(os.path.dirname(__file__), 'static/dummy.png'), 'rb') as f:
+            image = MIMEImage(f.read())
+        image.add_header('Content-Disposition', 'inline', filename='dummy.png')
+        image.add_header('Content-ID', f'<{content_id}>')
+        msg.attach(image)
+        with override_settings(EMAIL_BACKEND='post_office.EmailBackend'):
+            msg.send()
+        email = Email.objects.latest('id')
+        image_data = base64.b64encode(image.get_payload(decode=True)).decode('ascii')
+        return email, f'data:image/png;base64,{image_data}'
+
+    def test_email_preview_view_cid_quoted_img(self):
+        email, data_uri = self._send_html_email_with_image('<img src="cid:abc">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, f'<img src="{data_uri}">')
+        self.assertNotContains(response, 'cid:')
+
+    def test_email_preview_view_cid_css_url(self):
+        """An unquoted CSS ``url(cid:...)`` reference ends at the closing parenthesis."""
+        email, data_uri = self._send_html_email_with_image(
+            '<div style="background-image: url(cid:abc)">Hello</div>', 'abc'
+        )
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, f'<div style="background-image: url({data_uri})">Hello</div>')
+        self.assertNotContains(response, 'cid:')
+
+    def test_email_preview_view_cid_uppercase_scheme(self):
+        """URI schemes are case-insensitive, so ``CID:`` must be recognised too."""
+        email, data_uri = self._send_html_email_with_image('<img src="CID:abc">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, f'<img src="{data_uri}">')
+        self.assertNotContains(response, 'CID:')
+
+    def test_email_preview_view_cid_unknown_unchanged(self):
+        """References to a Content-ID that is not attached are left untouched."""
+        email, data_uri = self._send_html_email_with_image('<img src="cid:nope">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, '<img src="cid:nope">')
+        self.assertNotContains(response, data_uri)
+
+    def test_email_preview_view_cid_inside_word_unchanged(self):
+        """``cid:`` inside a longer word (``acid:``) is not a URI scheme and must not be rewritten."""
+        email, data_uri = self._send_html_email_with_image('<p>acid:abc</p><img src="cid:abc">', 'abc')
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, '<p>acid:abc</p>')
+        self.assertContains(response, f'<img src="{data_uri}">')
+
+    def test_email_preview_view_cid_in_text_unchanged(self):
+        """``cid:`` mentioned in the email's text is not an image reference and must not be rewritten."""
+        email, data_uri = self._send_html_email_with_image(
+            '<p>Referenced via cid:abc and <code>cid:abc</code></p><img src="cid:abc">', 'abc'
+        )
+        response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
+        self.assertContains(response, '<p>Referenced via cid:abc and <code>cid:abc</code></p>')
+        self.assertContains(response, f'<img src="{data_uri}">')
+
+    def test_change_view_cid_longer_than_md5_unchanged(self):
+        """A Content-ID that merely starts with 32 hex characters is not rewritten to the image URL."""
+        content_id = 32 * 'a' + '-extra'
+        email, _ = self._send_html_email_with_image(f'<img src="cid:{content_id}">', content_id)
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(
+            response, reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': 32 * 'a'})
+        )
+
+    def test_change_view_cid_uppercase_hex_unchanged(self):
+        """Only the scheme is case-insensitive: an uppercase-hex Content-ID has no image URL and is left alone."""
+        content_id = 32 * 'A'
+        email, _ = self._send_html_email_with_image(f'<img src="cid:{content_id}">', content_id)
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, f'/image/{content_id}')
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_change_view_cid_uppercase_scheme(self):
+        """The change view rewrites ``CID:`` references to the admin image URL as well."""
+        template = get_template('image.html', using='post_office')
+        body = template.render({'imgsrc': 'dummy.png'}).replace('cid:', 'CID:')
+        self.assertIn('CID:', body)
+        msg = EmailMultiAlternatives('attached image', 'Plain text body', to=['john@example.com'])
+        msg.attach_alternative(body, 'text/html')
+        template.attach_related(msg)
+        msg.send()
+
+        email = Email.objects.latest('id')
+        image_parts = [p for p in email.email_message().message().walk() if p.get_content_type() == 'image/png']
+        content_id = image_parts[0]['Content-Id'][1:33]
+        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
+        self.assertContains(
+            response, reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': content_id})
+        )
+        self.assertNotContains(response, 'CID:')
+
     def test_email_preview_view_plaintext_only(self):
         email = send(recipients=['john@example.com'], subject='Plain', message='Plain text body')
         response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
         self.assertEqual(response.status_code, 404)
+
+    def test_email_admin_views_require_login(self):
+        email = self._send_html_email('<p>Hello</p>')
+        anonymous = Client()
+        for url in (
+            reverse('admin:post_office_email_preview', args=[email.pk]),
+            reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': 32 * '0'}),
+        ):
+            response = anonymous.get(url)
+            self.assertEqual(response.status_code, 302, url)
+            self.assertIn(reverse('admin:login'), response['Location'])
+
+        response = anonymous.post(reverse('admin:resend', args=[email.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('admin:login'), response['Location'])
+        self.assertEqual(email.logs.count(), 0)
 
     def test_email_preview_view_object_permission(self):
         email = self._send_html_email('<p>Hello</p>')
@@ -383,3 +594,12 @@ class EmailAdminTest(TestCase):
         response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '<p>Café</p>')
+
+    def test_change_view_preview_button(self):
+        html_email = self._send_html_email('<p>Hello</p>')
+        response = self.client.get(reverse('admin:post_office_email_change', args=[html_email.pk]))
+        self.assertContains(response, reverse('admin:post_office_email_preview', args=[html_email.pk]))
+
+        text_email = send(recipients=['john@example.com'], subject='Plain', message='Plain text body')
+        response = self.client.get(reverse('admin:post_office_email_change', args=[text_email.pk]))
+        self.assertNotContains(response, reverse('admin:post_office_email_preview', args=[text_email.pk]))

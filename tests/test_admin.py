@@ -2,8 +2,8 @@ from django.contrib.admin.sites import AdminSite
 from django.core.files.base import ContentFile
 from django.test import TestCase
 
-from post_office.admin import AttachmentInline
-from post_office.models import Email, Attachment
+from post_office.admin import AttachmentInline, EmailAdmin
+from post_office.models import Email, EmailTemplate, Attachment
 
 
 class MockRequest:
@@ -21,6 +21,15 @@ class EmailAdminTest(TestCase):
 
         self.request = MockRequest()
         self.request.user = MockSuperUser()
+
+    def test_shortened_subject_reflects_template_edit(self):
+        email_admin = EmailAdmin(Email, self.site)
+        template = EmailTemplate(subject='Hi {{ name }}')
+        email = Email(template=template, context={'name': 'Ann'})
+        self.assertEqual(email_admin.shortened_subject(email), 'Hi Ann')
+
+        template.subject = 'Bye {{ name }}'
+        self.assertEqual(email_admin.shortened_subject(email), 'Bye Ann')
 
     def test_attachmentinline_contentdisposition_header(self):
         email = Email.objects.create(to=['to@example.com'], from_email='from@example.com', subject='Subject')

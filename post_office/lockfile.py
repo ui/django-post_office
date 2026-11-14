@@ -41,7 +41,8 @@ class FileLock:
 
     def get_lock_pid(self):
         try:
-            return int(open(self.lock_filename).read())
+            with open(self.lock_filename) as lock_file:
+                return int(lock_file.read())
         except OSError:
             # If we can't read symbolic link, there are two possibilities:
             # 1. The symbolic link is dead (point to non existing file)

@@ -20,3 +20,8 @@ class ConnectionTest(TestCase):
         connections.close()
         second = connections['locmem']
         self.assertIsNot(first, second)
+
+    def test_unknown_alias(self):
+        with self.assertRaises(KeyError) as ctx:
+            connections['nope']
+        self.assertIn('nope', str(ctx.exception))
