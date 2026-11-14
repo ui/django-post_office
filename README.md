@@ -915,6 +915,13 @@ mail.send_many(kwargs_list)
 
 Attachments are not supported with `mail.send_many()`.
 
+## Checking Formatting
+
+Install the Ruff formatting hook with `pre-commit install` or `prek install`.
+The hook checks staged files using the Ruff settings in `pyproject.toml`.
+To check the whole repository, run `pre-commit run --all-files` or
+`prek run --all-files`.
+
 ## Running Tests
 
 To run the test suite:
