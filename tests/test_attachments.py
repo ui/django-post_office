@@ -1,5 +1,6 @@
 from email import message_from_bytes, policy
 from email.generator import BytesGenerator
+from email.message import Message
 from io import BytesIO
 
 from django.core.files.base import ContentFile
@@ -29,6 +30,7 @@ class StoredAttachmentTest(SimpleTestCase):
         wire = BytesIO()
         BytesGenerator(wire, policy=policy.SMTP).flatten(message.message())
         sent = message_from_bytes(wire.getvalue()).get_payload(1)
+        assert isinstance(sent, Message)
         self.assertEqual(sent['Content-ID'], '<x>')
         self.assertEqual(sent.get_content_type(), 'application/octet-stream')
         self.assertEqual(sent.get_payload(decode=True), raw)

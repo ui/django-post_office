@@ -7,6 +7,7 @@ from email.header import Header
 from email.message import MIMEPart
 from email.mime.base import MIMEBase
 from email.mime.nonmultipart import MIMENonMultipart
+from email.parser import BytesParser
 from typing import TYPE_CHECKING
 
 from django.core.mail import EmailMessage
@@ -16,6 +17,13 @@ from .settings import PRE_DJANGO_6
 
 if TYPE_CHECKING:
     from .models import Attachment
+
+
+_mime_part_policy = policy.EmailPolicy(message_factory=MIMEPart)
+
+
+def parse_mime_part(data: bytes) -> MIMEPart:
+    return BytesParser(policy=_mime_part_policy).parsebytes(data)
 
 
 def _serialize_mime_part(attachment: MIMEBase | MIMEPart) -> tuple[bytes, dict[str, str | Header]]:
@@ -60,6 +68,7 @@ def attach_to_message(message: EmailMessage, attachment: Attachment) -> None:
         payload = base64.encodebytes(payload)
         headers['Content-Transfer-Encoding'] = 'base64'
 
+    mime_part: MIMEBase | MIMEPart
     if PRE_DJANGO_6:
         mime_part = MIMENonMultipart(maintype, subtype)
         mime_part.set_payload(payload)
@@ -76,5 +85,5 @@ def attach_to_message(message: EmailMessage, attachment: Attachment) -> None:
             headers['Content-Type'] = content_type
         header_bytes = b''.join(policy.default.fold_binary(name, value) for name, value in headers.items())
         # Parsing restores the child parts of multipart and message attachments.
-        mime_part = message_from_bytes(header_bytes + b'\n' + payload, _class=MIMEPart, policy=policy.default)
+        mime_part = parse_mime_part(header_bytes + b'\n' + payload)
     message.attach(mime_part)

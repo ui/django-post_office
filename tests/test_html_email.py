@@ -166,6 +166,7 @@ class HTMLMailTest(TestCase):
         msg = EmailMultiAlternatives(subject, body, to=['john@example.com'])
         msg.attach_alternative(html, 'text/html')
         for attachment in attached_images:
+            self.assertIsInstance(attachment, MIMEPart)
             msg.attach(attachment)
         # mixed_subtype no longer exists in Django 6+
         # this message can be send by email

@@ -286,8 +286,8 @@ mail.send(
 
 ### Inlined Images
 
-Often one wants to render images inside a template, which are attached
-as inlined `MIMEImage` to the outgoing email. This requires a slightly
+Often one wants to render images inside a template and attach them inline
+to the outgoing email. This requires a slightly
 modified Django Template Engine, keeping a list of inlined images, which
 later will be added to the outgoing message.
 
@@ -340,7 +340,8 @@ object itself. Templates rendered using this templatetag, render a
 reference ID for each given image, and store these images inside the
 context of the adopted template engine. Later on, when the rendered
 template is passed to the mailing library, those images will be
-transferred to the email message object as `MIMEImage`-attachments.
+transferred to the email message as `MIMEPart` attachments on Django 6 and
+later, or as `MIMEImage` attachments on older Django versions.
 
 To send an email containing both, a plain text body and some HTML with
 inlined images, use the following code snippet:
