@@ -46,6 +46,7 @@ content-type = "text/markdown"
 
 [project.optional-dependencies]
 test = [
+    "jinja2",
     "pytest",
     "pytest-django",
 ]

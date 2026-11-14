@@ -1,6 +1,7 @@
 import os
 
 from collections import namedtuple
+from functools import partial
 from uuid import uuid4
 from email.mime.nonmultipart import MIMENonMultipart
 
@@ -24,6 +25,8 @@ from .settings import (
     get_override_recipients,
     get_template_engine,
 )
+from .template import compile_template
+from .template.backends.post_office import PostOfficeTemplates
 from .validators import validate_email_with_name, validate_template_syntax
 
 
@@ -137,9 +140,14 @@ class Email(models.Model):
 
         if self.template is not None and self.context is not None:
             engine = get_template_engine()
-            subject = engine.from_string(self.template.subject).render(self.context)
-            plaintext_message = engine.from_string(self.template.content).render(self.context)
-            multipart_template = engine.from_string(self.template.html_content)
+            if isinstance(engine, PostOfficeTemplates):
+                # Caches compiled templates itself; its wrappers hold per-render inline images, so can't be shared
+                from_string = engine.from_string
+            else:
+                from_string = partial(compile_template, engine=engine)
+            subject = from_string(self.template.subject).render(self.context)
+            plaintext_message = from_string(self.template.content).render(self.context)
+            multipart_template = from_string(self.template.html_content)
             html_message = multipart_template.render(self.context)
 
         else:
