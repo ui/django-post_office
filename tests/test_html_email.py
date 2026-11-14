@@ -522,18 +522,21 @@ class EmailAdminTest(TestCase):
         response = self.client.get(reverse('admin:post_office_email_preview', args=[email.pk]))
         self.assertEqual(response.status_code, 404)
 
-    def test_email_preview_view_requires_login(self):
+    def test_email_admin_views_require_login(self):
         email = self._send_html_email('<p>Hello</p>')
         anonymous = Client()
         for url in (
             reverse('admin:post_office_email_preview', args=[email.pk]),
             reverse('admin:post_office_email_image', kwargs={'pk': email.pk, 'content_id': 32 * '0'}),
-            reverse('admin:resend', args=[email.pk]),
         ):
             response = anonymous.get(url)
             self.assertEqual(response.status_code, 302, url)
             self.assertIn(reverse('admin:login'), response['Location'])
-        self.assertEqual(email.logs.count(), 0)  # resend was not executed for the anonymous user
+
+        response = anonymous.post(reverse('admin:resend', args=[email.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('admin:login'), response['Location'])
+        self.assertEqual(email.logs.count(), 0)
 
     def test_email_preview_view_object_permission(self):
         email = self._send_html_email('<p>Hello</p>')
@@ -544,13 +547,35 @@ class EmailAdminTest(TestCase):
         staff = get_user_model().objects.create_user(username='staff', password='secret', is_staff=True)
         client = Client()
         client.force_login(staff)
-        for url in (preview_url, image_url, resend_url):
+        for url in (preview_url, image_url):
             self.assertEqual(client.get(url).status_code, 403, url)
+        self.assertEqual(client.post(resend_url).status_code, 403)
 
         staff.user_permissions.add(Permission.objects.get(content_type__app_label='post_office', codename='view_email'))
         self.assertEqual(client.get(preview_url).status_code, 200)
         self.assertEqual(client.get(image_url).status_code, 404)  # allowed, but no such image
-        self.assertEqual(client.get(resend_url).status_code, 403)  # resend needs change permission
+
+        # Resend needs change permission: view-only users are sent back with a helpful message, not a 403.
+        change_url = reverse('admin:post_office_email_change', args=[email.pk])
+        response = client.post(resend_url, follow=True)
+        self.assertRedirects(response, change_url)
+        self.assertContains(response, 'post_office.change_email')
+        self.assertNotContains(response, 'Email has been sent again')
+        self.assertEqual(email.logs.count(), 0)
+
+    def test_resend_requires_post(self):
+        email = self._send_html_email('<p>Hello</p>')
+        resend_url = reverse('admin:resend', args=[email.pk])
+
+        response = self.client.get(resend_url)
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(email.logs.count(), 0)
+
+        response = self.client.post(resend_url)
+        self.assertRedirects(response, reverse('admin:post_office_email_change', args=[email.pk]))
+        email.refresh_from_db()
+        self.assertEqual(email.status, STATUS.sent)
+        self.assertEqual(email.logs.count(), 1)
 
     @override_settings(DEFAULT_CHARSET='iso-8859-1')
     def test_email_preview_view_non_utf8_charset(self):
