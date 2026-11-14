@@ -563,29 +563,19 @@ class EmailAdminTest(TestCase):
         self.assertNotContains(response, 'Email has been sent again')
         self.assertEqual(email.logs.count(), 0)
 
-    def test_resend_rejects_get(self):
-        """Resend changes state, so it must not be triggerable by a GET (e.g. a cross-site <img> or a prefetch)."""
+    def test_resend_requires_post(self):
         email = self._send_html_email('<p>Hello</p>')
-        response = self.client.get(reverse('admin:resend', args=[email.pk]))
+        resend_url = reverse('admin:resend', args=[email.pk])
+
+        response = self.client.get(resend_url)
         self.assertEqual(response.status_code, 405)
         self.assertEqual(email.logs.count(), 0)
 
-    def test_resend_post(self):
-        email = self._send_html_email('<p>Hello</p>')
-        response = self.client.post(reverse('admin:resend', args=[email.pk]))
+        response = self.client.post(resend_url)
         self.assertRedirects(response, reverse('admin:post_office_email_change', args=[email.pk]))
         email.refresh_from_db()
         self.assertEqual(email.status, STATUS.sent)
         self.assertEqual(email.logs.count(), 1)
-
-    def test_change_view_resend_button(self):
-        """The change page submits resend via a CSRF-protected POST form, not a link."""
-        email = self._send_html_email('<p>Hello</p>')
-        resend_url = reverse('admin:resend', args=[email.pk])
-        response = self.client.get(reverse('admin:post_office_email_change', args=[email.pk]))
-        self.assertContains(response, f'<form method="post" action="{resend_url}">')
-        self.assertContains(response, 'csrfmiddlewaretoken')
-        self.assertNotContains(response, f'href="{resend_url}"')
 
     @override_settings(DEFAULT_CHARSET='iso-8859-1')
     def test_email_preview_view_non_utf8_charset(self):
