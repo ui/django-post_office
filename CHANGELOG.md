@@ -1,8 +1,13 @@
 Changelog
 =========
 
-## Master
-* Fixed an unclosed file when reading the send_queued_mail lock file.
+## Version 3.13 (2026-11-14)
+* Added MIMEPart handling in Django 6+. Thanks @selwin!
+* Email templates are now cached so sending multiple emails with the same template is now faster. Thanks @selwin!
+* Added support for Python 3.15. Thanks @selwin!
+* Improve email and template validators to catch common mistakes. Thanks @robinharms!
+* Don't render content using template when no template and no context is supplied. Thanks @amanjain!
+* Close lock file after reading it. Thanks @amanjain!
 
 ## Version 3.12 (2026-10-08)
 * Added support for `MAILERS` in Django 6.1. Thanks @selwin!
