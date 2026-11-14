@@ -1,16 +1,19 @@
-import os
+import unittest
+from email import policy
+from email.message import MIMEPart
+from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 from unittest import mock
 
 from django.conf import settings
-from django.core.files.images import File
 from django.core.mail import EmailMessage, EmailMultiAlternatives, send_mail
 from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase
 from django.test.utils import override_settings
 
 from post_office.models import PRIORITY, STATUS, Email
-from post_office.settings import get_backend
+from post_office.settings import PRE_DJANGO_6, get_backend
 
 
 class ErrorRaisingBackend(BaseEmailBackend):
@@ -155,32 +158,82 @@ class BackendTest(TestCase):
     def test_backend_attachments(self):
         message = EmailMessage('subject', 'body', 'from@example.com', ['recipient@example.com'])
 
-        message.attach('attachment.txt', b'attachment content')
+        message.attach('data', b'{}', 'application/json')
         message.send()
 
-        email = Email.objects.latest('id')
-        self.assertEqual(email.attachments.count(), 1)
-        self.assertEqual(email.attachments.all()[0].name, 'attachment.txt')
-        self.assertEqual(email.attachments.all()[0].file.read(), b'attachment content')
+        rebuilt = Email.objects.latest('id').email_message().message().get_payload(1)
+        self.assertEqual(rebuilt.get_content_type(), 'application/json')
+
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_legacy_multipart_attachment_round_trip(self):
+        message = EmailMessage('subject', 'body', 'from@example.com', ['recipient@example.com'])
+        image = MIMEImage(b'GIF89a', _subtype='gif')
+        bundle = MIMEMultipart()
+        bundle.attach(image)
+        message.attach(bundle)
+        message.send()
+
+        self.assertIsNone(bundle.get_boundary())
+        rebuilt = Email.objects.latest('id').email_message().message().get_payload(1)
+        self.assertEqual(rebuilt.get_payload(0).get_payload(decode=True), b'GIF89a')
 
     @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
     def test_backend_image_attachments(self):
         message = EmailMessage('subject', 'body', 'from@example.com', ['recipient@example.com'])
 
-        filename = os.path.join(os.path.dirname(__file__), 'static/dummy.png')
-        fileobj = File(open(filename, 'rb'), name='dummy.png')
-        image = MIMEImage(fileobj.read())
-        image.add_header('Content-Disposition', 'inline', filename='dummy.png')
-        image.add_header('Content-ID', '<{dummy.png}>')
+        image = MIMEImage(b'GIF89a', _subtype='gif')
+        image.add_header('Content-Disposition', 'inline', filename='logo.gif')
+        image.add_header('Content-ID', '<logo>')
         message.attach(image)
         message.send()
 
-        email = Email.objects.latest('id')
-        self.assertEqual(email.attachments.count(), 1)
-        self.assertEqual(email.attachments.all()[0].name, 'dummy.png')
-        self.assertEqual(email.attachments.all()[0].file.read(), image.get_payload().encode())
-        self.assertEqual(email.attachments.all()[0].headers.get('Content-ID'), '<{dummy.png}>')
-        self.assertEqual(email.attachments.all()[0].headers.get('Content-Disposition'), 'inline; filename="dummy.png"')
+        rebuilt = Email.objects.latest('id').email_message().attachments[0]
+        self.assertEqual(rebuilt['Content-ID'], image['Content-ID'])
+        self.assertIsInstance(rebuilt, MIMEBase if PRE_DJANGO_6 else MIMEPart)
+
+    @unittest.skipIf(PRE_DJANGO_6, 'Django 6 added MIMEPart attachments')
+    @override_settings(EMAIL_BACKEND='post_office.EmailBackend')
+    def test_mimepart_attachments_round_trip(self):
+        message = EmailMessage('subject', 'body', 'from@example.com', ['recipient@example.com'])
+        payload = b'\x00\xff\x80\r\n'
+        parts = []
+        for content_id, filename in (('<first>', 'same.bin'), ('<second>', 'same.bin'), ('<unnamed>', None)):
+            part = MIMEPart(policy=policy.SMTP)
+            part.set_content(
+                payload,
+                maintype='application',
+                subtype='octet-stream',
+                cte='8bit',
+                cid=content_id,
+                filename=filename,
+                disposition='inline',
+            )
+            parts.append(part)
+        forwarded = MIMEPart()
+        forwarded.set_type('message/rfc822')
+        forwarded.set_payload([parts[0]])
+        for part in [*parts, forwarded]:
+            message.attach(part)
+        message.send()
+
+        self.assertEqual(parts[0]['Content-Transfer-Encoding'], '8bit')
+        rebuilt = Email.objects.latest('id').email_message().message().get_payload()[1:]
+        self.assertCountEqual(
+            [
+                (part['Content-ID'], part.get_filename(), part.get_payload(decode=True))
+                for part in rebuilt
+                if not part.is_multipart()
+            ],
+            [('<first>', 'same.bin', payload), ('<second>', 'same.bin', payload), ('<unnamed>', None, payload)],
+        )
+        self.assertCountEqual(
+            [
+                (part.get_content_type(), part.get_payload(0).get_payload(decode=True))
+                for part in rebuilt
+                if part.is_multipart()
+            ],
+            [('message/rfc822', payload)],
+        )
 
     @override_settings(
         EMAIL_BACKEND='post_office.EmailBackend',

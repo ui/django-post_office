@@ -286,36 +286,22 @@ mail.send(
 
 ### Inlined Images
 
-Often one wants to render images inside a template, which are attached
-as inlined `MIMEImage` to the outgoing email. This requires a slightly
-modified Django Template Engine, keeping a list of inlined images, which
-later will be added to the outgoing message.
-
-First we must add a special Django template backend to our list of template engines:
+The Post Office template backend collects the images an HTML email references
+so they can be attached inline. Add this entry to your existing `TEMPLATES` list:
 
 ```python
-TEMPLATES = [
-    {...},
+TEMPLATES += [
     {
         'BACKEND': 'post_office.template.backends.post_office.PostOfficeTemplates',
+        'NAME': 'post_office',
         'APP_DIRS': True,
         'DIRS': [],
-        'OPTIONS': {
-            'context_processors': [
-                'django.contrib.auth.context_processors.auth',
-                'django.template.context_processors.debug',
-                'django.template.context_processors.i18n',
-                'django.template.context_processors.media',
-                'django.template.context_processors.static',
-                'django.template.context_processors.tz',
-                'django.template.context_processors.request',
-            ]
-        },
     },
 ]
 ```
 
-then we must tell Post-Office to use this template engine:
+If you render email templates through `post_office.mail.send()`, set
+`TEMPLATE_ENGINE` in your existing `POST_OFFICE` settings:
 
 ```python
 POST_OFFICE = {
@@ -323,24 +309,26 @@ POST_OFFICE = {
 }
 ```
 
-In templates used to render HTML for emails add
+In `email-template-name.html`, load the tag and reference an image:
 
 ```html+django
 {% load post_office %}
 
-<p>... somewhere in the body ...</p>
-<img src="{% inline_image 'path/to/image.png' %}" />
+<p>Hello!</p>
+<img src="{% inline_image 'path/to/logo.png' %}" alt="Company logo">
 ```
 
-Here the templatetag named `inline_image` is used to keep track of
-inlined images. It takes a single parameter. This can either be the
-relative path to an image file located in one of the `static`
-directories, or the absolute path to an image file, or an image-file
-object itself. Templates rendered using this templatetag, render a
-reference ID for each given image, and store these images inside the
-context of the adopted template engine. Later on, when the rendered
-template is passed to the mailing library, those images will be
-transferred to the email message object as `MIMEImage`-attachments.
+The tag accepts a path relative to a static files directory, an absolute path,
+or a Django `ImageFile` object. It returns a `cid:` URL and collects the
+corresponding attachment. Post Office attaches those images automatically
+when you send an email template with `post_office.mail.send()`.
+
+When building a Django message yourself, call `attach_related()` on the same
+template object you rendered. If you use
+`post_office.template.render_to_string(..., using='post_office')`, unpack the
+HTML and the list of images, then pass each image to `email_message.attach()`.
+The images are `MIMEPart` objects on Django 6+ and `MIMEImage` objects on older
+Django versions.
 
 To send an email containing both, a plain text body and some HTML with
 inlined images, use the following code snippet:
@@ -353,8 +341,7 @@ subject, body = 'Hello', 'Plain text body'
 from_email, to_email = 'no-reply@example.com', 'john@example.com'
 email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
 template = get_template('email-template-name.html', using='post_office')
-context = {...}
-html = template.render(context)
+html = template.render({})
 email_message.attach_alternative(html, 'text/html')
 template.attach_related(email_message)
 email_message.send()
@@ -369,8 +356,7 @@ from django.template.loader import get_template
 
 subject, from_email, to_email = 'Hello', 'no-reply@example.com', 'john@example.com'
 template = get_template('email-template-name.html', using='post_office')
-context = {...}
-html = template.render(context)
+html = template.render({})
 email_message = EmailMultiAlternatives(subject, html, from_email, [to_email])
 email_message.content_subtype = 'html'
 template.attach_related(email_message)

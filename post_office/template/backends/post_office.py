@@ -33,8 +33,8 @@ class Template(DjangoTemplate):
         assert isinstance(email_message, EmailMultiAlternatives), 'Parameter must be of type EmailMultiAlternatives'
         if PRE_DJANGO_6:
             email_message.mixed_subtype = 'related'
-        for attachment in self._attached_images:
-            email_message.attach(attachment)
+        for image in self._attached_images:
+            email_message.attach(image)
 
 
 class PostOfficeTemplates(BaseEngine):
