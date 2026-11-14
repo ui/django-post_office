@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
@@ -83,14 +85,15 @@ def create_attachments(attachment_files):
     """
     Create Attachment instances from files
 
-    attachment_files is a dict of:
-        * Key - the filename to be used for the attachment.
-        * Value - file-like object, or a filename to open OR a dict of {'file': file-like-object, 'mimetype': string}
+    attachment_files is a mapping or an iterable of (filename, filedata) pairs.
+    filedata is a file-like object, a path string to open, or a dict with 'file'
+    and optional 'mimetype' and 'headers'.
 
     Returns a list of Attachment objects
     """
     attachments = []
-    for filename, filedata in attachment_files.items():
+    items = attachment_files.items() if isinstance(attachment_files, Mapping) else attachment_files
+    for filename, filedata in items:
         if isinstance(filedata, dict):
             content = filedata.get('file', None)
             mimetype = filedata.get('mimetype', None)

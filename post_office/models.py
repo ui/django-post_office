@@ -3,7 +3,6 @@ import os
 from collections import namedtuple
 from functools import partial
 from uuid import uuid4
-from email.mime.nonmultipart import MIMENonMultipart
 
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage, EmailMultiAlternatives
@@ -15,6 +14,7 @@ from django.utils import timezone
 from post_office import cache
 from post_office.fields import CommaSeparatedEmailField
 
+from .attachments import attach_to_message
 from .connections import connections
 from .logutils import setup_loghandlers
 from .settings import (
@@ -203,18 +203,7 @@ class Email(models.Model):
             )
 
         for attachment in self.attachments.all():
-            if attachment.headers:
-                mime_part = MIMENonMultipart(*attachment.mimetype.split('/'))
-                mime_part.set_payload(attachment.file.read())
-                for key, val in attachment.headers.items():
-                    try:
-                        mime_part.replace_header(key, val)
-                    except KeyError:
-                        mime_part.add_header(key, val)
-                msg.attach(mime_part)
-            else:
-                msg.attach(attachment.name, attachment.file.read(), mimetype=attachment.mimetype or None)
-            attachment.file.close()
+            attach_to_message(msg, attachment)
 
         self._cached_email_message = msg
         return msg

@@ -2,6 +2,7 @@ import base64
 import hashlib
 import os
 import unittest
+from email.message import MIMEPart
 from email.mime.image import MIMEImage
 from io import BytesIO
 
@@ -139,6 +140,7 @@ class HTMLMailTest(TestCase):
         subject = '[Django Post-Office unit tests] attached image'
         msg = EmailMultiAlternatives(subject, body, to=['john@example.com'])
         template.attach_related(msg)
+        self.assertIsInstance(msg.attachments[0], MIMEPart)
         msg.content_subtype = 'html'
         # mixed_subtype no longer exists in Django 6+
         # this message can be send by email

@@ -1,3 +1,5 @@
+from email import message_from_bytes, policy
+from email.message import MIMEPart
 from typing import Any
 
 from django.conf import settings
@@ -34,6 +36,8 @@ class Template(DjangoTemplate):
         if PRE_DJANGO_6:
             email_message.mixed_subtype = 'related'
         for attachment in self._attached_images:
+            if not PRE_DJANGO_6:
+                attachment = message_from_bytes(attachment.as_bytes(), _class=MIMEPart, policy=policy.default)
             email_message.attach(attachment)
 
 
