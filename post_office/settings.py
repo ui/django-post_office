@@ -5,6 +5,7 @@ import django
 from django.conf import settings
 from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
+from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage, storages
 from django.core.mail.utils import DNS_NAME
 from django.template import engines as template_engines
@@ -104,6 +105,24 @@ def get_batch_size():
 
 def get_celery_enabled():
     return get_config().get('CELERY_ENABLED', False)
+
+
+def get_task_dispatcher():
+    """Resolve the explicitly configured enqueue callable."""
+    dispatcher = get_config().get('TASK_DISPATCHER')
+    if dispatcher is None:
+        return None
+    if isinstance(dispatcher, str):
+        try:
+            dispatcher = import_string(dispatcher)
+        except ImportError as exc:
+            raise ImproperlyConfigured('Unable to import POST_OFFICE TASK_DISPATCHER.') from exc
+    if not callable(dispatcher):
+        raise ImproperlyConfigured(
+            'POST_OFFICE TASK_DISPATCHER must be a synchronous enqueue callable or None. '
+            'For task objects, configure an enqueue callable instead.'
+        )
+    return dispatcher
 
 
 def get_lock_file_name():
