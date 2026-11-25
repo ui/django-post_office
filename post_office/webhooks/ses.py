@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import lru_cache
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -117,6 +117,65 @@ def verify_ses_signature(payload: dict) -> bool:
         return False
 
 
+DEFAULT_MAX_MESSAGE_AGE = 3600  # seconds
+
+_warned_no_trusted_topics = False
+
+
+def verify_sns_topic_arn(payload: dict, trusted_topic_arns) -> bool:
+    """
+    Returns True if the message's TopicArn is allowed.
+
+    `trusted_topic_arns` restricts which topics are accepted. If it is empty,
+    any topic is accepted (and a warning is logged once).
+    """
+    global _warned_no_trusted_topics
+
+    if not trusted_topic_arns:
+        if not _warned_no_trusted_topics:
+            logger.warning(
+                "SES Webhook: POST_OFFICE['WEBHOOKS']['SES']['TRUSTED_TOPIC_ARNS'] is not set, "
+                'messages from any SNS topic are accepted.'
+            )
+            _warned_no_trusted_topics = True
+        return True
+
+    if isinstance(trusted_topic_arns, str):
+        trusted_topic_arns = [trusted_topic_arns]
+
+    topic_arn = payload.get('TopicArn')
+    if topic_arn not in trusted_topic_arns:
+        logger.warning('SES Webhook: Rejected message from untrusted TopicArn %s', topic_arn)
+        return False
+    return True
+
+
+def verify_sns_timestamp(payload: dict, max_age, now: datetime | None = None) -> bool:
+    """
+    Returns True if the message's Timestamp is within `max_age` seconds of now.
+
+    `max_age=None` disables the check.
+    """
+    if max_age is None:
+        return True
+
+    timestamp = payload.get('Timestamp')
+    try:
+        sent_at = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+    except (AttributeError, TypeError, ValueError):
+        logger.warning('SES Webhook: Invalid Timestamp %r', timestamp)
+        return False
+    if sent_at.tzinfo is None:
+        logger.warning('SES Webhook: Timestamp without timezone %r', timestamp)
+        return False
+
+    now = now or datetime.now(timezone.utc)
+    if abs((now - sent_at).total_seconds()) > max_age:
+        logger.warning('SES Webhook: Rejected message with Timestamp %s (max age %s seconds)', timestamp, max_age)
+        return False
+    return True
+
+
 class SESWebhookHandler(BaseWebhookHandler):
     """
     Webhook handler for AWS SES via SNS.
@@ -152,7 +211,8 @@ class SESWebhookHandler(BaseWebhookHandler):
 
     def verify_signature(self, request: HttpRequest) -> bool:
         """
-        Verify AWS SNS message signature using X.509 certificate.
+        Verify AWS SNS message signature using X.509 certificate, then check that
+        the message comes from a trusted topic and is not older than MAX_MESSAGE_AGE.
         """
         config = get_webhook_config('SES')
         if not config.get('VERIFY_SIGNATURE', True):
@@ -174,7 +234,13 @@ class SESWebhookHandler(BaseWebhookHandler):
             logger.warning('SNS signature fields missing from payload')
             return False
 
-        return verify_ses_signature(payload)
+        if not verify_ses_signature(payload):
+            return False
+
+        if not verify_sns_topic_arn(payload, config.get('TRUSTED_TOPIC_ARNS')):
+            return False
+
+        return verify_sns_timestamp(payload, config.get('MAX_MESSAGE_AGE', DEFAULT_MAX_MESSAGE_AGE))
 
     def post(self, request: HttpRequest) -> HttpResponse:
         """Handle incoming SNS POST request, including subscription confirmation."""

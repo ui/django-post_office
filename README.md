@@ -556,6 +556,11 @@ POST_OFFICE = {
     'WEBHOOKS': {
         'SES': {
             'VERIFY_SIGNATURE': True,  # default, requires cryptography package
+            # SNS topics allowed to send to this endpoint. Strongly recommended.
+            'TRUSTED_TOPIC_ARNS': ['arn:aws:sns:us-east-1:123456789012:ses-notifications'],
+            # Reject messages whose SNS Timestamp is older than this many seconds.
+            # Default is 3600, set to None to disable.
+            'MAX_MESSAGE_AGE': 3600,
         },
     },
 }
@@ -563,6 +568,10 @@ POST_OFFICE = {
 
 Signature verification uses the SNS `SigningCertURL` and requires the `cryptography`
 package. Set `VERIFY_SIGNATURE` to `False` for local development only.
+
+Set `TRUSTED_TOPIC_ARNS` to the SNS topic(s) your SES configuration publishes to.
+If it is not set, messages from any topic are accepted and a warning is logged.
+The topic check also applies to subscription confirmations.
 
 The handler also recognizes SNS subscription confirmations; visit the `SubscribeURL`
 from AWS to complete the subscription.
