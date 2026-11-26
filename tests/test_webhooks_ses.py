@@ -1,4 +1,6 @@
+import base64
 import json
+import unittest
 from datetime import datetime, timezone
 
 from django.test import RequestFactory, TestCase, override_settings
@@ -10,7 +12,13 @@ except ImportError:  # pragma: no cover - optional dependency
     serialization = None
 
 from post_office.models import RecipientDeliveryStatus
-from post_office.webhooks.ses import SESWebhookHandler, verify_ses_signature, _is_valid_cert_url
+from post_office.webhooks.ses import (
+    SESWebhookHandler,
+    _is_valid_cert_url,
+    verify_ses_signature,
+    verify_sns_timestamp,
+    verify_sns_topic_arn,
+)
 
 
 class SESWebhookHandlerTest(TestCase):
@@ -272,3 +280,137 @@ class SESSignatureVerificationTest(TestCase):
         for url in invalid_urls:
             with self.subTest(url=url):
                 self.assertFalse(_is_valid_cert_url(url), f'Expected invalid: {url}')
+
+
+TRUSTED_TOPIC = 'arn:aws:sns:us-east-1:111111111111:ses-notifications'
+OTHER_TOPIC = 'arn:aws:sns:us-east-1:222222222222:other-topic'
+
+
+@mock.patch('post_office.webhooks.ses._get_aws_certificate')
+class SESTopicAndTimestampTest(TestCase):
+    """Tests for TRUSTED_TOPIC_ARNS and MAX_MESSAGE_AGE."""
+
+    @classmethod
+    def setUpClass(cls):
+        if serialization is None:
+            raise unittest.SkipTest('cryptography is required for SES signature tests')
+        super().setUpClass()
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
+        cls.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def _signed_payload(self, topic_arn=TRUSTED_TOPIC, timestamp=None, msg_type='Notification'):
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        if timestamp is None:
+            timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        message = {
+            'notificationType': 'Complaint',
+            'mail': {'messageId': 'abc123', 'destination': ['user@example.com']},
+            'complaint': {'complainedRecipients': [{'emailAddress': 'user@example.com'}]},
+        }
+        payload = {
+            'Type': msg_type,
+            'MessageId': 'mid-1',
+            'TopicArn': topic_arn,
+            'Message': json.dumps(message),
+            'Timestamp': timestamp,
+            'SignatureVersion': '2',
+            'SigningCertURL': 'https://sns.us-east-1.amazonaws.com/SimpleNotificationService-abc123.pem',
+        }
+        if msg_type == 'Notification':
+            fields = ['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type']
+        else:
+            payload['SubscribeURL'] = 'https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription'
+            payload['Token'] = 'token'
+            fields = ['Message', 'MessageId', 'SubscribeURL', 'Timestamp', 'Token', 'TopicArn', 'Type']
+        string_to_sign = ''.join(f'{key}\n{payload[key]}\n' for key in fields if key in payload)
+        signature = self.private_key.sign(string_to_sign.encode('utf-8'), padding.PKCS1v15(), hashes.SHA256())
+        payload['Signature'] = base64.b64encode(signature).decode('ascii')
+        return payload
+
+    def _post(self, payload):
+        handler = SESWebhookHandler()
+        handler.handle_events = mock.Mock()
+        request = self.factory.post('/webhook/ses/', data=json.dumps(payload), content_type='application/json')
+        return handler.post(request), handler.handle_events
+
+    @override_settings(POST_OFFICE={'WEBHOOKS': {'SES': {'TRUSTED_TOPIC_ARNS': [TRUSTED_TOPIC]}}})
+    def test_trusted_topic_accepted(self, mocked_cert):
+        mocked_cert.return_value = self.private_key.public_key()
+        response, handle_events = self._post(self._signed_payload())
+
+        self.assertEqual(response.status_code, 200)
+        handle_events.assert_called_once()
+
+    @override_settings(POST_OFFICE={'WEBHOOKS': {'SES': {'TRUSTED_TOPIC_ARNS': [TRUSTED_TOPIC]}}})
+    def test_topic_not_in_trusted_list_rejected(self, mocked_cert):
+        mocked_cert.return_value = self.private_key.public_key()
+        response, handle_events = self._post(self._signed_payload(topic_arn=OTHER_TOPIC))
+
+        self.assertEqual(response.status_code, 401)
+        handle_events.assert_not_called()
+
+    @override_settings(POST_OFFICE={'WEBHOOKS': {'SES': {'TRUSTED_TOPIC_ARNS': TRUSTED_TOPIC}}})
+    def test_trusted_topic_arns_as_string(self, mocked_cert):
+        mocked_cert.return_value = self.private_key.public_key()
+        self.assertEqual(self._post(self._signed_payload())[0].status_code, 200)
+        self.assertEqual(self._post(self._signed_payload(topic_arn=OTHER_TOPIC))[0].status_code, 401)
+
+    @override_settings(POST_OFFICE={'WEBHOOKS': {'SES': {'TRUSTED_TOPIC_ARNS': [TRUSTED_TOPIC]}}})
+    def test_subscription_confirmation_topic_not_in_trusted_list_rejected(self, mocked_cert):
+        mocked_cert.return_value = self.private_key.public_key()
+        payload = self._signed_payload(topic_arn=OTHER_TOPIC, msg_type='SubscriptionConfirmation')
+        response, _ = self._post(payload)
+
+        self.assertEqual(response.status_code, 401)
+
+    @override_settings(POST_OFFICE={'WEBHOOKS': {'SES': {}}})
+    def test_no_trusted_topics_configured_accepts_any_topic(self, mocked_cert):
+        """Backwards compatible: without TRUSTED_TOPIC_ARNS any topic is accepted."""
+        mocked_cert.return_value = self.private_key.public_key()
+        response, _ = self._post(self._signed_payload(topic_arn=OTHER_TOPIC))
+
+        self.assertEqual(response.status_code, 200)
+
+    @override_settings(POST_OFFICE={'WEBHOOKS': {'SES': {'TRUSTED_TOPIC_ARNS': [TRUSTED_TOPIC]}}})
+    def test_timestamp_older_than_max_age_rejected(self, mocked_cert):
+        mocked_cert.return_value = self.private_key.public_key()
+        response, handle_events = self._post(self._signed_payload(timestamp='2019-01-01T00:00:00.000Z'))
+
+        self.assertEqual(response.status_code, 401)
+        handle_events.assert_not_called()
+
+    @override_settings(
+        POST_OFFICE={'WEBHOOKS': {'SES': {'TRUSTED_TOPIC_ARNS': [TRUSTED_TOPIC], 'MAX_MESSAGE_AGE': None}}}
+    )
+    def test_max_message_age_none_disables_timestamp_check(self, mocked_cert):
+        mocked_cert.return_value = self.private_key.public_key()
+        response, _ = self._post(self._signed_payload(timestamp='2019-01-01T00:00:00.000Z'))
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_verify_sns_timestamp(self, mocked_cert):
+        now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        cases = [
+            ('2024-01-01T11:30:00.000Z', True),
+            ('2024-01-01T12:30:00.000Z', True),  # small clock skew
+            ('2024-01-01T10:59:59.000Z', False),
+            ('2024-01-01T13:00:01.000Z', False),
+            ('2024-01-01T11:30:00', False),  # no timezone
+            ('not-a-date', False),
+            (None, False),
+        ]
+        for timestamp, expected in cases:
+            with self.subTest(timestamp=timestamp):
+                self.assertEqual(verify_sns_timestamp({'Timestamp': timestamp}, 3600, now=now), expected)
+
+    def test_verify_sns_topic_arn(self, mocked_cert):
+        self.assertTrue(verify_sns_topic_arn({'TopicArn': TRUSTED_TOPIC}, [TRUSTED_TOPIC]))
+        self.assertFalse(verify_sns_topic_arn({'TopicArn': OTHER_TOPIC}, [TRUSTED_TOPIC]))
+        self.assertFalse(verify_sns_topic_arn({}, [TRUSTED_TOPIC]))
+        self.assertTrue(verify_sns_topic_arn({'TopicArn': OTHER_TOPIC}, []))
